@@ -36,8 +36,8 @@ export default function LoginPage() {
                 {/* Brand Header */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-flex items-center gap-3 mb-6 group">
-                        <div className="w-12 h-12 rounded-xl border-2 border-gold bg-white flex items-center justify-center transition-transform duration-300 group-hover:rotate-12">
-                            <span className="font-display text-2xl text-terracotta-raw">V</span>
+                        <div className="w-12 h-12 transition-transform duration-300 group-hover:scale-110">
+                            <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
                         </div>
                         <span className="font-display text-2xl text-ink">VIRAMAH</span>
                     </Link>

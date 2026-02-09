@@ -69,8 +69,8 @@ export function Navigation() {
             >
                 {/* Brand */}
                 <Link href="/" className="group flex items-center gap-3">
-                    <div className="relative w-10 h-10 flex items-center justify-center border border-gold rounded-lg bg-ivory overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.68,-0.6,0.32,1.6)] group-hover:rotate-90 group-hover:border-ink">
-                        <span className="font-display text-xl text-terracotta-raw transition-colors duration-300 group-hover:text-ink">V</span>
+                    <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.68,-0.6,0.32,1.6)] group-hover:scale-110">
+                        <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
                     </div>
                     <span className="font-display text-lg tracking-wide hidden sm:block text-ink">
                         VIRAMAH

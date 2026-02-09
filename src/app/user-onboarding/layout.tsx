@@ -203,8 +203,8 @@ export default function RoomBookingLayout({
                             )}
 
                             <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg border border-gold bg-white flex items-center justify-center">
-                                    <span className="font-display text-xs text-terracotta-raw">V</span>
+                                <div className="w-8 h-8">
+                                    <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
                                 </div>
                                 <span className="font-display text-base text-ink hidden sm:block">VIRAMAH</span>
                             </div>

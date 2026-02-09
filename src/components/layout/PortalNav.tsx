@@ -49,8 +49,8 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
             {/* Brand Header */}
             <div className="p-6 border-b border-sand-dark">
                 <Link href="/" className="flex items-center gap-3 group">
-                    <div className="w-10 h-10 rounded-lg border border-gold bg-white flex items-center justify-center transition-transform duration-300 group-hover:rotate-12">
-                        <span className="font-display text-xl text-terracotta-raw">V</span>
+                    <div className="w-10 h-10 transition-transform duration-300 group-hover:scale-110">
+                        <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
                         <span className="font-display text-lg text-ink block">VIRAMAH</span>
