@@ -21,6 +21,10 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Viramah | The Art of the Pause",
   description: "Premium student living reimagined.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
