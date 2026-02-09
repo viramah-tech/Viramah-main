@@ -1,65 +1,111 @@
-import Image from "next/image";
+import { Navigation } from "@/components/layout/Navigation";
+import { Footer } from "@/components/layout/Footer";
+import { Container } from "@/components/layout/Container";
+import { SearchBar } from "@/components/search/SearchBar";
+import { RoomCard } from "@/components/ui/RoomCard";
+import { RealitySection } from "@/components/sections/RealitySection";
+import { DifferenceSection } from "@/components/sections/DifferenceSection";
+import { CategoriesSection } from "@/components/sections/CategoriesSection";
+import { LifeAtViramahSection } from "@/components/sections/LifeAtViramahSection";
+import { CommunitySection } from "@/components/sections/CommunitySection";
+import { FounderSection } from "@/components/sections/FounderSection";
+import { AudienceSection } from "@/components/sections/AudienceSection";
+import { ClosingSection } from "@/components/sections/ClosingSection";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="min-h-screen flex flex-col">
+      <Navigation />
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex flex-col justify-end pb-20 overflow-hidden">
+        {/* Hero Background Image */}
+        <div
+          className="absolute inset-0 -z-10"
+          style={{
+            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 40%, var(--sand-light) 95%), url('https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&q=80&w=2000')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'grayscale(10%) contrast(95%)',
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <Container className="relative z-10">
+          <div className="max-w-3xl">
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-terracotta-raw opacity-70 block mb-6">
+              विरामाह — The Art of the Pause
+            </span>
+            <h1 className="font-display text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.1] text-terracotta-raw mb-6">
+              For the life you are building, a place to breathe.
+            </h1>
+            <p className="font-body text-xl max-w-lg text-charcoal/80">
+              An intentional community-living experience designed for the modern Indian journey.
+            </p>
+          </div>
+        </Container>
+      </section>
+
+      {/* Discovery Search Section - Overlaps Hero */}
+      <section className="relative z-20 -mt-10 pb-20">
+        <Container>
+          <div className="bg-white p-8 md:p-10 rounded-lg shadow-[0_30px_60px_rgba(142,77,62,0.08)]">
+            <SearchBar />
+          </div>
+        </Container>
+      </section>
+
+      <RealitySection />
+      <DifferenceSection />
+
+      {/* Rooms Showcase Section */}
+      <section className="py-20 md:py-32 bg-sand-light">
+        <Container>
+          <div className="flex flex-col gap-16">
+            <div className="flex justify-between items-end">
+              <div className="max-w-xl">
+                <h2 className="text-5xl md:text-6xl mb-6">Curated Spaces</h2>
+                <p className="text-lg opacity-70">
+                  Designed for focus, comfort, and community. Choose the space that fits your rhythm.
+                </p>
+              </div>
+              <button className="hidden md:block border-b border-charcoal pb-1 uppercase tracking-widest font-mono text-xs hover:text-terracotta-raw hover:border-terracotta-raw transition-colors">
+                View All Rooms
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+              <RoomCard
+                title="The Solo"
+                type="1 SEATER"
+                price="₹25,000"
+                image="/placeholder-1.jpg"
+              />
+              <RoomCard
+                title="The Duo"
+                type="2 SEATER"
+                price="₹18,000"
+                image="/placeholder-2.jpg"
+                className="md:translate-y-20" // Stagger effect
+              />
+              <RoomCard
+                title="The Tribe"
+                type="3 SEATER"
+                price="₹15,000"
+                image="/placeholder-3.jpg"
+              />
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      <CategoriesSection />
+      <LifeAtViramahSection />
+      <CommunitySection />
+      <FounderSection />
+      <AudienceSection />
+      <ClosingSection />
+
+      <Footer />
+    </main>
   );
 }
