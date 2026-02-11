@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Viramah | The Art of the Pause",
+  title: "Viramah | The Art of the Rest",
   description: "Premium student living reimagined.",
   icons: {
     icon: "/favicon.ico",

@@ -35,7 +35,7 @@ export default function AboutPage() {
                                 Viramah was born from a simple observation: student housing is often an afterthought. We believe your environment shapes your future.
                             </p>
                             <p className="text-lg opacity-80">
-                                Our mission is to create sanctuaries that balance privacy with community, giving you the space to pause, reflect, and grow.
+                                Our mission is to create sanctuaries that balance privacy with community, giving you the space to rest, reflect, and grow.
                             </p>
                         </div>
                         <div className="w-full lg:w-1/2 bg-terracotta-soft/20 rounded-3xl min-h-[400px]" />

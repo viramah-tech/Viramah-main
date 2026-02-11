@@ -7,7 +7,7 @@ export function ClosingSection() {
             <Container>
                 <div className="relative z-10 flex flex-col items-center gap-8">
                     <h2 className="font-display text-5xl md:text-7xl lg:text-8xl leading-none">
-                        Ready to pause?
+                        Ready to rest?
                     </h2>
                     <p className="text-xl opacity-90 max-w-lg">
                         Applications for the upcoming academic year are now open. Spaces are limited.

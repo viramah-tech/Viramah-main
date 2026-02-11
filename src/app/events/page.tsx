@@ -77,7 +77,7 @@ export default function EventsPage() {
                                 </div>
 
                                 <Button variant="secondary" className="w-full mt-6 group-hover:bg-terracotta-soft/20 group-hover:border-transparent">
-                                    RSVP
+                                    MORE INFO
                                 </Button>
                             </div>
                         ))}

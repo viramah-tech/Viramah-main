@@ -65,7 +65,7 @@ export function RoomCard({ title, type, price, className }: RoomCardProps) {
                 {/* Header */}
                 <div className="z-10">
                     <span className="font-mono text-[0.75rem] text-card-accent tracking-[2px] uppercase block mb-2">
-                        {type} // PRIVATE
+                        {type}
                     </span>
                     <h3 className="font-display text-[3rem] text-ink-black leading-[0.9] uppercase tracking-[-2px]">
                         {title.split(" ").map((word, i) => (
@@ -157,18 +157,18 @@ export function RoomCard({ title, type, price, className }: RoomCardProps) {
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2 text-pulp-shadow">
                             <span className="font-mono text-[0.7rem] leading-relaxed">
-                                LOC_REF<br />
-                                <span className="text-ink-black">NORTH CAMPUS, DELHI</span>
+                                
+                                <span className="text-ink-black">KRISHNA VALLEY, VRINDAVAN</span>
                             </span>
                         </div>
-                        <span className="font-mono text-[0.7rem] text-pulp-shadow">
-                            RENTAL_AMT<br />
+                        <span className="font-mono text-[1rem] text-pulp-shadow">
+                            PRICES<br />
                             <span className="text-ink-black">{price}/MO</span>
                         </span>
                     </div>
 
                     <button className="bg-ink-black text-pulp-base px-4 py-2 font-mono text-[0.7rem] font-bold tracking-[1px] hover:bg-card-accent hover:-translate-y-0.5 transition-all duration-300">
-                        EXPLORE SPACE
+                        BOOK NOW
                     </button>
                 </div>
             </div>

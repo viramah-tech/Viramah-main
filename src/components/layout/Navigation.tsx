@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect, memo, useRef } from "react";
 
 interface NavLink {
     label: string;
@@ -72,9 +72,7 @@ export function Navigation() {
                     <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.68,-0.6,0.32,1.6)] group-hover:scale-110">
                         <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
                     </div>
-                    <span className="font-display text-lg tracking-wide hidden sm:block text-ink">
-                        VIRAMAH
-                    </span>
+                    
                 </Link>
 
                 {/* Links - Pure CSS hover */}
@@ -113,16 +111,71 @@ export function Navigation() {
                         href="/login"
                         className="px-5 py-2.5 rounded-full text-sm font-medium text-ink/70 hover:text-ink hover:bg-sand-dark/50 transition-colors hidden sm:block font-mono text-xs uppercase tracking-wider"
                     >
-                        Sign In
+                        ALREADY A MEMBER
                     </Link>
                     <Link
                         href="/signup"
                         className="px-6 py-2.5 rounded-full text-sm font-medium bg-terracotta-raw text-white shadow-lg shadow-terracotta-raw/20 hover:bg-terracotta-raw/90 hover:-translate-y-0.5 transition-all duration-300"
                     >
-                        Sign Up
+                        NEW TO VIRAMAH
                     </Link>
+                </div>
+                {/* Mobile hamburger - shows links hidden on small screens */}
+                <div className="md:hidden relative">
+                    <MobileMenuButtonAndPanel navLinks={NAV_LINKS} />
                 </div>
             </nav>
         </header>
+    );
+}
+
+function MobileMenuButtonAndPanel({ navLinks }: { navLinks: NavLink[] }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        function onDoc(e: MouseEvent) {
+            if (!ref.current) return;
+            if (!ref.current.contains(e.target as Node)) setOpen(false);
+        }
+        document.addEventListener('click', onDoc);
+        return () => document.removeEventListener('click', onDoc);
+    }, []);
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                aria-expanded={open}
+                aria-label="Open menu"
+                onClick={() => setOpen((v) => !v)}
+                className="inline-flex items-center justify-center p-2 rounded-lg bg-ivory/80 "
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 7H20" stroke="#2B2B2B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M4 12H20" stroke="#2B2B2B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M4 17H20" stroke="#2B2B2B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            </button>
+
+            {open && (
+                <div className="absolute right-0 mt-2 w-64 bg-ivory border border-gold/30 rounded-lg shadow-lg p-3 flex flex-col gap-2 z-50">
+                    {navLinks.map((l) => (
+                        <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="px-3 py-2 rounded-md hover:bg-sand-light text-ink">
+                            <div className="text-sm font-medium">{l.label}</div>
+                            <div className="text-xs text-gold italic">{l.labelAlt}</div>
+                        </Link>
+                    ))}
+
+                    <hr className="border-t border-gold/10 my-1" />
+
+                    <Link href="/login" onClick={() => setOpen(false)} className="px-3 py-2 rounded-md text-sm text-ink/80 hover:bg-sand-light">
+                        ALREADY A MEMBER
+                    </Link>
+                    <Link href="/signup" onClick={() => setOpen(false)} className="px-3 py-2 rounded-md text-sm bg-terracotta-raw text-white text-center">
+                        NEW TO VIRAMAH
+                    </Link>
+                </div>
+            )}
+        </div>
     );
 }

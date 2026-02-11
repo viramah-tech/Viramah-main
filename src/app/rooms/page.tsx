@@ -15,7 +15,7 @@ export default function RoomsPage() {
                     <span className="font-mono text-xs uppercase tracking-[0.2em] text-terracotta-raw">
                         Availability
                     </span>
-                    <h1 className="font-display text-5xl md:text-6xl mt-4">Find Your Sanctuary</h1>
+                    <h1 className="font-display text-5xl md:text-6xl mt-4">GET YOUR SPACE</h1>
                 </Container>
             </section>
 
@@ -28,7 +28,7 @@ export default function RoomsPage() {
 
 
             {/* Results Grid */}
-            <section className="py-12">
+            <section className="py-0">
                 <Container>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <RoomCard

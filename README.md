@@ -8,7 +8,7 @@
 <h1 align="center">🏠 Viramah</h1>
 
 <p align="center">
-  <strong>विरामाह — The Art of the Pause</strong>
+  <strong>विरामाह — The Art of the Rest</strong>
   <br>
   <em>A premium student living platform designed for the modern Indian journey</em>
 </p>
