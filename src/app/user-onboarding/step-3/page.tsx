@@ -2,13 +2,15 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import {
     ArrowRight, ArrowLeft, Home, Wifi, Wind, Bath, Check, UtensilsCrossed,
     Search, X, ArrowUpDown, SlidersHorizontal, Bed, Square, Compass, Zap,
-    Users, Star, ChevronRight
+    Users, Star, ChevronRight, Loader2
 } from "lucide-react";
+import { saveRoomSelection } from "../actions";
 
 // Room types
 interface Room {
@@ -82,10 +84,10 @@ function RoomCard({ room, isSelected, onSelect, onViewDetails }: {
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
             className={`group relative bg-ivory rounded-xl overflow-hidden transition-all duration-300 ${isSelected
-                    ? "ring-2 ring-terracotta-raw shadow-xl shadow-terracotta-raw/15"
-                    : room.available
-                        ? "shadow-lg shadow-charcoal/5 hover:shadow-xl hover:shadow-charcoal/10"
-                        : "opacity-60 grayscale-[30%]"
+                ? "ring-2 ring-terracotta-raw shadow-xl shadow-terracotta-raw/15"
+                : room.available
+                    ? "shadow-lg shadow-charcoal/5 hover:shadow-xl hover:shadow-charcoal/10"
+                    : "opacity-60 grayscale-[30%]"
                 }`}
         >
             {/* Image Section */}
@@ -106,8 +108,8 @@ function RoomCard({ room, isSelected, onSelect, onViewDetails }: {
                         {typeLabels[room.type]}
                     </div>
                     <div className={`px-3 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-wider shadow-lg ${room.available
-                            ? "bg-white/95 text-sage-muted"
-                            : "bg-terracotta-raw text-white"
+                        ? "bg-white/95 text-sage-muted"
+                        : "bg-terracotta-raw text-white"
                         }`}>
                         {room.available ? "● Available" : "● Occupied"}
                     </div>
@@ -209,10 +211,10 @@ function RoomCard({ room, isSelected, onSelect, onViewDetails }: {
                         onClick={() => room.available && onSelect()}
                         disabled={!room.available}
                         className={`flex-1 py-3 rounded-xl font-mono text-xs transition-all flex items-center justify-center gap-2 ${!room.available
-                                ? "bg-sand-dark/30 text-charcoal/30 cursor-not-allowed"
-                                : isSelected
-                                    ? "bg-terracotta-raw text-white shadow-lg shadow-terracotta-raw/25"
-                                    : "bg-charcoal text-ivory hover:bg-terracotta-raw hover:shadow-lg hover:shadow-terracotta-raw/25"
+                            ? "bg-sand-dark/30 text-charcoal/30 cursor-not-allowed"
+                            : isSelected
+                                ? "bg-terracotta-raw text-white shadow-lg shadow-terracotta-raw/25"
+                                : "bg-charcoal text-ivory hover:bg-terracotta-raw hover:shadow-lg hover:shadow-terracotta-raw/25"
                             }`}
                     >
                         {isSelected ? (
@@ -320,7 +322,7 @@ function RoomDetailModal({ room, onClose, onSelect, isSelected }: {
                         onClick={() => { onSelect(); onClose(); }}
                         disabled={!room.available}
                         className={`w-full py-4 rounded-xl font-body font-medium transition-all ${!room.available ? "bg-sand-dark/50 text-charcoal/40 cursor-not-allowed" :
-                                isSelected ? "bg-sage-muted text-white" : "bg-terracotta-raw text-white hover:bg-terracotta-raw/90 shadow-lg shadow-terracotta-raw/25"
+                            isSelected ? "bg-sage-muted text-white" : "bg-terracotta-raw text-white hover:bg-terracotta-raw/90 shadow-lg shadow-terracotta-raw/25"
                             }`}
                     >
                         {isSelected ? "✓ Room Selected" : room.available ? "Select This Room" : "Room Occupied"}
@@ -365,6 +367,7 @@ function MessPackageCard({ pkg, isSelected, onSelect }: { pkg: typeof MESS_PACKA
 }
 
 export default function Step3Page() {
+    const router = useRouter();
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
     const [selectedPackage, setSelectedPackage] = useState<string>("full");
     const [viewingRoom, setViewingRoom] = useState<Room | null>(null);
@@ -372,6 +375,8 @@ export default function Step3Page() {
     const [filters, setFilters] = useState({ type: "all", floor: "all", priceRange: "all", showAvailable: true });
     const [sortBy, setSortBy] = useState("room_number");
     const [showFilters, setShowFilters] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const filteredRooms = useMemo(() => {
         let result = MOCK_ROOMS.filter((room) => {
@@ -515,10 +520,45 @@ export default function Step3Page() {
                 </motion.div>
             )}
 
+            {/* Error */}
+            {error && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200">
+                    <p className="font-body text-sm text-red-600">{error}</p>
+                </div>
+            )}
+
             {/* Navigation */}
             <div className="flex justify-between pt-4">
                 <Link href="/user-onboarding/step-2"><Button variant="secondary" size="lg" className="gap-2"><ArrowLeft className="w-4 h-4" />Back</Button></Link>
-                <Link href={selectedRoom ? "/user-onboarding/step-4" : "#"}><Button size="lg" className="gap-2" disabled={!selectedRoom}>Continue to Preferences<ArrowRight className="w-4 h-4" /></Button></Link>
+                <Button
+                    size="lg"
+                    className="gap-2"
+                    disabled={!selectedRoom || isLoading}
+                    onClick={async () => {
+                        if (!selectedRoom) return;
+                        setIsLoading(true);
+                        setError(null);
+                        try {
+                            const fd = new FormData();
+                            fd.append('roomId', selectedRoom.id);
+                            const pkg = MESS_PACKAGES.find(p => p.id === selectedPackage);
+                            if (pkg) fd.append('messPackageId', pkg.id);
+                            fd.append('totalAmount', String(totalMonthly));
+                            const result = await saveRoomSelection(fd);
+                            if (result?.error) setError(result.error);
+                        } catch {
+                            // redirect() throws, expected
+                        } finally {
+                            setIsLoading(false);
+                        }
+                    }}
+                >
+                    {isLoading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+                    ) : (
+                        <>Continue to Preferences<ArrowRight className="w-4 h-4" /></>
+                    )}
+                </Button>
             </div>
 
             {/* Modal */}

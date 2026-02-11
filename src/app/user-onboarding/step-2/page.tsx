@@ -2,10 +2,12 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FormInput } from "@/components/ui/FormInput";
 import { Button } from "@/components/ui/Button";
-import { ArrowRight, ArrowLeft, Phone, Upload, X, Image, Users } from "lucide-react";
+import { ArrowRight, ArrowLeft, Phone, Upload, X, Image, Users, Loader2 } from "lucide-react";
+import { saveEmergencyContact } from "../actions";
 
 interface UploadedFile {
     name: string;
@@ -81,6 +83,7 @@ function PhotoUpload({
 }
 
 export default function Step2Page() {
+    const router = useRouter();
     const [formData, setFormData] = useState({
         emergencyName: "",
         emergencyPhone: "",
@@ -92,6 +95,8 @@ export default function Step2Page() {
 
     const [parentIdFront, setParentIdFront] = useState<UploadedFile | null>(null);
     const [parentIdBack, setParentIdBack] = useState<UploadedFile | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     return (
         <motion.div
@@ -230,6 +235,13 @@ export default function Step2Page() {
                 </div>
             </div>
 
+            {/* Error */}
+            {error && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200">
+                    <p className="font-body text-sm text-red-600">{error}</p>
+                </div>
+            )}
+
             {/* Navigation */}
             <div className="flex justify-between pt-4">
                 <Link href="/user-onboarding/step-1">
@@ -238,12 +250,33 @@ export default function Step2Page() {
                         Back
                     </Button>
                 </Link>
-                <Link href="/user-onboarding/step-3">
-                    <Button size="lg" className="gap-2">
-                        Continue to Room Selection
-                        <ArrowRight className="w-4 h-4" />
-                    </Button>
-                </Link>
+                <Button
+                    size="lg"
+                    className="gap-2"
+                    disabled={isLoading}
+                    onClick={async () => {
+                        setIsLoading(true);
+                        setError(null);
+                        try {
+                            const fd = new FormData();
+                            fd.append('emergencyName', formData.emergencyName);
+                            fd.append('emergencyPhone', formData.emergencyPhone);
+                            fd.append('emergencyRelation', formData.emergencyRelation);
+                            const result = await saveEmergencyContact(fd);
+                            if (result?.error) setError(result.error);
+                        } catch {
+                            // redirect() throws, expected
+                        } finally {
+                            setIsLoading(false);
+                        }
+                    }}
+                >
+                    {isLoading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+                    ) : (
+                        <>Continue to Room Selection<ArrowRight className="w-4 h-4" /></>
+                    )}
+                </Button>
             </div>
         </motion.div>
     );

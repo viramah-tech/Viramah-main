@@ -1,39 +1,19 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
+import { type NextRequest } from 'next/server'
 
-// Role-based route protection proxy
-export function proxy(request: NextRequest) {
-    const { pathname } = request.nextUrl
-
-    // TODO: Get session from cookies/headers when Supabase is configured
-    const session = null // Placeholder
-
-    // Protected routes configuration
-    const protectedRoutes = {
-        '/student': 'student',
-        '/parent': 'parent',
-        '/admin': 'admin',
-    }
-
-    // Check if route is protected
-    for (const [route, requiredRole] of Object.entries(protectedRoutes)) {
-        if (pathname.startsWith(route)) {
-            // TODO: Implement actual auth check
-            // For now, allow all routes during development
-            // if (!session || session.role !== requiredRole) {
-            //     return NextResponse.redirect(new URL('/login', request.url))
-            // }
-        }
-    }
-
-    return NextResponse.next()
+export async function proxy(request: NextRequest) {
+    return await updateSession(request)
 }
 
 export const config = {
     matcher: [
-        '/student/:path*',
-        '/parent/:path*',
-        '/admin/:path*',
-        '/room-booking/:path*',
+        /*
+         * Match all request paths except for the ones starting with:
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         * - public assets
+         */
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 }
