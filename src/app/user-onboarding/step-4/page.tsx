@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import { ArrowRight, ArrowLeft, Settings2, Moon, Sun, Volume2, VolumeX, Loader2 } from "lucide-react";
-import { savePreferences } from "../actions";
+import { ArrowRight, ArrowLeft, Settings2, Moon, Sun, Volume2, VolumeX } from "lucide-react";
 
 interface PreferenceOption {
     value: string;
@@ -34,14 +32,11 @@ const NOISE_OPTIONS: PreferenceOption[] = [
 ];
 
 export default function Step3Page() {
-    const router = useRouter();
     const [preferences, setPreferences] = useState({
         dietary: "",
         sleep: "",
         noise: "",
     });
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const PreferenceGroup = ({
         title,
@@ -131,13 +126,6 @@ export default function Step3Page() {
                 />
             </div>
 
-            {/* Error */}
-            {error && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200">
-                    <p className="font-body text-sm text-red-600">{error}</p>
-                </div>
-            )}
-
             {/* Navigation */}
             <div className="flex justify-between pt-4">
                 <Link href="/user-onboarding/step-3">
@@ -146,33 +134,12 @@ export default function Step3Page() {
                         Back
                     </Button>
                 </Link>
-                <Button
-                    size="lg"
-                    className="gap-2"
-                    disabled={isLoading}
-                    onClick={async () => {
-                        setIsLoading(true);
-                        setError(null);
-                        try {
-                            const fd = new FormData();
-                            fd.append('dietary', preferences.dietary);
-                            fd.append('sleep', preferences.sleep);
-                            fd.append('noise', preferences.noise);
-                            const result = await savePreferences(fd);
-                            if (result?.error) setError(result.error);
-                        } catch {
-                            // redirect() throws, expected
-                        } finally {
-                            setIsLoading(false);
-                        }
-                    }}
-                >
-                    {isLoading ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
-                    ) : (
-                        <>Continue to Review<ArrowRight className="w-4 h-4" /></>
-                    )}
-                </Button>
+                <Link href="/user-onboarding/confirm">
+                    <Button size="lg" className="gap-2">
+                        Continue to Review
+                        <ArrowRight className="w-4 h-4" />
+                    </Button>
+                </Link>
             </div>
         </motion.div>
     );

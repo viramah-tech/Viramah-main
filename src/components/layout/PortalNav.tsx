@@ -116,21 +116,13 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
 
             {/* Footer Actions */}
             <div className="p-4 border-t border-sand-dark">
-                <button
-                    onClick={async () => {
-                        const { createBrowserClient } = await import("@supabase/ssr");
-                        const supabase = createBrowserClient(
-                            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-                        );
-                        await supabase.auth.signOut();
-                        window.location.href = "/login";
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-charcoal/60 hover:text-terracotta-raw hover:bg-sand-dark/30 transition-all duration-300"
+                <Link
+                    href="/"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-charcoal/60 hover:text-terracotta-raw hover:bg-sand-dark/30 transition-all duration-300"
                 >
                     <LogOut className="w-5 h-5" />
                     <span className="font-body text-sm">Sign Out</span>
-                </button>
+                </Link>
             </div>
         </aside>
     );

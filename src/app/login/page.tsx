@@ -2,66 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { FormInput } from "@/components/ui/FormInput";
-import { GraduationCap, Users, ArrowRight, Chrome, Loader2 } from "lucide-react";
-import { signInWithEmail, signUpWithEmail, signInWithGoogle } from "@/app/auth/actions";
+import { GraduationCap, Users, ArrowRight, Chrome } from "lucide-react";
 
 type RoleSelection = "student" | "parent" | null;
-type AuthMode = "login" | "signup";
 
 export default function LoginPage() {
     const [selectedRole, setSelectedRole] = useState<RoleSelection>(null);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [authMode, setAuthMode] = useState<AuthMode>("login");
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedRole) return;
-
-        setError(null);
-        setIsLoading(true);
-
-        try {
-            const formData = new FormData();
-            formData.append("email", email);
-            formData.append("password", password);
-            formData.append("role", selectedRole);
-
-            const result = authMode === "login"
-                ? await signInWithEmail(formData)
-                : await signUpWithEmail(formData);
-
-            if (result?.error) {
-                setError(result.error);
-            }
-        } catch {
-            // redirect() throws an error in server actions, which is expected
-            // If we get here without an explicit error, the redirect worked
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleGoogleSignIn = async () => {
-        setError(null);
-        setIsLoading(true);
-        try {
-            const result = await signInWithGoogle();
-            if (result?.error) {
-                setError(result.error);
-            }
-        } catch {
-            // redirect() throws, which is expected
-        } finally {
-            setIsLoading(false);
-        }
+    const getRedirectPath = () => {
+        if (selectedRole === "student") return "/user-onboarding/step-1";
+        if (selectedRole === "parent") return "/parent/dashboard";
+        return "/login";
     };
 
     return (
@@ -85,14 +41,8 @@ export default function LoginPage() {
                         </div>
                         <span className="font-display text-2xl text-ink">VIRAMAH</span>
                     </Link>
-                    <h1 className="font-display text-3xl text-charcoal">
-                        {authMode === "login" ? "Welcome Back" : "Create Account"}
-                    </h1>
-                    <p className="font-body text-charcoal/60 mt-2">
-                        {authMode === "login"
-                            ? "Sign in to continue to your portal"
-                            : "Join the Viramah community"}
-                    </p>
+                    <h1 className="font-display text-3xl text-charcoal">Welcome Back</h1>
+                    <p className="font-body text-charcoal/60 mt-2">Sign in to continue to your portal</p>
                 </div>
 
                 {/* Auth Card */}
@@ -140,65 +90,40 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    {/* Error Message */}
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200"
-                        >
-                            <p className="font-body text-sm text-red-600">{error}</p>
-                        </motion.div>
-                    )}
-
                     {/* Login Form */}
-                    <form onSubmit={handleSubmit}>
-                        <div className="space-y-4 mb-6">
-                            <FormInput
-                                label="Email Address"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
-                            <FormInput
-                                label="Password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                        </div>
+                    <div className="space-y-4 mb-6">
+                        <FormInput
+                            label="Email Address"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        <FormInput
+                            label="Password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </div>
 
-                        {/* Forgot Password */}
-                        {authMode === "login" && (
-                            <div className="flex justify-end mb-6">
-                                <Link href="#" className="font-mono text-xs text-terracotta-raw hover:underline">
-                                    Forgot Password?
-                                </Link>
-                            </div>
-                        )}
+                    {/* Forgot Password */}
+                    <div className="flex justify-end mb-6">
+                        <Link href="#" className="font-mono text-xs text-terracotta-raw hover:underline">
+                            Forgot Password?
+                        </Link>
+                    </div>
 
-                        {/* Submit Button */}
+                    {/* Submit Button */}
+                    <Link href={getRedirectPath()}>
                         <Button
-                            type="submit"
                             size="lg"
                             className="w-full gap-2"
-                            disabled={!selectedRole || isLoading}
+                            disabled={!selectedRole}
                         >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    {authMode === "login" ? "Signing In..." : "Creating Account..."}
-                                </>
-                            ) : (
-                                <>
-                                    {authMode === "login"
-                                        ? (selectedRole === "student" ? "Sign In" : "Sign In")
-                                        : "Create Account"}
-                                    <ArrowRight className="w-4 h-4" />
-                                </>
-                            )}
+                            {selectedRole === "student" ? "Continue to Booking" : "Sign In"}
+                            <ArrowRight className="w-4 h-4" />
                         </Button>
-                    </form>
+                    </Link>
 
                     {/* Divider */}
                     <div className="flex items-center gap-4 my-6">
@@ -208,36 +133,10 @@ export default function LoginPage() {
                     </div>
 
                     {/* Google Login */}
-                    <Button
-                        variant="secondary"
-                        size="lg"
-                        className="w-full gap-3"
-                        onClick={handleGoogleSignIn}
-                        disabled={isLoading}
-                    >
+                    <Button variant="secondary" size="lg" className="w-full gap-3">
                         <Chrome className="w-5 h-5" />
                         Continue with Google
                     </Button>
-
-                    {/* Toggle Login / Sign Up */}
-                    <div className="text-center mt-6">
-                        <button
-                            onClick={() => {
-                                setAuthMode(authMode === "login" ? "signup" : "login");
-                                setError(null);
-                            }}
-                            className="font-body text-sm text-charcoal/60"
-                        >
-                            {authMode === "login"
-                                ? <>Don&apos;t have an account?{" "}
-                                    <span className="text-terracotta-raw hover:underline font-medium">Sign Up</span>
-                                </>
-                                : <>Already have an account?{" "}
-                                    <span className="text-terracotta-raw hover:underline font-medium">Sign In</span>
-                                </>
-                            }
-                        </button>
-                    </div>
                 </div>
 
                 <div className="text-center mt-6">

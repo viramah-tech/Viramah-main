@@ -1,7 +1,11 @@
-// Re-export browser client for backward compatibility
-// Prefer importing from '@/lib/supabase/client' or '@/lib/supabase/server' directly
-export { createClient } from './supabase/client'
+// Supabase Client Configuration
+// TODO: Configure with environment variables
 
-// Legacy: create a default instance for quick use in client components
-import { createClient } from './supabase/client'
-export const supabase = createClient()
+// import { createClient } from '@supabase/supabase-js'
+
+// const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+// const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+// export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+export const supabase = null // Placeholder until Supabase is configured

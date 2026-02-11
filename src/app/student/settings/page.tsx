@@ -5,13 +5,12 @@ import { motion } from "framer-motion";
 import { FormInput } from "@/components/ui/FormInput";
 import { Button } from "@/components/ui/Button";
 import { User, Bell, Lock, Save } from "lucide-react";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { mockUser } from "@/lib/auth";
 
 export default function SettingsPage() {
-    const { user } = useAuth();
     const [profile, setProfile] = useState({
-        name: user?.name || "",
-        email: user?.email || "",
+        name: mockUser.name,
+        email: mockUser.email,
         phone: "+91 98XXX XXXXX",
     });
 

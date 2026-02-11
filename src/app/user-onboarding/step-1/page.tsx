@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { FormInput } from "@/components/ui/FormInput";
 import { Button } from "@/components/ui/Button";
-import { ArrowRight, Shield, Upload, X, Image, Loader2 } from "lucide-react";
-import { saveKYCData, uploadIDDocument } from "../actions";
+import { ArrowRight, Shield, Upload, X, Image } from "lucide-react";
 
 interface UploadedFile {
     name: string;
@@ -17,21 +16,18 @@ function PhotoUpload({
     label,
     file,
     onUpload,
-    onRemove,
-    onRawFile
+    onRemove
 }: {
     label: string;
     file: UploadedFile | null;
     onUpload: (file: UploadedFile) => void;
     onRemove: () => void;
-    onRawFile?: (file: File) => void;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
-            onRawFile?.(selectedFile);
             const reader = new FileReader();
             reader.onload = () => {
                 onUpload({
@@ -85,7 +81,6 @@ function PhotoUpload({
 }
 
 export default function Step1Page() {
-    const router = useRouter();
     const [formData, setFormData] = useState({
         fullName: "",
         dateOfBirth: "",
@@ -95,10 +90,6 @@ export default function Step1Page() {
 
     const [idFront, setIdFront] = useState<UploadedFile | null>(null);
     const [idBack, setIdBack] = useState<UploadedFile | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const idFrontFileRef = useRef<File | null>(null);
-    const idBackFileRef = useRef<File | null>(null);
 
     return (
         <motion.div
@@ -183,73 +174,26 @@ export default function Step1Page() {
                             label="Front Side"
                             file={idFront}
                             onUpload={setIdFront}
-                            onRemove={() => { setIdFront(null); idFrontFileRef.current = null; }}
-                            onRawFile={(f) => { idFrontFileRef.current = f; }}
+                            onRemove={() => setIdFront(null)}
                         />
                         <PhotoUpload
                             label="Back Side"
                             file={idBack}
                             onUpload={setIdBack}
-                            onRemove={() => { setIdBack(null); idBackFileRef.current = null; }}
-                            onRawFile={(f) => { idBackFileRef.current = f; }}
+                            onRemove={() => setIdBack(null)}
                         />
                     </div>
                 </div>
             </div>
 
-            {/* Error */}
-            {error && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200">
-                    <p className="font-body text-sm text-red-600">{error}</p>
-                </div>
-            )}
-
             {/* Navigation */}
             <div className="flex justify-end pt-4">
-                <Button
-                    size="lg"
-                    className="gap-2"
-                    disabled={isLoading}
-                    onClick={async () => {
-                        setIsLoading(true);
-                        setError(null);
-                        try {
-                            // Upload files first
-                            if (idFrontFileRef.current) {
-                                const fd = new FormData();
-                                fd.append('file', idFrontFileRef.current);
-                                fd.append('side', 'front');
-                                const res = await uploadIDDocument(fd);
-                                if (res.error) { setError(res.error); setIsLoading(false); return; }
-                            }
-                            if (idBackFileRef.current) {
-                                const fd = new FormData();
-                                fd.append('file', idBackFileRef.current);
-                                fd.append('side', 'back');
-                                const res = await uploadIDDocument(fd);
-                                if (res.error) { setError(res.error); setIsLoading(false); return; }
-                            }
-                            // Save profile data
-                            const fd = new FormData();
-                            fd.append('fullName', formData.fullName);
-                            fd.append('dateOfBirth', formData.dateOfBirth);
-                            fd.append('idType', formData.idType);
-                            fd.append('idNumber', formData.idNumber);
-                            const result = await saveKYCData(fd);
-                            if (result?.error) setError(result.error);
-                        } catch {
-                            // redirect() throws, expected
-                        } finally {
-                            setIsLoading(false);
-                        }
-                    }}
-                >
-                    {isLoading ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
-                    ) : (
-                        <>Continue to Emergency Info<ArrowRight className="w-4 h-4" /></>
-                    )}
-                </Button>
+                <Link href="/user-onboarding/step-2">
+                    <Button size="lg" className="gap-2">
+                        Continue to Emergency Info
+                        <ArrowRight className="w-4 h-4" />
+                    </Button>
+                </Link>
             </div>
         </motion.div>
     );
