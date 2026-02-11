@@ -1,0 +1,511 @@
+# LLM Onboarding Guide for Viramah
+
+> **Generated:** February 11, 2026 — Code Guardian Protocol Phase 7
+> **Status:** Frontend-only MVP — No backend, no auth, all data is mock
+
+---
+
+## Quick Reference
+
+| Attribute        | Value                                            |
+|------------------|--------------------------------------------------|
+| **Language**     | TypeScript 5.x (strict mode)                     |
+| **Framework**    | Next.js 16.1.6 (App Router)                      |
+| **UI Library**   | React 19.2.3                                     |
+| **Styling**      | Tailwind CSS 4 + custom CSS vars                 |
+| **Animations**   | Framer Motion 12.33.0                            |
+| **Icons**        | Lucide React 0.563.0                             |
+| **Utilities**    | class-variance-authority, clsx, tailwind-merge   |
+| **Database**     | Supabase (planned, `null` placeholder)           |
+| **Architecture** | Next.js App Router (file-system routing)         |
+| **Entry Point**  | `src/app/page.tsx`                               |
+| **Path Alias**   | `@/*` → `./src/*`                                |
+
+---
+
+## Project Purpose
+
+Viramah (विरामाह — "The Art of the Pause") is a **premium student living platform** connecting students with curated accommodations. The platform includes:
+
+- **Landing Page** — Marketing page with rich sections
+- **Login** — Role-based sign-in (Student / Parent) — UI only
+- **User Onboarding** — 4-step booking wizard (identity → emergency → room → preferences)
+- **Student Portal** — Dashboard, Wallet, Canteen, Amenities, Settings — mock data
+- **Parent Portal** — Dashboard, Visit Scheduling — mock data
+- **Rooms Page** — Room browsing with search and filters
+
+---
+
+## Directory Structure
+
+```
+src/
+├── app/                          # Next.js App Router pages
+│   ├── layout.tsx                # Root layout (fonts, metadata)
+│   ├── page.tsx                  # Landing page (Server Component)
+│   ├── template.tsx              # Page transition wrapper (Client Component)
+│   ├── loading.tsx               # Loading animation (Client Component)
+│   ├── api/route.ts              # API placeholder (GET → { message })
+│   ├── login/page.tsx            # Login page
+│   ├── rooms/page.tsx            # Room browsing
+│   ├── about/page.tsx            # About page
+│   ├── about-us/page.tsx         # About us page
+│   ├── community/page.tsx        # Community page
+│   ├── events/page.tsx           # Events page
+│   ├── user-onboarding/          # 4-step wizard
+│   │   ├── layout.tsx            # Stepper layout with scroll animations
+│   │   ├── step-1/page.tsx       # Identity verification
+│   │   ├── step-2/page.tsx       # Emergency contacts
+│   │   ├── step-3/page.tsx       # Room selection (most complex, 529 lines)
+│   │   ├── step-4/page.tsx       # Lifestyle preferences
+│   │   └── confirm/page.tsx      # Booking confirmation
+│   ├── student/                  # Student portal
+│   │   ├── layout.tsx            # Portal layout with sidebar
+│   │   ├── dashboard/page.tsx    # Dashboard
+│   │   ├── wallet/page.tsx       # Wallet
+│   │   ├── canteen/page.tsx      # Coming soon placeholder
+│   │   ├── amenities/page.tsx    # Coming soon placeholder
+│   │   └── settings/page.tsx     # Profile settings
+│   └── parent/                   # Parent portal
+│       ├── layout.tsx            # Portal layout with sidebar
+│       ├── dashboard/page.tsx    # Parent dashboard
+│       └── visit/page.tsx        # Visit scheduling
+├── components/
+│   ├── layout/                   # Layout components
+│   │   ├── Navigation.tsx        # Floating pill nav with clock
+│   │   ├── Footer.tsx            # Simple footer
+│   │   ├── Container.tsx         # Max-width container
+│   │   └── PortalNav.tsx         # Sidebar nav for portals
+│   ├── sections/                 # Landing page sections (8 components)
+│   │   ├── RealitySection.tsx
+│   │   ├── DifferenceSection.tsx
+│   │   ├── CategoriesSection.tsx
+│   │   ├── LifeAtViramahSection.tsx
+│   │   ├── CommunitySection.tsx
+│   │   ├── FounderSection.tsx
+│   │   ├── AudienceSection.tsx
+│   │   └── ClosingSection.tsx
+│   ├── ui/                       # Reusable primitives
+│   │   ├── Button.tsx            # CVA-based button variants
+│   │   ├── FormInput.tsx         # Floating-label input
+│   │   └── RoomCard.tsx          # 3D tilt room card
+│   ├── search/
+│   │   ├── SearchBar.tsx         # Discovery search with animated segments
+│   │   └── FilterBar.tsx         # Filter bar with buttons
+│   ├── room-booking/
+│   │   ├── ProgressStepper.tsx   # Step progress indicator
+│   │   └── index.ts              # Barrel export (empty)
+│   ├── student/index.ts          # Barrel export (empty)
+│   └── parent/index.ts           # Barrel export (empty)
+├── lib/
+│   ├── auth.ts                   # Mock auth (User, Session, mockUser)
+│   ├── supabase.ts               # export const supabase = null
+│   └── utils.ts                  # cn() — clsx + tailwind-merge
+├── hooks/
+│   └── useScrollReveal.ts        # IntersectionObserver scroll animation
+├── types/
+│   └── index.ts                  # User, Room, Booking, KYCData types
+├── styles/
+│   └── globals.css               # TW4 @theme, CSS vars, grain texture
+└── proxy.ts                      # Route protection middleware (disabled)
+```
+
+---
+
+## Naming Conventions
+
+### Files & Directories
+| Category | Convention | Examples |
+|----------|-----------|----------|
+| **Components** | PascalCase | `Navigation.tsx`, `RoomCard.tsx` |
+| **Pages** | `page.tsx` in route directories | `app/login/page.tsx` |
+| **Layouts** | `layout.tsx` | `app/student/layout.tsx` |
+| **Hooks** | camelCase with `use` prefix | `useScrollReveal.ts` |
+| **Utilities** | camelCase | `utils.ts`, `auth.ts` |
+| **Types** | `index.ts` inside `types/` | `types/index.ts` |
+| **Barrel Exports** | `index.ts` | `components/student/index.ts` |
+
+### Code Naming
+| Category | Convention | Examples |
+|----------|-----------|----------|
+| **Components** | PascalCase named exports | `export function Navigation()` |
+| **Default page exports** | PascalCase with `default` | `export default function LoginPage()` |
+| **Interfaces** | PascalCase (no `I` prefix) | `NavLink`, `RoomCardProps`, `ButtonProps` |
+| **Type aliases** | PascalCase | `UserRole`, `RoleSelection` |
+| **Constants** | SCREAMING_SNAKE or PascalCase arrays | `NAV_LINKS`, `BOOKING_STEPS`, `MOCK_ROOMS` |
+| **Functions** | camelCase | `getSession()`, `hasRole()`, `cn()` |
+| **CSS variables** | kebab-case | `--terracotta-raw`, `--sand-light` |
+
+---
+
+## Component Patterns
+
+### Server Components (Default)
+Pages without `"use client"` are Server Components:
+```tsx
+// src/app/page.tsx — Server Component
+import { Navigation } from "@/components/layout/Navigation";
+import { Footer } from "@/components/layout/Footer";
+
+export default function Home() {
+    return (
+        <main className="min-h-screen flex flex-col">
+            <Navigation />
+            {/* sections */}
+            <Footer />
+        </main>
+    );
+}
+```
+
+### Client Components
+Any component using hooks, event handlers, or Framer Motion:
+```tsx
+// ALWAYS starts with this directive:
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+```
+
+### Props Pattern
+All component props are defined as interfaces, never inline:
+```tsx
+interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    label: string;
+    error?: string;
+    hint?: string;
+}
+
+export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
+    ({ label, error, hint, className, type, ...props }, ref) => {
+        // ...
+    }
+);
+FormInput.displayName = "FormInput";
+```
+
+### Named Exports (Preferred)
+```tsx
+// Components use named exports:
+export function Navigation() { ... }
+export function Container({ className, children, ...props }: ContainerProps) { ... }
+export { Button, buttonVariants };
+
+// Pages use default exports:
+export default function LoginPage() { ... }
+export default function StudentLayout({ children }: { children: React.ReactNode }) { ... }
+```
+
+---
+
+## Styling Patterns
+
+### Tailwind + Custom CSS Variables
+All custom colors are defined as CSS variables in `globals.css`:
+```css
+:root {
+  --terracotta-raw: #8E4D3E;   /* Primary accent, CTAs */
+  --terracotta-soft: #D4A373;   /* Gradients, highlights */
+  --sand-light: #F4F1EC;        /* Page backgrounds */
+  --sand-dark: #E8E2D9;         /* Borders, dividers */
+  --charcoal: #2D2D2D;          /* Primary text */
+  --sage-muted: #8B9474;        /* Success states */
+  --ivory: #F9F7F2;             /* Navigation bg */
+  --gold: #C5A059;              /* Secondary accent */
+  --ink: #1C1C1C;               /* Dark text */
+  --pulp-base: #f4f1ea;         /* Card backgrounds */
+}
+```
+
+Then mapped to Tailwind via `@theme` block (Tailwind CSS 4 syntax):
+```css
+@theme {
+  --color-terracotta-raw: var(--terracotta-raw);
+  --color-sand-light: var(--sand-light);
+  /* ... */
+}
+```
+
+### Typography
+Three font families loaded in `layout.tsx`:
+```tsx
+const dmSerif = DM_Serif_Display({ weight: "400", variable: "--font-display" });
+const inter = Inter({ variable: "--font-body" });
+const jetbrainsMono = JetBrains_Mono({ variable: "--font-mono" });
+```
+
+Usage via Tailwind classes:
+- `font-display` — Headings, brand text (DM Serif Display)
+- `font-body` — Body text, labels (Inter)
+- `font-mono` — Metadata, codes, labels, uppercase tracking (JetBrains Mono)
+
+### The `cn()` Utility
+Always use for conditional class merging:
+```tsx
+import { cn } from "@/lib/utils";
+
+<div className={cn(
+    "base-classes here",
+    isActive && "active-state-classes",
+    className   // Always spread incoming className last
+)} />
+```
+
+### Common Class Patterns
+```
+Labels/Metadata:  font-mono text-xs text-charcoal/50 uppercase tracking-widest
+Headings:         font-display text-4xl text-charcoal
+Body Text:        font-body text-sm text-charcoal
+Section Tags:     font-mono text-xs uppercase tracking-[0.2em] text-terracotta-raw
+Cards:            bg-white rounded-2xl border border-sand-dark p-6
+Card Hover:       hover:-translate-y-1 transition-transform
+Buttons Primary:  bg-terracotta-raw text-white rounded-full
+Buttons Secondary: border border-charcoal text-charcoal rounded-full
+```
+
+---
+
+## Animation Patterns
+
+### Standard Entry Animation (Framer Motion)
+```tsx
+<motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5 }}
+>
+```
+
+### Staggered Delays
+```tsx
+// Each subsequent card gets +0.1s delay
+transition={{ duration: 0.5, delay: 0.1 * index }}
+```
+
+### Page Transition (Template)
+```tsx
+// src/app/template.tsx — applies to all pages
+<motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ ease: "easeInOut", duration: 0.5 }}
+>
+```
+
+### Custom Easing
+```css
+--ease-smooth: cubic-bezier(0.23, 1, 0.32, 1);   /* Most transitions */
+--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy effects */
+```
+
+### Layout Animations
+```tsx
+<motion.div layoutId="activeNav" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+```
+
+### Scroll Reveal (CSS + IntersectionObserver)
+```tsx
+// Add data-reveal attribute to elements
+<div data-reveal>...</div>
+
+// The useScrollReveal hook & CSS handles the rest:
+// [data-reveal] { opacity: 0; transform: translateY(30px); }
+// [data-reveal="active"] { opacity: 1; transform: translateY(0); }
+```
+
+---
+
+## Import Style
+
+### Order
+1. React/Next.js imports
+2. Third-party libraries (framer-motion, lucide-react)
+3. Internal components (`@/components/...`)
+4. Internal utilities (`@/lib/...`)
+5. Types (if separate)
+
+### Import Style
+```tsx
+// Always use path alias @/ for src/
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
+import { Container } from "@/components/layout/Container";
+
+// Relative imports ONLY for sibling files
+import { Container } from "./Container";  // Within components/layout/
+```
+
+### Quote Style
+- **Double quotes** — used consistently everywhere (`"use client"`, `"@/lib/utils"`)
+- **Semicolons** — used consistently
+
+---
+
+## Authentication System (Mock)
+
+```tsx
+// src/lib/auth.ts
+export type UserRole = "student" | "parent" | "admin" | "guest";
+
+export interface User {
+    id: string;
+    email: string;
+    name: string;
+    role: UserRole;
+    isAuthenticated: boolean;
+}
+
+export const mockUser: User = {
+    id: "mock-user-1",
+    email: "student@viramah.com",
+    name: "Arjun Mehta",
+    role: "student",
+    isAuthenticated: true,
+};
+
+// Available functions:
+// getSession() → Returns mock session
+// hasRole(session, role) → Boolean check
+// getRoleRedirect(role) → Portal path string
+// hasCompletedOnboarding() → Always returns false
+```
+
+---
+
+## Internal Dependency Graph
+
+```
+globals.css ← layout.tsx (root)
+    ↓
+lib/utils.ts (cn) ← Used by ALL components
+lib/auth.ts (mockUser) ← Used by student/ and parent/ layouts + dashboards
+lib/supabase.ts ← Not used (placeholder)
+
+components/layout/Container.tsx ← Used by pages + sections
+components/layout/Navigation.tsx ← Used by landing, rooms pages
+components/layout/Footer.tsx ← Used by landing, rooms pages
+components/layout/PortalNav.tsx ← Used by student/layout, parent/layout
+
+components/ui/Button.tsx ← Used by pages + components
+components/ui/FormInput.tsx ← Used by login, onboarding steps
+components/ui/RoomCard.tsx ← Used by landing page, rooms page
+
+components/search/SearchBar.tsx ← Used by landing page, rooms page
+components/search/FilterBar.tsx ← Exists but NOT imported anywhere
+
+components/room-booking/ProgressStepper.tsx ← Exists but NOT imported (stepper is inline in onboarding layout)
+
+hooks/useScrollReveal.ts ← Not actively imported (CSS handles data-reveal)
+types/index.ts ← Not actively imported (types defined inline per component)
+proxy.ts ← Route guard placeholder (disabled)
+```
+
+**⚠️ Observations:**
+- `FilterBar`, `ProgressStepper`, barrel `index.ts` files, `types/index.ts`, and `hooks/useScrollReveal.ts` exist but are **not actively imported**
+- Types are duplicated between `types/index.ts` and `lib/auth.ts` (both define `UserRole` and `User`)
+- The `proxy.ts` middleware is disabled (all auth checks commented out)
+
+---
+
+## Button Variants (CVA)
+
+```tsx
+import { Button } from "@/components/ui/Button";
+
+// Variants:
+<Button variant="primary">CTA Button</Button>       // Terracotta bg, white text
+<Button variant="secondary">Outlined</Button>       // Border, transparent bg
+<Button variant="ghost">Ghost</Button>               // Minimal, hover bg
+<Button variant="link">Link Style</Button>           // Underline, mono font
+
+// Sizes:
+<Button size="sm">Small</Button>      // h-9 px-4
+<Button size="default">Default</Button> // h-10 px-6
+<Button size="lg">Large</Button>      // h-12 px-8
+<Button size="icon">Icon</Button>     // h-10 w-10
+```
+
+---
+
+## Page Layout Patterns
+
+### Public Pages (Landing, Rooms)
+```tsx
+<main className="min-h-screen flex flex-col">
+    <Navigation />
+    {/* Sections/Content */}
+    <Footer />
+</main>
+```
+
+### Portal Pages (Student, Parent)
+```tsx
+// layout.tsx — Sidebar + heading
+<div className="min-h-screen bg-sand-light">
+    <PortalNav role="student" userName={mockUser.name} />
+    <main className="ml-[280px] min-h-screen">
+        <header className="sticky top-0 z-30 h-16 bg-sand-light/80 backdrop-blur-md ...">
+            {/* breadcrumb */}
+        </header>
+        <div className="p-8">{children}</div>
+    </main>
+</div>
+```
+
+### Dashboard/Content Pages
+```tsx
+<div className="space-y-8">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <span className="font-mono text-xs text-terracotta-raw uppercase tracking-widest">Section Tag</span>
+        <h1 className="font-display text-4xl text-charcoal mt-1">Heading</h1>
+        <p className="font-body text-charcoal/60 mt-2">Description</p>
+    </motion.div>
+    {/* Cards using staggered delays 0.1, 0.2, 0.3... */}
+</div>
+```
+
+---
+
+## Forbidden Actions
+
+| Rule | Reason |
+|------|--------|
+| Do NOT use raw Supabase calls | Supabase is not configured (`null` placeholder) |
+| Do NOT modify the design token system | Color variables are foundational to all components |
+| Do NOT add new font families | Three fonts are intentionally curated (Display, Body, Mono) |
+| Do NOT create new exception types | No error handling system exists yet; mock-only phase |
+| Do NOT import infrastructure into domain | Keep mock auth separate from future real auth |
+| Do NOT use `tailwind.config.js` | Tailwind 4 uses `@theme` in CSS, no JS config file |
+| Do NOT use relative imports across directories | Always use `@/` path alias |
+
+---
+
+## Common Pitfalls
+
+1. **Forgetting `"use client"`** — Any component using useState, useEffect, framer-motion, or event handlers MUST have this directive
+2. **Using `tailwind.config.js`** — This project uses Tailwind CSS 4 with `@theme` in `globals.css`, NOT a JS config
+3. **Importing from `types/index.ts`** — Types are mostly defined inline per component; the central types file is underutilized
+4. **Missing `displayName`** — Components using `React.forwardRef` must set `.displayName`
+5. **Breaking the pill nav** — Navigation uses absolute positioning with `rounded-full`; do not change to fixed-width
+6. **Using wrong color names** — Use the custom token names (`terracotta-raw`, `sand-light`) NOT generic Tailwind colors
+7. **Sidebar width assumption** — Portal layouts assume `ml-[280px]` left margin for sidebar
+
+---
+
+## The Architecture Oath
+
+I, Antigravity (LLM), hereby affirm:
+
+1. ✅ I have mapped the complete directory structure (53 source files, 7 component dirs, 10 app subdirs) and will not create files outside established patterns.
+2. ✅ I have identified all existing abstractions (`cn()`, `Button` variants, `Container`, `FormInput`, `RoomCard`, `PortalNav`, `mockUser`) and will use them.
+3. ✅ I understand no error handling exists yet — this is a frontend-only mock phase.
+4. ✅ I note there are no tests. If tests are added, I will match Next.js conventions.
+5. ✅ I will not add dependencies without checking existing ones (CVA, clsx, tailwind-merge, framer-motion, lucide-react).
+6. ✅ I will not "clean up" or "optimize" existing code unless explicitly requested.
+7. ✅ I will follow the exact code style: double quotes, semicolons, 4-space indentation, PascalCase components, `@/` imports, Tailwind custom tokens.
+
+---
+
+*This document was generated by analyzing all 53 source files in the Viramah codebase following the Code Guardian Protocol.*

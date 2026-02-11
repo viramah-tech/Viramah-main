@@ -27,7 +27,7 @@ export function SearchBar() {
     const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
 
     return (
-        <div className="w-full max-w-[1000px] h-[90px] bg-white rounded-2xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] flex items-center p-2 gap-1 relative z-20 border border-[#d1d1d1]">
+        <div className="w-full max-w-[1000px] h-[90px] rounded-2xl flex items-center p-2 gap-1 relative z-20 border border-sand-dark/60 bg-white/40 backdrop-blur-sm shadow-[0_4px_20px_rgba(142,77,62,0.06)]">
             {SEGMENTS.map((segment, index) => {
                 const isActive = activeSegment === segment.id;
                 const isHovered = hoveredSegment === segment.id;
@@ -43,7 +43,7 @@ export function SearchBar() {
                         onClick={() => setActiveSegment(segment.id)}
                         className={cn(
                             "relative h-full flex flex-col justify-center px-6 rounded-xl cursor-text transition-colors duration-300 border border-transparent",
-                            isActive ? "bg-sand-light/50 border-sand-dark shadow-[inset_0_0_15px_rgba(0,0,0,0.02)]" : "hover:bg-sand-light/30"
+                            isActive ? "bg-white/60 border-sand-dark shadow-[inset_0_0_15px_rgba(0,0,0,0.04)]" : "hover:bg-white/30"
                         )}
                         style={{
                             flex: isActive ? 1.8 : isHovered ? 1.4 : 1,
@@ -54,21 +54,6 @@ export function SearchBar() {
                             damping: 30
                         }}
                     >
-                        {/* Tooltip Readout */}
-                        <AnimatePresence>
-                            {isHovered && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="absolute -top-10 left-1/2 -translate-x-1/2 bg-charcoal text-white px-3 py-1 rounded-md font-mono text-[11px] whitespace-nowrap z-30"
-                                >
-                                    {segment.systemCode}
-                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-charcoal" />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
 
                         {/* Pneumatic Rib Divider */}
                         {index > 0 && (
@@ -99,7 +84,7 @@ export function SearchBar() {
                             <input
                                 type="text"
                                 placeholder={segment.placeholder}
-                                className="w-full bg-transparent border-none outline-none font-mono text-base text-charcoal placeholder:text-charcoal/40 placeholder:font-body"
+                                className="w-full bg-transparent border-none outline-none font-body text-sm text-charcoal placeholder:text-charcoal/40"
                             />
                             {segment.unit && (
                                 <span className="font-mono text-xs text-charcoal/40">{segment.unit}</span>
@@ -124,7 +109,7 @@ export function SearchBar() {
             <motion.button
                 whileHover={{ width: 90, scale: 0.98 }}
                 whileTap={{ scale: 0.95, rotate: 2 }}
-                className="h-full w-[74px] bg-charcoal rounded-xl flex items-center justify-center text-white shrink-0 hover:bg-ink transition-colors duration-300 shadow-lg relative overflow-hidden"
+                className="h-full w-[74px] bg-terracotta-raw rounded-xl flex items-center justify-center text-white shrink-0 hover:bg-terracotta-raw/90 transition-colors duration-300 shadow-lg shadow-terracotta-raw/20 relative overflow-hidden"
             >
                 <Search className="w-6 h-6 relative z-10" />
                 {/* Click flash effect */}

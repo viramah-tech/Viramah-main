@@ -240,12 +240,11 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                {/* Footer Links */}
                 <div className="text-center mt-6">
                     <span className="font-body text-sm text-charcoal/60">
                         New to Viramah?{" "}
-                        <Link href="/rooms" className="text-terracotta-raw hover:underline font-medium">
-                            Explore Rooms
+                        <Link href="/signup" className="text-terracotta-raw hover:underline font-medium">
+                            Create an Account
                         </Link>
                     </span>
                 </div>

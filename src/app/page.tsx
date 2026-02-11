@@ -45,14 +45,6 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* Discovery Search Section - Overlaps Hero */}
-      <section className="relative z-20 -mt-10 pb-20">
-        <Container>
-          <div className="bg-white p-8 md:p-10 rounded-lg shadow-[0_30px_60px_rgba(142,77,62,0.08)]">
-            <SearchBar />
-          </div>
-        </Container>
-      </section>
 
       <RealitySection />
       <DifferenceSection />

@@ -6,7 +6,7 @@ import { ChevronDown, SlidersHorizontal } from "lucide-react";
 
 export function FilterBar() {
     return (
-        <div className="sticky top-[70px] z-40 w-full bg-white/80 backdrop-blur-md border-b border-sand-dark py-4 transition-all">
+        <div className="flex top-[70px] z-40 w-full backdrop-blur-md border-b border-sand-dark py-4 transition-all">
             <div className="mx-auto w-full max-w-[var(--container-max)] px-5 md:px-10 lg:px-20 flex flex-col md:flex-row gap-4 justify-between items-center">
 
                 {/* Filters Group */}

@@ -1,7 +1,7 @@
 import { Container } from "@/components/layout/Container";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
-import { FilterBar } from "@/components/search/FilterBar";
+import { SearchBar } from "@/components/search/SearchBar";
 import { RoomCard } from "@/components/ui/RoomCard";
 
 export default function RoomsPage() {
@@ -19,7 +19,13 @@ export default function RoomsPage() {
                 </Container>
             </section>
 
-            <FilterBar />
+            {/* Discovery Search Section */}
+            <section className="relative z-20 -mt-10 pb-20">
+                <Container>
+                    <SearchBar />
+                </Container>
+            </section>
+
 
             {/* Results Grid */}
             <section className="py-12">
