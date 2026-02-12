@@ -23,7 +23,7 @@ export default function Home() {
         <div
           className="absolute inset-0 -z-10"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 40%, var(--sand-light) 95%), url('https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&q=80&w=2000')`,
+            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 40%, var(--sand-light) 95%), url('HERO.JPG')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'grayscale(10%) contrast(95%)',
@@ -33,7 +33,7 @@ export default function Home() {
         <Container className="relative z-10">
           <div className="max-w-3xl">
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-terracotta-raw opacity-70 block mb-6">
-              विरामाह — The Art of the REST
+              विरामाह — The Art of the Pause
             </span>
             <h1 className="font-display text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.1] text-terracotta-raw mb-6">
               For the life you are building, a place to breathe.
