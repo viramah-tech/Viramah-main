@@ -51,7 +51,7 @@ export function RoomCard({ title, type, price, className }: RoomCardProps) {
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             className={cn(
-                "group relative w-full h-[640px] bg-pulp-base rounded-[4px] p-[60px]",
+                "group relative w-full h-[500px] md:h-[640px] bg-pulp-base rounded-[4px] p-6 md:p-[60px]",
                 "shadow-[-20px_-20px_60px_var(--pulp-highlight),20px_20px_60px_var(--pulp-shadow),inset_1px_1px_2px_var(--pulp-highlight),inset_-1px_-1px_2px_var(--pulp-shadow)]",
                 "hover:z-10 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-crosshair",
                 className
@@ -67,7 +67,7 @@ export function RoomCard({ title, type, price, className }: RoomCardProps) {
                     <span className="font-mono text-[0.75rem] text-card-accent tracking-[2px] uppercase block mb-2">
                         {type}
                     </span>
-                    <h3 className="font-display text-[3rem] text-ink-black leading-[0.9] uppercase tracking-[-2px]">
+                    <h3 className="font-display text-[2.5rem] md:text-[3rem] text-ink-black leading-[0.9] uppercase tracking-[-2px]">
                         {title.split(" ").map((word, i) => (
                             <span key={i}>
                                 {word}
@@ -79,7 +79,7 @@ export function RoomCard({ title, type, price, className }: RoomCardProps) {
 
                 {/* 3D Isometric Room Viewport */}
                 <div
-                    className="absolute top-1/2 left-1/2 w-[320px] h-[320px] -translate-x-1/2 -translate-y-[40%]"
+                    className="absolute top-1/2 left-1/2 w-[320px] h-[320px] -translate-x-1/2 -translate-y-[40%] scale-75 md:scale-100 origin-center"
                     style={{ perspective: "1200px" }}
                 >
                     <motion.div
@@ -157,7 +157,7 @@ export function RoomCard({ title, type, price, className }: RoomCardProps) {
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2 text-pulp-shadow">
                             <span className="font-mono text-[0.7rem] leading-relaxed">
-                                
+
                                 <span className="text-ink-black">KRISHNA VALLEY, VRINDAVAN</span>
                             </span>
                         </div>

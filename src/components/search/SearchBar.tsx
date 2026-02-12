@@ -27,7 +27,7 @@ export function SearchBar() {
     const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
 
     return (
-        <div className="w-full max-w-[1000px] h-[90px] rounded-2xl flex items-center p-2 gap-1 relative z-20 border border-sand-dark/60 bg-white/40 backdrop-blur-sm shadow-[0_4px_20px_rgba(142,77,62,0.06)]">
+        <div className="w-full max-w-[1000px] h-auto md:h-[90px] rounded-2xl flex flex-col md:flex-row items-center p-2 gap-1 relative z-20 border border-sand-dark/60 bg-white/40 backdrop-blur-sm shadow-[0_4px_20px_rgba(142,77,62,0.06)]">
             {SEGMENTS.map((segment, index) => {
                 const isActive = activeSegment === segment.id;
                 const isHovered = hoveredSegment === segment.id;
@@ -42,11 +42,16 @@ export function SearchBar() {
                         onBlur={() => setActiveSegment(null)}
                         onClick={() => setActiveSegment(segment.id)}
                         className={cn(
-                            "relative h-full flex flex-col justify-center px-6 rounded-xl cursor-text transition-colors duration-300 border border-transparent",
+                            "relative w-full md:w-auto h-[70px] md:h-full flex flex-col justify-center px-4 md:px-6 rounded-xl cursor-text transition-colors duration-300 border border-transparent",
                             isActive ? "bg-white/60 border-sand-dark shadow-[inset_0_0_15px_rgba(0,0,0,0.04)]" : "hover:bg-white/30"
                         )}
                         style={{
-                            flex: isActive ? 1.8 : isHovered ? 1.4 : 1,
+                            // flex: isActive ? 1.8 : isHovered ? 1.4 : 1, // Keep this for desktop only if possible, or handle with media queries/conditional logic. 
+                            // Simplified for now to let framer motion handle layout changes or simple flex grow.
+                            // For mobile we want full width, for desktop we want proportional.
+                            // We can use a custom class or inline style with media query hook if strictly needed,
+                            // but flex-grow usually works well.
+                            flexGrow: isActive ? 2 : isHovered ? 1.5 : 1,
                         }}
                         transition={{
                             type: "spring",
@@ -55,12 +60,22 @@ export function SearchBar() {
                         }}
                     >
 
-                        {/* Pneumatic Rib Divider */}
+                        {/* Pneumatic Rib Divider - Desktop Only */}
                         {index > 0 && (
                             <div
-                                className="absolute left-0 top-[15%] h-[70%] w-[3px] opacity-50"
+                                className="hidden md:block absolute left-0 top-[15%] h-[70%] w-[3px] opacity-50"
                                 style={{
                                     background: "repeating-linear-gradient(to bottom, var(--sand-dark), var(--sand-dark) 2px, transparent 2px, transparent 4px)"
+                                }}
+                            />
+                        )}
+
+                        {/* Mobile Divider */}
+                        {index > 0 && (
+                            <div
+                                className="md:hidden absolute top-0 left-[5%] right-[5%] h-[1px] w-[90%] opacity-30"
+                                style={{
+                                    background: "repeating-linear-gradient(to right, var(--sand-dark), var(--sand-dark) 2px, transparent 2px, transparent 4px)"
                                 }}
                             />
                         )}
@@ -107,11 +122,12 @@ export function SearchBar() {
 
             {/* Search Button */}
             <motion.button
-                whileHover={{ width: 90, scale: 0.98 }}
+                whileHover={{ scale: 0.98 }}
                 whileTap={{ scale: 0.95, rotate: 2 }}
-                className="h-full w-[74px] bg-terracotta-raw rounded-xl flex items-center justify-center text-white shrink-0 hover:bg-terracotta-raw/90 transition-colors duration-300 shadow-lg shadow-terracotta-raw/20 relative overflow-hidden"
+                className="w-full md:w-[74px] h-[60px] md:h-full bg-terracotta-raw rounded-xl flex items-center justify-center text-white shrink-0 hover:bg-terracotta-raw/90 transition-colors duration-300 shadow-lg shadow-terracotta-raw/20 relative overflow-hidden"
             >
                 <Search className="w-6 h-6 relative z-10" />
+                <span className="md:hidden ml-2 font-mono font-bold">SEARCH</span>
                 {/* Click flash effect */}
                 <motion.div
                     className="absolute inset-0 bg-white/10"
