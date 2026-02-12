@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/layout/Navigation";
+import Link from "next/link";
 import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/layout/Container";
 import { SearchBar } from "@/components/search/SearchBar";
@@ -60,9 +61,11 @@ export default function Home() {
                   Designed for focus, comfort, and community. Choose the space that fits your rhythm.
                 </p>
               </div>
-              <button className="hidden md:block border-b border-charcoal pb-1 uppercase tracking-widest font-mono text-xs hover:text-terracotta-raw hover:border-terracotta-raw transition-colors">
-                View All Rooms
-              </button>
+              <Link href="/rooms" className="hidden md:block">
+                <button className="border-b border-charcoal pb-1 uppercase tracking-widest font-mono text-xs hover:text-terracotta-raw hover:border-terracotta-raw transition-colors">
+                  View All Rooms
+                </button>
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">

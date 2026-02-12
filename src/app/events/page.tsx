@@ -1,6 +1,7 @@
 "use client";
 
 import { Container } from "@/components/layout/Container";
+import Link from "next/link";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
@@ -76,9 +77,11 @@ export default function EventsPage() {
                                     </div>
                                 </div>
 
-                                <Button variant="secondary" className="w-full mt-6 group-hover:bg-terracotta-soft/20 group-hover:border-transparent">
-                                    MORE INFO
-                                </Button>
+                                <Link href="#">
+                                    <Button variant="secondary" className="w-full mt-6 group-hover:bg-terracotta-soft/20 group-hover:border-transparent">
+                                        MORE INFO
+                                    </Button>
+                                </Link>
                             </div>
                         ))}
                     </div>

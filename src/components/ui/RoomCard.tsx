@@ -3,6 +3,7 @@
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { ArrowRight, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface RoomCardProps {
     title: string;
@@ -10,9 +11,10 @@ interface RoomCardProps {
     image: string;
     price: string;
     className?: string;
+    href?: string;
 }
 
-export function RoomCard({ title, type, price, className }: RoomCardProps) {
+export function RoomCard({ title, type, price, className, href = "/signup" }: RoomCardProps) {
     const x = useMotionValue(0);
     const y = useMotionValue(0);
 
@@ -167,9 +169,11 @@ export function RoomCard({ title, type, price, className }: RoomCardProps) {
                         </span>
                     </div>
 
-                    <button className="bg-ink-black text-pulp-base px-4 py-2 font-mono text-[0.7rem] font-bold tracking-[1px] hover:bg-card-accent hover:-translate-y-0.5 transition-all duration-300">
-                        BOOK NOW
-                    </button>
+                    <Link href={href}>
+                        <button className="bg-ink-black text-pulp-base px-4 py-2 font-mono text-[0.7rem] font-bold tracking-[1px] hover:bg-card-accent hover:-translate-y-0.5 transition-all duration-300">
+                            BOOK NOW
+                        </button>
+                    </Link>
                 </div>
             </div>
         </motion.div>

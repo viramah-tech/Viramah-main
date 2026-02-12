@@ -1,4 +1,5 @@
 import { Container } from "@/components/layout/Container";
+import Link from "next/link";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
@@ -82,9 +83,11 @@ export default function AboutPage() {
             <section className="py-32 bg-terracotta-raw text-white text-center">
                 <Container>
                     <h2 className="font-display text-5xl mb-8">Join the movement</h2>
-                    <Button size="lg" className="bg-white text-terracotta-raw hover:bg-white/90">
-                        View Available Rooms
-                    </Button>
+                    <Link href="/rooms">
+                        <Button size="lg" className="bg-white text-terracotta-raw hover:bg-white/90">
+                            View Available Rooms
+                        </Button>
+                    </Link>
                 </Container>
             </section>
 

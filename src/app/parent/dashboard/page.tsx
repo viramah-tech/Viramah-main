@@ -125,7 +125,7 @@ export default function ParentDashboard() {
                     <ArrowRight className="w-4 h-4 mt-2 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
-                    href="#"
+                    href="/student/wallet"
                     className="group bg-gold rounded-2xl p-6 text-white hover:-translate-y-1 transition-transform"
                 >
                     <CreditCard className="w-6 h-6 mb-3" />

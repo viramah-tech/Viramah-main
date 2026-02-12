@@ -1,4 +1,5 @@
 import { Container } from "@/components/layout/Container";
+import Link from "next/link";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
@@ -28,7 +29,9 @@ export default function CommunityPage() {
                             <p className="text-lg opacity-80 mb-6">
                                 We curate our community to ensure diversity of thought and background. When you live at Viramah, you live with people who inspire you.
                             </p>
-                            <Button>Apply for Membership</Button>
+                            <Link href="/signup">
+                                <Button>Apply for Membership</Button>
+                            </Link>
                         </div>
                     </div>
                 </Container>

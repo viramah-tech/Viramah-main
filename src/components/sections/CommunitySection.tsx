@@ -1,4 +1,5 @@
 import { Container } from "@/components/layout/Container";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 export function CommunitySection() {
@@ -22,9 +23,11 @@ export function CommunitySection() {
                             Viramah is home to artists, founders, and scholars. Our spaces are curated to foster connection without forcing it.
                         </p>
                         <div className="flex gap-4 pt-4">
-                            <Button variant="secondary" className="border-white text-white hover:bg-white hover:text-terracotta-raw">
-                                Meet the Members
-                            </Button>
+                            <Link href="/community">
+                                <Button variant="secondary" className="border-white text-white hover:bg-white hover:text-terracotta-raw">
+                                    Meet the Members
+                                </Button>
+                            </Link>
                         </div>
                     </div>
                 </div>

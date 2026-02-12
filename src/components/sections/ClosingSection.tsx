@@ -1,4 +1,5 @@
 import { Container } from "@/components/layout/Container";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 export function ClosingSection() {
@@ -13,12 +14,16 @@ export function ClosingSection() {
                         Applications for the upcoming academic year are now open. Spaces are limited.
                     </p>
                     <div className="flex gap-4 mt-8">
-                        <Button size="lg" className="bg-white text-terracotta-raw hover:bg-white/90 shadow-2xl">
-                            Apply Now
-                        </Button>
-                        <Button size="lg" variant="secondary" className="border-white text-white hover:bg-white/10">
-                            Schedule a Visit
-                        </Button>
+                        <Link href="/signup">
+                            <Button size="lg" className="bg-white text-terracotta-raw hover:bg-white/90 shadow-2xl">
+                                Apply Now
+                            </Button>
+                        </Link>
+                        <Link href="/parent/visit">
+                            <Button size="lg" variant="secondary" className="border-white text-white hover:bg-white/10">
+                                Schedule a Visit
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </Container>

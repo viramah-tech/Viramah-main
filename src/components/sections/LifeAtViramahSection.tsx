@@ -7,9 +7,6 @@ export function LifeAtViramahSection() {
                 <div className="flex flex-col gap-16">
                     <div className="flex justify-between items-end">
                         <h2 className="text-5xl lg:text-7xl">Life at Viramah</h2>
-                        <span className="font-mono text-xs uppercase tracking-widest opacity-50">
-                            @viramah_stays  
-                        </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-[600px] md:h-[400px]">

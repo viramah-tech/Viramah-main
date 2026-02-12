@@ -18,7 +18,7 @@ export function CategoriesSection() {
                     {CATEGORIES.map((cat, idx) => (
                         <Link
                             key={idx}
-                            href="#"
+                            href="/rooms"
                             className="group flex flex-col gap-4 p-6 border border-charcoal/10 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300"
                         >
                             <div className="flex justify-between items-start">

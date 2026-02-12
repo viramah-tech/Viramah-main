@@ -1,4 +1,5 @@
 import { Container } from "@/components/layout/Container";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 export function RealitySection() {
@@ -31,7 +32,9 @@ export function RealitySection() {
                             Cramped rooms, poor hygiene, and zero community. The standard for student housing has been too low for too long. We're here to change that.
                         </p>
                         <div className="pt-4">
-                            <Button variant="secondary">Read Our Philosophy</Button>
+                            <Link href="/about">
+                                <Button variant="secondary">Read Our Philosophy</Button>
+                            </Link>
                         </div>
                     </div>
                 </div>
