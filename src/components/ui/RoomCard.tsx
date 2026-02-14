@@ -53,7 +53,7 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             className={cn(
-                "group relative w-full h-[500px] md:h-[640px] bg-pulp-base rounded-[4px] p-6 md:p-[60px]",
+                "group relative w-full h-[500px] md:h-[640px] bg-cream-warm rounded-[4px] p-6 md:p-[60px]",
                 "shadow-[-20px_-20px_60px_var(--pulp-highlight),20px_20px_60px_var(--pulp-shadow),inset_1px_1px_2px_var(--pulp-highlight),inset_-1px_-1px_2px_var(--pulp-shadow)]",
                 "hover:z-10 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-crosshair",
                 className
@@ -66,10 +66,10 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
             >
                 {/* Header */}
                 <div className="z-10">
-                    <span className="font-mono text-[0.75rem] text-card-accent tracking-[2px] uppercase block mb-2">
+                    <span className="font-mono text-[0.75rem] text-green-sage tracking-[2px] uppercase block mb-2">
                         {type}
                     </span>
-                    <h3 className="font-display text-[2.5rem] md:text-[3rem] text-ink-black leading-[0.9] uppercase tracking-[-2px]">
+                    <h3 className="font-display text-[2.5rem] md:text-[3rem] text-charcoal leading-[0.9] uppercase tracking-[-2px]">
                         {title.split(" ").map((word, i) => (
                             <span key={i}>
                                 {word}
@@ -94,7 +94,7 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
                     >
                         {/* Floor */}
                         <div
-                            className="absolute w-[240px] h-[240px] bottom-0 right-0 bg-pulp-base border border-black/5"
+                            className="absolute w-[240px] h-[240px] bottom-0 right-0 bg-cream-warm border border-black/5"
                             style={{
                                 boxShadow: "inset 10px 10px 30px var(--pulp-shadow), inset -2px -2px 10px var(--pulp-highlight)",
                             }}
@@ -104,7 +104,7 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
                         <div
                             className="absolute w-[240px] h-[140px] right-0"
                             style={{
-                                background: "linear-gradient(to bottom, var(--pulp-base), var(--pulp-shadow))",
+                                background: "linear-gradient(to bottom, var(--cream-warm), var(--pulp-shadow))",
                                 transformOrigin: "bottom",
                                 transform: "rotateX(-90deg)",
                                 bottom: "240px",
@@ -116,7 +116,7 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
                         <div
                             className="absolute w-[140px] h-[240px] bottom-0"
                             style={{
-                                background: "linear-gradient(to right, var(--pulp-shadow), var(--pulp-base))",
+                                background: "linear-gradient(to right, var(--pulp-shadow), var(--cream-warm))",
                                 transformOrigin: "right",
                                 transform: "rotateY(90deg)",
                                 right: "240px",
@@ -126,7 +126,7 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
 
                         {/* Plinth/Base Object */}
                         <div
-                            className="absolute w-[60px] h-[60px] bg-pulp-base"
+                            className="absolute w-[60px] h-[60px] bg-cream-warm"
                             style={{
                                 bottom: "60px",
                                 right: "60px",
@@ -137,7 +137,7 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
 
                         {/* Floating Cube with Animation */}
                         <motion.div
-                            className="absolute w-[40px] h-[40px] bg-card-accent"
+                            className="absolute w-[40px] h-[40px] bg-green-sage"
                             style={{
                                 bottom: "70px",
                                 right: "70px",
@@ -157,20 +157,20 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
                 {/* Footer */}
                 <div className="flex justify-between items-end z-10">
                     <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-pulp-shadow">
+                        <div className="flex items-center gap-2 text-charcoal/60">
                             <span className="font-mono text-[0.7rem] leading-relaxed">
 
-                                <span className="text-ink-black">KRISHNA VALLEY, VRINDAVAN</span>
+                                <span className="text-charcoal">KRISHNA VALLEY, VRINDAVAN</span>
                             </span>
                         </div>
-                        <span className="font-mono text-[1rem] text-pulp-shadow">
+                        <span className="font-mono text-[1rem] text-charcoal/60">
                             PRICES<br />
-                            <span className="text-ink-black">{price}/MO</span>
+                            <span className="text-charcoal">{price}/MO</span>
                         </span>
                     </div>
 
                     <Link href={href}>
-                        <button className="bg-ink-black text-pulp-base px-4 py-2 font-mono text-[0.7rem] font-bold tracking-[1px] hover:bg-card-accent hover:-translate-y-0.5 transition-all duration-300">
+                        <button className="bg-charcoal text-cream-warm px-4 py-2 font-mono text-[0.7rem] font-bold tracking-[1px] hover:bg-green-sage hover:-translate-y-0.5 transition-all duration-300">
                             BOOK NOW
                         </button>
                     </Link>

@@ -19,7 +19,7 @@ export function CategoriesSection() {
                         <Link
                             key={idx}
                             href="/rooms"
-                            className="group flex flex-col gap-4 p-6 border border-charcoal/10 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300"
+                            className="group flex flex-col gap-4 p-6 border border-charcoal/10 rounded-2xl hover:bg-cream-warm hover:shadow-lg transition-all duration-300"
                         >
                             <div className="flex justify-between items-start">
                                 <span className="font-mono text-xs opacity-50">0{idx + 1}</span>

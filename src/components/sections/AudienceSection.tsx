@@ -2,7 +2,7 @@ import { Container } from "@/components/layout/Container";
 
 export function AudienceSection() {
     return (
-        <section className="py-24 bg-white border-t border-sand-dark/50">
+        <section className="py-24 bg-cream-warm border-t border-sand-dark/50">
             <Container>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
                     <div>

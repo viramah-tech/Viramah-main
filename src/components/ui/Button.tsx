@@ -8,11 +8,11 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 primary:
-                    "bg-terracotta-raw text-white shadow-lg shadow-terracotta-raw/20 hover:bg-terracotta-raw/90 hover:-translate-y-0.5",
+                    "bg-green-sage text-off-white shadow-lg shadow-green-sage/20 hover:bg-green-sage/90 hover:-translate-y-0.5",
                 secondary:
-                    "bg-transparent border border-charcoal text-charcoal hover:bg-sand-dark/50",
+                    "bg-blue-muted text-off-white shadow-md shadow-blue-muted/20 hover:bg-blue-muted/90 hover:-translate-y-0.5",
                 ghost: "hover:bg-sand-dark/20 text-charcoal",
-                link: "text-charcoal underline-offset-4 hover:underline font-mono uppercase tracking-widest text-[10px]",
+                link: "text-green-sage underline-offset-4 hover:underline font-mono uppercase tracking-widest text-[10px]",
             },
             size: {
                 default: "h-10 px-6 py-2",

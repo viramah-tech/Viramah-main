@@ -27,7 +27,7 @@ export default function AboutPage() {
             </section>
 
             {/* Mission Section */}
-            <section className="py-20 bg-white">
+            <section className="py-20 bg-cream-warm">
                 <Container>
                     <div className="flex flex-col lg:flex-row gap-16">
                         <div className="w-full lg:w-1/2">
@@ -56,7 +56,7 @@ export default function AboutPage() {
                             { step: "02", title: "Apply & Verify", desc: "Simple digital application and verification process." },
                             { step: "03", title: "Move In", desc: "Arrive to a fully furnished, ready-to-live sanctuary." }
                         ].map((item, idx) => (
-                            <div key={idx} className="bg-white p-8 rounded-2xl shadow-sm">
+                            <div key={idx} className="bg-cream-warm p-8 rounded-2xl shadow-sm">
                                 <span className="font-display text-6xl text-terracotta-raw/20 block mb-4">{item.step}</span>
                                 <h3 className="font-display text-2xl mb-2">{item.title}</h3>
                                 <p className="opacity-70">{item.desc}</p>
@@ -67,7 +67,7 @@ export default function AboutPage() {
             </section>
 
             {/* Values Grid */}
-            <section className="py-24 bg-white">
+            <section className="py-24 bg-cream-warm">
                 <Container>
                     <h2 className="font-display text-4xl mb-12">Our Values</h2>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-8">

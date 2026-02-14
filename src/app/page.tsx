@@ -4,7 +4,8 @@ import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/layout/Container";
 import { SearchBar } from "@/components/search/SearchBar";
 import { RoomCard } from "@/components/ui/RoomCard";
-import { RealitySection } from "@/components/sections/RealitySection";
+// import { RealitySection } from "@/components/sections/RealitySection";
+import { AmenitiesSection } from "@/components/sections/AmenitiesSection";
 import { DifferenceSection } from "@/components/sections/DifferenceSection";
 import { CategoriesSection } from "@/components/sections/CategoriesSection";
 import { LifeAtViramahSection } from "@/components/sections/LifeAtViramahSection";
@@ -33,13 +34,22 @@ export default function Home() {
 
         <Container className="relative z-10">
           <div className="max-w-3xl">
-            <span className="font-mono text-xs uppercase tracking-[0.2em] text-terracotta-raw opacity-70 block mb-6">
-              विरामाह — The Art of the Pause
+            <span 
+              className="font-mono text-s uppercase tracking-[0.2em] text-charcoal opacity-90 block mb-6"
+              style={{ textShadow: '0 4px 12px rgb(255, 255, 255)' }}
+            >
+              विरामाह — The Art of the REST 
             </span>
-            <h1 className="font-display text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.1] text-terracotta-raw mb-6">
+            <h1 
+              className="font-display text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.1] text-charcoal mb-6"
+              style={{ textShadow: '0 8px 24px rgb(255, 255, 255)' }}
+            >
               For the life you are building, a place to breathe.
             </h1>
-            <p className="font-body text-xl max-w-lg text-charcoal/80">
+            <p 
+              className="font-body text-xl max-w-lg text-charcoal/80"
+              style={{ textShadow: '0 4px 16px rgba(21, 61, 24, 0.83)' }}
+            >
               An intentional community-living experience designed for the modern Indian journey.
             </p>
           </div>
@@ -47,7 +57,7 @@ export default function Home() {
       </section>
 
 
-      <RealitySection />
+      
       <DifferenceSection />
 
       {/* Rooms Showcase Section */}
@@ -94,6 +104,7 @@ export default function Home() {
       </section>
 
       <CategoriesSection />
+      <AmenitiesSection />
       <LifeAtViramahSection />
       <CommunitySection />
       <FounderSection />

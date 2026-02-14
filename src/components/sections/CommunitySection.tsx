@@ -1,20 +1,28 @@
 import { Container } from "@/components/layout/Container";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import Image from "next/image";
 
 export function CommunitySection() {
     return (
-        <section className="py-32 bg-terracotta-raw text-white">
+        <section className="py-20 bg-cream-warm text-charcoal">
             <Container>
-                <div className="flex flex-col lg:flex-row gap-16 items-center">
-                    <div className="w-full lg:w-1/2">
-                        <div className="aspect-square bg-white/10 rounded-2xl p-8 relative overflow-hidden">
-                            {/* Decorative Pattern or Image */}
-                            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div className="w-full">
+                        <div className="relative w-full aspect-square rounded-2xl overflow-hidden shadow-2xl bg-charcoal/5">
+                            <Image
+                                src="/communities.jpg"
+                                alt="Viramah Community - People gathering and connecting"
+                                fill
+                                sizes="(max-width: 768px) 100vw, 50vw"
+                                quality={95}
+                                loading="lazy"
+                                className="object-cover"
+                            />
                         </div>
                     </div>
 
-                    <div className="w-full lg:w-1/2 flex flex-col gap-8">
+                    <div className="w-full flex flex-col gap-8">
                         <span className="font-mono text-xs tracking-[0.2em] uppercase opacity-60">
                             Not Just Tenants
                         </span>

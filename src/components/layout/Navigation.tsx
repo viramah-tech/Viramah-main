@@ -62,7 +62,7 @@ export function Navigation() {
             <nav
                 className={cn(
                     "pointer-events-auto relative flex items-center justify-between px-3 pl-6 pr-3 h-[70px] gap-6",
-                    "bg-luxury-green border border-gold/30 rounded-full",
+                    "bg-luxury-green border border-white/10 rounded-full",
                     "shadow-[0_12px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]",
                     "transition-all duration-500",
                     scrolled && "bg-luxury-green/80 backdrop-blur-md h-[60px]"
@@ -91,11 +91,11 @@ export function Navigation() {
                             <div className="relative h-5 overflow-hidden z-10">
                                 <div className="flex flex-col transition-transform duration-300 ease-out group-hover/link:-translate-y-5">
                                     {/* Primary Label */}
-                                    <span className="font-body text-sm font-medium text-off-white h-5 leading-5 whitespace-nowrap">
+                                    <span className="font-body text-sm font-medium text-sand-light h-5 leading-5 whitespace-nowrap">
                                         {link.label}
                                     </span>
                                     {/* Secondary Label (Gold, Italic) */}
-                                    <span className="font-body text-sm font-medium text-champagne-gold italic h-5 leading-5 whitespace-nowrap">
+                                    <span className="font-body text-sm font-medium text-gold-antique italic h-5 leading-5 whitespace-nowrap">
                                         {link.labelAlt}
                                     </span>
                                 </div>
@@ -110,13 +110,13 @@ export function Navigation() {
                 <div className="flex items-center gap-2">
                     <Link
                         href="/login"
-                        className="px-5 py-2.5 rounded-full text-sm font-medium text-off-white/70 hover:text-off-white hover:bg-white/10 transition-colors hidden sm:block font-mono text-xs uppercase tracking-wider"
+                        className="px-5 py-2.5 rounded-full text-sm font-medium text-sand-light/70 hover:text-sand-light hover:bg-white/10 transition-colors hidden sm:block font-mono text-xs uppercase tracking-wider"
                     >
                         ALREADY A MEMBER
                     </Link>
                     <Link
                         href="/signup"
-                        className="px-6 py-2.5 rounded-full text-sm font-medium bg-champagne-gold text-luxury-green shadow-lg shadow-champagne-gold/20 hover:bg-champagne-gold/90 hover:-translate-y-0.5 transition-all duration-300"
+                        className="px-6 py-2.5 rounded-full text-sm font-medium bg-green-sage text-white shadow-lg shadow-green-sage/20 hover:bg-green-sage/90 hover:-translate-y-0.5 transition-all duration-300"
                     >
                         NEW TO VIRAMAH
                     </Link>

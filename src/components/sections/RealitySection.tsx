@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/Button";
 
 export function RealitySection() {
     return (
-        <section className="py-24 bg-sand-dark relative overflow-hidden">
+        <section className="py-20 md:py-32 bg-cream-warm overflow-hidden">
             <Container>
-                <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+                <div className="flex flex-col lg:flex-row gap-16 items-center">
                     {/* Image Side (Left) */}
                     <div className="w-full lg:w-1/2" data-reveal>
                         <div className="relative aspect-[4/5] w-full max-w-md mx-auto lg:mx-0">

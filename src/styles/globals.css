@@ -26,6 +26,13 @@
   --color-champagne-gold: var(--champagne-gold);
   --color-off-white: var(--off-white);
 
+  /* New Strategic Colors */
+  --color-blue-muted: var(--blue-muted);
+  --color-green-sage: var(--green-sage);
+  --color-cream-warm: var(--cream-warm);
+  --color-gold-antique: var(--gold-antique);
+  --color-mustard-muted: var(--mustard-muted);
+
   --ease-smooth: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-mechanical: cubic-bezier(0.68, -0.6, 0.32, 1.6);
@@ -33,15 +40,25 @@
 
 
 :root {
-  /* Brand Colors */
-  --terracotta-raw: #8E4D3E;
+  /* Brand Colors - Strategic Updates */
+  --terracotta-raw: #C07A5A;
+  /* Muted Terracotta (was #8E4D3E) */
   --terracotta-soft: #D4A373;
-  --sand-light: #F4F1EC;
+  --sand-light: #F3EDE2;
+  /* Warm Sand Beige (was #F4F1EC) */
   --sand-dark: #E8E2D9;
-  --charcoal: #2D2D2D;
+  --charcoal: #2E2A26;
+  /* Charcoal Brown-Black (was #2D2D2D) */
   --sage-muted: #8B9474;
 
-  /* New Luxury Colors */
+  /* New Strategic Colors */
+  --blue-muted: #6C8EA6;
+  --green-sage: #7A9D7B;
+  --cream-warm: #FBF7F0;
+  --gold-antique: #C2A75E;
+  --mustard-muted: #D9B44A;
+
+  /* New Luxury Colors (Preserved) */
   --luxury-green: #1F3A2D;
   --champagne-gold: #D8B56A;
   --off-white: #F6F4EF;

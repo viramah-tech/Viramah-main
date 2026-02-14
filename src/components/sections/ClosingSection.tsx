@@ -15,7 +15,7 @@ export function ClosingSection() {
                     </p>
                     <div className="flex gap-4 mt-8">
                         <Link href="/signup">
-                            <Button size="lg" className="bg-white text-terracotta-raw hover:bg-white/90 shadow-2xl">
+                            <Button size="lg" className="bg-cream-warm text-terracotta-raw hover:bg-cream-warm/90 shadow-2xl">
                                 Apply Now
                             </Button>
                         </Link>

@@ -22,8 +22,9 @@ interface QuickAction {
 
 const QUICK_ACTIONS: QuickAction[] = [
     { label: "Add Funds", href: "/student/wallet", icon: Wallet, color: "bg-terracotta-raw" },
-    { label: "Order Food", href: "/student/canteen", icon: UtensilsCrossed, color: "bg-gold" }
-    // { label: "Book Gym", href: "/student/amenities", icon: Dumbbell, color: "bg-sage-muted" },
+    { label: "Order Food", href: "/student/canteen", icon: UtensilsCrossed, color: "bg-gold" },
+    { label: "Notifications", href: "/student/settings", icon: Bell, color: "bg-charcoal/80" },
+    { label: "Events", href: "/student/dashboard#events", icon: Calendar, color: "bg-gold-muted" },
 ];
 
 const UPCOMING_EVENTS = [
@@ -63,18 +64,20 @@ export default function StudentDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="grid grid-cols-3 gap-4"
+                className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
             >
                 {QUICK_ACTIONS.map((action) => (
                     <Link
                         key={action.label}
                         href={action.href}
-                        className="group bg-white rounded-2xl border border-sand-dark p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                        className="group bg-white rounded-2xl border border-sand-dark p-4 sm:p-5 md:p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 min-h-[100px] flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-terracotta w-full"
+                        tabIndex={0}
+                        aria-label={action.label}
                     >
-                        <div className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center mb-4`}>
+                        <div className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center mb-3`}>
                             <action.icon className="w-6 h-6 text-white" />
                         </div>
-                        <span className="font-body text-sm font-medium text-charcoal block">
+                        <span className="font-body text-sm font-medium text-charcoal block text-center">
                             {action.label}
                         </span>
                         <ArrowRight className="w-4 h-4 text-charcoal/30 mt-2 group-hover:text-terracotta-raw group-hover:translate-x-1 transition-all" />

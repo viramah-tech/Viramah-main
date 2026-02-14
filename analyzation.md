@@ -1,7 +1,3 @@
- I'll create a comprehensive LLM Code Analysis Guide for you. This will be a structured framework to onboard any new LLM to your codebase while maintaining strict architectural discipline.
-
----
-
 # 🛡️ The Code Guardian Protocol
 ## A Definitive LLM Onboarding & Analysis Framework
 
@@ -271,5 +267,3 @@ To deploy this protocol:
 3. **Pin this guide** in your AI assistant's context window for every session
 4. **Create template files** for common operations (New Repository, New Service, New API Route)
 5. **Establish a "Pattern Police"** - one senior file that demonstrates the gold standard
-
-Would you like me to help you customize this framework for your specific tech stack (Python/Node/Go/Rust/etc.) and architecture pattern? I can also create the actual template files once you share your repository structure.
