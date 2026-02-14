@@ -25,7 +25,7 @@ export default function Home() {
         <div
           className="absolute inset-0 -z-10"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 40%, var(--sand-light) 95%), url('HERO.JPG')`,
+            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 40%, var(--sand-light) 95%), url('/HERO.jpg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'grayscale(10%) contrast(95%)',
