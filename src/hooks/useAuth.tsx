@@ -65,13 +65,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Load session on mount
     useEffect(() => {
         const initAuth = async () => {
+            console.log("[Auth] Initializing...");
             try {
                 const { data: { session: currentSession } } = await supabase.auth.getSession();
 
                 if (currentSession?.user) {
+                    console.log("[Auth] Session found, fetching profile...");
                     setSession(currentSession);
                     const profile = await fetchProfile(currentSession.user);
                     setUser(profile);
+                    console.log("[Auth] Profile loaded:", profile?.fullName);
+                } else {
+                    console.log("[Auth] No active session");
                 }
             } catch (err) {
                 console.error("[Auth] Failed to initialize:", err);
@@ -85,13 +90,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, newSession) => {
+                console.log("[Auth] State changed:", event);
                 setSession(newSession);
 
                 if (event === "SIGNED_IN" && newSession?.user) {
-                    const profile = await fetchProfile(newSession.user);
-                    setUser(profile);
+                    setIsLoading(true); // Keep in loading state while profile is fetched
+                    try {
+                        const profile = await fetchProfile(newSession.user);
+                        setUser(profile);
+                        console.log("[Auth] Profile fetched after sign-in:", profile?.fullName);
+                    } finally {
+                        setIsLoading(false);
+                    }
                 } else if (event === "SIGNED_OUT") {
+                    console.log("[Auth] Signed out");
                     setUser(null);
+                    setIsLoading(false);
+                } else if (event === "INITIAL_SESSION") {
+                    // Handled by initAuth
+                } else if (event === "USER_UPDATED") {
+                    if (newSession?.user) {
+                        const profile = await fetchProfile(newSession.user);
+                        setUser(profile);
+                    }
                 }
             }
         );
@@ -117,11 +138,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Sign in with email/password
     const signIn = useCallback(async (email: string, password: string) => {
+        console.log("[Auth] Signing in with email/password...");
         const { error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) return { error: error.message };
+
+        // Wait for profile to be loaded by onAuthStateChange
+        // We poll for up to 5 seconds
+        let attempts = 0;
+        while (!user && attempts < 25) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+            attempts++;
+        }
+
+        if (!user) {
+            console.warn("[Auth] Signed in but profile fetch is taking too long");
+        }
+
         return { error: null };
-    }, []);
+    }, [user]);
 
     // Sign in with Google OAuth
     const signInWithGoogle = useCallback(async () => {
