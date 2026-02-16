@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { FormInput } from "@/components/ui/FormInput";
-import { GraduationCap, Users, ArrowRight, Chrome } from "lucide-react";
+import { GraduationCap, Users, ArrowRight, Chrome, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { getRoleRedirect } from "@/lib/auth";
 
 type RoleSelection = "student" | "parent" | null;
 
@@ -15,11 +18,49 @@ export default function SignUpPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { signUp, signInWithGoogle } = useAuth();
+    const router = useRouter();
 
-    const getRedirectPath = () => {
-        if (selectedRole === "student") return "/user-onboarding/step-1";
-        if (selectedRole === "parent") return "/parent/dashboard";
-        return "/signup";
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedRole || !name || !email || !password) return;
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            return;
+        }
+
+        if (password.length < 6) {
+            setError("Password must be at least 6 characters");
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+
+        const result = await signUp(email, password, name, selectedRole);
+
+        if (result.error) {
+            setError(result.error);
+            setIsSubmitting(false);
+        } else {
+            // Redirect to onboarding for students, dashboard for parents
+            if (selectedRole === "student") {
+                router.push("/user-onboarding/step-1");
+            } else {
+                router.push(getRoleRedirect(selectedRole));
+            }
+        }
+    };
+
+    const handleGoogleSignUp = async () => {
+        setError(null);
+        const result = await signInWithGoogle();
+        if (result.error) {
+            setError(result.error);
+        }
     };
 
     return (
@@ -48,103 +89,132 @@ export default function SignUpPage() {
                 </div>
 
                 {/* Auth Card */}
-                <div className="bg-white rounded-3xl border border-sand-dark p-8 shadow-xl shadow-charcoal/5">
-                    {/* Role Selection */}
-                    <div className="mb-6">
-                        <label className="font-mono text-xs text-charcoal/50 uppercase tracking-widest block mb-3">
-                            I am a
-                        </label>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                onClick={() => setSelectedRole("student")}
-                                className={`p-4 rounded-xl border-2 text-left transition-all duration-300 ${selectedRole === "student"
-                                    ? "border-terracotta-raw bg-terracotta-raw/5"
-                                    : "border-sand-dark hover:border-charcoal/30"
-                                    }`}
+                <form onSubmit={handleSubmit}>
+                    <div className="bg-white rounded-3xl border border-sand-dark p-8 shadow-xl shadow-charcoal/5">
+                        {/* Error Display */}
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200"
                             >
-                                <GraduationCap className={`w-6 h-6 mb-2 ${selectedRole === "student" ? "text-terracotta-raw" : "text-charcoal/40"
-                                    }`} />
-                                <span className={`font-body text-sm font-medium block ${selectedRole === "student" ? "text-terracotta-raw" : "text-charcoal"
-                                    }`}>
-                                    Student
-                                </span>
-                                <span className="font-mono text-[10px] text-charcoal/50">
-                                    Access your room &amp; services
-                                </span>
-                            </button>
-                            <button
-                                onClick={() => setSelectedRole("parent")}
-                                className={`p-4 rounded-xl border-2 text-left transition-all duration-300 ${selectedRole === "parent"
-                                    ? "border-terracotta-raw bg-terracotta-raw/5"
-                                    : "border-sand-dark hover:border-charcoal/30"
-                                    }`}
-                            >
-                                <Users className={`w-6 h-6 mb-2 ${selectedRole === "parent" ? "text-terracotta-raw" : "text-charcoal/40"
-                                    }`} />
-                                <span className={`font-body text-sm font-medium block ${selectedRole === "parent" ? "text-terracotta-raw" : "text-charcoal"
-                                    }`}>
-                                    Parent
-                                </span>
-                                <span className="font-mono text-[10px] text-charcoal/50">
-                                    Monitor &amp; visit your child
-                                </span>
-                            </button>
+                                <p className="font-body text-sm text-red-600">{error}</p>
+                            </motion.div>
+                        )}
+
+                        {/* Role Selection */}
+                        <div className="mb-6">
+                            <label className="font-mono text-xs text-charcoal/50 uppercase tracking-widest block mb-3">
+                                I am a
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedRole("student")}
+                                    className={`p-4 rounded-xl border-2 text-left transition-all duration-300 ${selectedRole === "student"
+                                        ? "border-terracotta-raw bg-terracotta-raw/5"
+                                        : "border-sand-dark hover:border-charcoal/30"
+                                        }`}
+                                >
+                                    <GraduationCap className={`w-6 h-6 mb-2 ${selectedRole === "student" ? "text-terracotta-raw" : "text-charcoal/40"
+                                        }`} />
+                                    <span className={`font-body text-sm font-medium block ${selectedRole === "student" ? "text-terracotta-raw" : "text-charcoal"
+                                        }`}>
+                                        Student
+                                    </span>
+                                    <span className="font-mono text-[10px] text-charcoal/50">
+                                        Access your room &amp; services
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedRole("parent")}
+                                    className={`p-4 rounded-xl border-2 text-left transition-all duration-300 ${selectedRole === "parent"
+                                        ? "border-terracotta-raw bg-terracotta-raw/5"
+                                        : "border-sand-dark hover:border-charcoal/30"
+                                        }`}
+                                >
+                                    <Users className={`w-6 h-6 mb-2 ${selectedRole === "parent" ? "text-terracotta-raw" : "text-charcoal/40"
+                                        }`} />
+                                    <span className={`font-body text-sm font-medium block ${selectedRole === "parent" ? "text-terracotta-raw" : "text-charcoal"
+                                        }`}>
+                                        Parent
+                                    </span>
+                                    <span className="font-mono text-[10px] text-charcoal/50">
+                                        Monitor &amp; visit your child
+                                    </span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Sign Up Form */}
-                    <div className="space-y-4 mb-6">
-                        <FormInput
-                            label="Full Name"
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
-                        <FormInput
-                            label="Email Address"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                        <FormInput
-                            label="Password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                        <FormInput
-                            label="Confirm Password"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
-                    </div>
+                        {/* Sign Up Form */}
+                        <div className="space-y-4 mb-6">
+                            <FormInput
+                                label="Full Name"
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                            <FormInput
+                                label="Email Address"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                            <FormInput
+                                label="Password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                            <FormInput
+                                label="Confirm Password"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                            />
+                        </div>
 
-                    {/* Submit Button */}
-                    <Link href={getRedirectPath()}>
+                        {/* Submit Button */}
                         <Button
+                            type="submit"
                             size="lg"
                             className="w-full gap-2"
-                            disabled={!selectedRole}
+                            disabled={!selectedRole || !name || !email || !password || !confirmPassword || isSubmitting}
                         >
-                            {selectedRole === "student" ? "Continue to Booking" : "Create Account"}
-                            <ArrowRight className="w-4 h-4" />
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Creating account...
+                                </>
+                            ) : (
+                                <>
+                                    {selectedRole === "student" ? "Continue to Booking" : "Create Account"}
+                                    <ArrowRight className="w-4 h-4" />
+                                </>
+                            )}
                         </Button>
-                    </Link>
 
-                    {/* Divider */}
-                    <div className="flex items-center gap-4 my-6">
-                        <div className="flex-1 h-px bg-sand-dark" />
-                        <span className="font-mono text-[10px] text-charcoal/40 uppercase">or</span>
-                        <div className="flex-1 h-px bg-sand-dark" />
+                        {/* Divider */}
+                        <div className="flex items-center gap-4 my-6">
+                            <div className="flex-1 h-px bg-sand-dark" />
+                            <span className="font-mono text-[10px] text-charcoal/40 uppercase">or</span>
+                            <div className="flex-1 h-px bg-sand-dark" />
+                        </div>
+
+                        {/* Google Sign Up */}
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="lg"
+                            className="w-full gap-3"
+                            onClick={handleGoogleSignUp}
+                        >
+                            <Chrome className="w-5 h-5" />
+                            Sign up with Google
+                        </Button>
                     </div>
-
-                    {/* Google Sign Up */}
-                    <Button variant="secondary" size="lg" className="w-full gap-3">
-                        <Chrome className="w-5 h-5" />
-                        Sign up with Google
-                    </Button>
-                </div>
+                </form>
 
                 {/* Footer Links */}
                 <div className="text-center mt-6">

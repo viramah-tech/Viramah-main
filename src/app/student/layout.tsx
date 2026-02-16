@@ -1,17 +1,39 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { PortalNav } from "@/components/layout/PortalNav";
-import { mockUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { user, isLoading, isAuthenticated } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            router.push("/login");
+        }
+    }, [isLoading, isAuthenticated, router]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-sand-light flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-terracotta-raw" />
+                <span className="ml-3 font-body text-charcoal/60">Loading...</span>
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) return null;
+
     return (
         <div className="min-h-screen bg-sand-light">
             {/* Sidebar Navigation */}
             <div
                 className={`fixed top-0 left-0 h-full w-[280px] bg-white z-40 transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:static lg:block`}
             >
-                <PortalNav role="student" userName={mockUser.name} />
+                <PortalNav role="student" userName={user?.fullName ?? "Student"} />
             </div>
 
             {/* Main Content Area */}

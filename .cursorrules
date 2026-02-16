@@ -1,0 +1,53 @@
+# Viramah — AI Coding Assistant Rules
+
+## Absolute Constraints
+
+1. **NO ARCHITECTURAL CHANGES** — Do not modify folder structures, naming conventions, or design patterns.
+2. **PATTERN OBEDIENCE** — Existing patterns are law. Copy the style of neighboring files exactly.
+3. **REPOSITORY SANCTITY** — Do not reorganize, rename, or "clean up" files unless explicitly asked.
+
+## Tech Stack
+
+- Next.js 16.1.6 (App Router) + React 19 + TypeScript 5 (strict)
+- Tailwind CSS 4 via `@theme` in `globals.css` (NO `tailwind.config.js`)
+- Framer Motion for animations
+- Lucide React for icons
+- CVA + clsx + tailwind-merge for class management
+
+## Code Style
+
+- Double quotes everywhere
+- 4-space indentation
+- Always use `@/*` path alias (mapped to `./src/*`)
+- Always use `cn()` from `@/lib/utils` for className merging
+- Named exports for components, default exports for pages
+- `"use client"` only when hooks/interactivity/framer-motion are used
+- Imports order: "use client" → framework → third-party → internal (@/) → types
+
+## Design System
+
+- Colors are CSS variables in `:root` (globals.css), mapped to Tailwind via `@theme`
+- Fonts: DM Serif Display (display), Inter (body), JetBrains Mono (mono)
+- Always use semantic color tokens (`text-charcoal`, `bg-sand-light`, `bg-cream-warm`)
+
+## File Locations
+
+- Pages: `src/app/[route]/page.tsx`
+- Sections: `src/components/sections/`
+- UI primitives: `src/components/ui/`
+- Layout shells: `src/components/layout/`
+- Hooks: `src/hooks/`
+- Types: `src/types/`
+- Utils: `src/lib/`
+
+## Forbidden
+
+- Do NOT create `tailwind.config.js` — Tailwind 4 uses @theme
+- Do NOT use `<img>` for content images — use `next/image`
+- Do NOT add global state management libraries
+- Do NOT use string concatenation for classes — use `cn()`
+- Do NOT install Supabase without explicit approval
+
+## Reference
+
+See `LLM_ONBOARDING.md` for the complete pattern bible with copy-paste templates.

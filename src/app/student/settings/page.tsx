@@ -1,18 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FormInput } from "@/components/ui/FormInput";
 import { Button } from "@/components/ui/Button";
 import { User, Bell, Lock, Save } from "lucide-react";
-import { mockUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SettingsPage() {
+    const { user } = useAuth();
     const [profile, setProfile] = useState({
-        name: mockUser.name,
-        email: mockUser.email,
+        name: "",
+        email: "",
         phone: "+91 98XXX XXXXX",
     });
+
+    useEffect(() => {
+        if (user) {
+            setProfile(prev => ({
+                ...prev,
+                name: user.fullName,
+                email: user.email,
+            }));
+        }
+    }, [user]);
 
     return (
         <div className="space-y-8 max-w-2xl">

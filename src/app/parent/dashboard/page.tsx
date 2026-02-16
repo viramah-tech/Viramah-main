@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { mockUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import {
     User,
     Calendar,
@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 
 export default function ParentDashboard() {
+    const { user } = useAuth();
+    const firstName = user?.fullName?.split(" ")[0] ?? "Parent";
+
     return (
         <div className="space-y-8">
             {/* Welcome Header */}
@@ -25,7 +28,7 @@ export default function ParentDashboard() {
                     Parent Portal
                 </span>
                 <h1 className="font-display text-4xl text-charcoal mt-1">
-                    Welcome, {mockUser.name.split(" ")[0]}
+                    Welcome, {firstName}
                 </h1>
                 <p className="font-body text-charcoal/60 mt-2">
                     Monitor your child&apos;s stay at Viramah
@@ -44,12 +47,12 @@ export default function ParentDashboard() {
                         <User className="w-8 h-8 text-terracotta-raw" />
                     </div>
                     <div className="flex-1">
-                        <span className="font-body text-lg font-medium text-charcoal block">Arjun Mehta</span>
-                        <span className="font-mono text-xs text-charcoal/50">Room 204 • Block A</span>
+                        <span className="font-body text-lg font-medium text-charcoal block">Linked Student</span>
+                        <span className="font-mono text-xs text-charcoal/50">No student linked yet</span>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-sage-muted/20">
                         <CheckCircle className="w-4 h-4 text-sage-muted" />
-                        <span className="font-mono text-xs text-sage-muted">Checked In</span>
+                        <span className="font-mono text-xs text-sage-muted">Active</span>
                     </div>
                 </div>
             </motion.div>
@@ -61,19 +64,12 @@ export default function ParentDashboard() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-4"
             >
-                {/* <div className="bg-white rounded-2xl border border-sand-dark p-6">
-                    <CreditCard className="w-6 h-6 text-gold mb-3" />
-                    <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest block">
-                        Wallet Balance
-                    </span>
-                    <span className="font-display text-2xl text-charcoal">₹2,450</span>
-                </div> */}
                 <div className="bg-white rounded-2xl border border-sand-dark p-6">
                     <Calendar className="w-6 h-6 text-terracotta-raw mb-3" />
                     <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest block">
                         Next Visit
                     </span>
-                    <span className="font-display text-2xl text-charcoal">Feb 15</span>
+                    <span className="font-display text-2xl text-charcoal">Not Scheduled</span>
                 </div>
                 <div className="bg-white rounded-2xl border border-sand-dark p-6">
                     <AlertCircle className="w-6 h-6 text-sage-muted mb-3" />
@@ -81,6 +77,13 @@ export default function ParentDashboard() {
                         Alerts
                     </span>
                     <span className="font-display text-2xl text-charcoal">None</span>
+                </div>
+                <div className="bg-white rounded-2xl border border-sand-dark p-6">
+                    <User className="w-6 h-6 text-gold mb-3" />
+                    <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest block">
+                        Account Status
+                    </span>
+                    <span className="font-display text-2xl text-charcoal capitalize">{user?.kycStatus ?? "Pending"}</span>
                 </div>
             </motion.div>
 
@@ -93,19 +96,9 @@ export default function ParentDashboard() {
             >
                 <h2 className="font-body font-medium text-charcoal mb-4">Recent Activity</h2>
                 <div className="space-y-3">
-                    {[
-                        { action: "Canteen order placed", time: "Today, 1:00 PM", amount: "₹150" },
-                        { action: "Gym slot booked", time: "Yesterday", amount: "-" },
-                        { action: "Wallet topped up", time: "Feb 5", amount: "₹2,000" },
-                    ].map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 rounded-xl hover:bg-sand-light/50">
-                            <div>
-                                <span className="font-body text-sm text-charcoal block">{item.action}</span>
-                                <span className="font-mono text-[10px] text-charcoal/50">{item.time}</span>
-                            </div>
-                            <span className="font-mono text-sm text-charcoal/70">{item.amount}</span>
-                        </div>
-                    ))}
+                    <div className="py-8 text-center">
+                        <p className="font-body text-sm text-charcoal/50">No recent activity. Link a student to view their updates.</p>
+                    </div>
                 </div>
             </motion.div>
 

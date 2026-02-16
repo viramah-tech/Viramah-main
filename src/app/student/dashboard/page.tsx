@@ -5,13 +5,14 @@ import Link from "next/link";
 import {
     Wallet,
     UtensilsCrossed,
-    Dumbbell,
     Bell,
     Calendar,
     ArrowRight,
-    TrendingUp
+    TrendingUp,
+    Loader2
 } from "lucide-react";
-import { mockUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { useWallet, useBookings } from "@/hooks/useApi";
 
 interface QuickAction {
     label: string;
@@ -27,18 +28,21 @@ const QUICK_ACTIONS: QuickAction[] = [
     { label: "Events", href: "/student/dashboard#events", icon: Calendar, color: "bg-gold-muted" },
 ];
 
-const UPCOMING_EVENTS = [
-    { title: "Yoga Session", time: "6:00 AM", day: "Tomorrow" },
-    { title: "Community Dinner", time: "7:30 PM", day: "Saturday" },
-];
-
 export default function StudentDashboard() {
+    const { user } = useAuth();
+    const { data: walletData, isLoading: walletLoading } = useWallet();
+    const { data: bookingsData } = useBookings();
+
     const greeting = () => {
         const hour = new Date().getHours();
         if (hour < 12) return "Good morning";
         if (hour < 17) return "Good afternoon";
         return "Good evening";
     };
+
+    const firstName = user?.fullName?.split(" ")[0] ?? "Student";
+    const walletBalance = walletData?.balance ?? 0;
+    const activeBookings = bookingsData?.data?.filter(b => b.status === "active" || b.status === "confirmed").length ?? 0;
 
     return (
         <div className="space-y-8">
@@ -52,7 +56,7 @@ export default function StudentDashboard() {
                     {greeting()}
                 </span>
                 <h1 className="font-display text-4xl text-charcoal mt-1">
-                    Welcome back, {mockUser.name.split(" ")[0]}
+                    Welcome back, {firstName}
                 </h1>
                 <p className="font-body text-charcoal/60 mt-2">
                     Here&apos;s what&apos;s happening at Viramah today.
@@ -95,17 +99,25 @@ export default function StudentDashboard() {
                 <div className="bg-white rounded-2xl border border-sand-dark p-6">
                     <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest">Wallet Balance</span>
                     <div className="flex items-end gap-2 mt-2">
-                        <span className="font-display text-3xl text-charcoal">₹2,450</span>
-                        <TrendingUp className="w-4 h-4 text-sage-muted mb-1" />
+                        {walletLoading ? (
+                            <Loader2 className="w-5 h-5 animate-spin text-charcoal/30" />
+                        ) : (
+                            <>
+                                <span className="font-display text-3xl text-charcoal">
+                                    ₹{walletBalance.toLocaleString("en-IN")}
+                                </span>
+                                <TrendingUp className="w-4 h-4 text-sage-muted mb-1" />
+                            </>
+                        )}
                     </div>
                 </div>
                 <div className="bg-white rounded-2xl border border-sand-dark p-6">
-                    <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest">Meals This Week</span>
-                    <span className="font-display text-3xl text-charcoal block mt-2">12</span>
+                    <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest">Active Bookings</span>
+                    <span className="font-display text-3xl text-charcoal block mt-2">{activeBookings}</span>
                 </div>
                 <div className="bg-white rounded-2xl border border-sand-dark p-6">
-                    <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest">Gym Sessions</span>
-                    <span className="font-display text-3xl text-charcoal block mt-2">4</span>
+                    <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest">KYC Status</span>
+                    <span className="font-display text-xl text-charcoal block mt-2 capitalize">{user?.kycStatus ?? "Pending"}</span>
                 </div>
                 <div className="bg-white rounded-2xl border border-sand-dark p-6">
                     <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest">Community Events</span>
@@ -115,7 +127,7 @@ export default function StudentDashboard() {
 
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Notifications */}
+                {/* Recent Transactions */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -123,21 +135,29 @@ export default function StudentDashboard() {
                     className="bg-white rounded-2xl border border-sand-dark p-6"
                 >
                     <div className="flex items-center gap-3 mb-4">
-                        <Bell className="w-5 h-5 text-terracotta-raw" />
-                        <span className="font-body font-medium text-charcoal">Notifications</span>
-                        <span className="ml-auto px-2 py-0.5 rounded-full bg-terracotta-raw/10 font-mono text-[10px] text-terracotta-raw">
-                            3 new
-                        </span>
+                        <Wallet className="w-5 h-5 text-terracotta-raw" />
+                        <span className="font-body font-medium text-charcoal">Recent Transactions</span>
                     </div>
                     <div className="space-y-3">
-                        <div className="p-3 rounded-xl bg-sand-light/50 border border-sand-dark/30">
-                            <p className="font-body text-sm text-charcoal">Your laundry is ready for pickup</p>
-                            <span className="font-mono text-[10px] text-charcoal/50">2 hours ago</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-sand-light/50 border border-sand-dark/30">
-                            <p className="font-body text-sm text-charcoal">Rent reminder: Due in 5 days</p>
-                            <span className="font-mono text-[10px] text-charcoal/50">Yesterday</span>
-                        </div>
+                        {walletData?.transactions && walletData.transactions.length > 0 ? (
+                            walletData.transactions.slice(0, 3).map((tx) => (
+                                <div key={tx.id} className="p-3 rounded-xl bg-sand-light/50 border border-sand-dark/30">
+                                    <div className="flex items-center justify-between">
+                                        <p className="font-body text-sm text-charcoal">{tx.description || tx.source}</p>
+                                        <span className={`font-mono text-sm font-medium ${tx.type === "credit" ? "text-sage-muted" : "text-charcoal"}`}>
+                                            {tx.type === "credit" ? "+" : "-"}₹{tx.amount.toLocaleString("en-IN")}
+                                        </span>
+                                    </div>
+                                    <span className="font-mono text-[10px] text-charcoal/50">
+                                        {new Date(tx.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="p-3 rounded-xl bg-sand-light/50 border border-sand-dark/30">
+                                <p className="font-body text-sm text-charcoal/50">No recent transactions</p>
+                            </div>
+                        )}
                     </div>
                 </motion.div>
 
@@ -153,7 +173,10 @@ export default function StudentDashboard() {
                         <span className="font-body font-medium text-charcoal">Upcoming Events</span>
                     </div>
                     <div className="space-y-3">
-                        {UPCOMING_EVENTS.map((event, idx) => (
+                        {[
+                            { title: "Yoga Session", time: "6:00 AM", day: "Tomorrow" },
+                            { title: "Community Dinner", time: "7:30 PM", day: "Saturday" },
+                        ].map((event, idx) => (
                             <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-sand-light/50 border border-sand-dark/30">
                                 <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center">
                                     <span className="font-mono text-xs text-gold">{event.day.slice(0, 3)}</span>

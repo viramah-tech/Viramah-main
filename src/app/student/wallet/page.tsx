@@ -2,16 +2,15 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, CreditCard } from "lucide-react";
-
-const TRANSACTIONS = [
-    { type: "credit", label: "Added Funds", amount: 2000, date: "Today, 2:30 PM" },
-    { type: "debit", label: "Canteen - Lunch", amount: 150, date: "Today, 1:00 PM" },
-    { type: "debit", label: "Laundry Service", amount: 200, date: "Yesterday" },
-    { type: "credit", label: "Refund - Gym Slot", amount: 100, date: "Feb 5" },
-];
+import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2 } from "lucide-react";
+import { useWallet } from "@/hooks/useApi";
 
 export default function WalletPage() {
+    const { data, isLoading, error } = useWallet();
+
+    const balance = data?.balance ?? 0;
+    const transactions = data?.transactions ?? [];
+
     return (
         <div className="space-y-8">
             {/* Header */}
@@ -36,7 +35,13 @@ export default function WalletPage() {
                 <div className="flex items-start justify-between">
                     <div>
                         <span className="font-mono text-xs opacity-70 uppercase tracking-widest">Available Balance</span>
-                        <div className="font-display text-5xl mt-2">₹2,450</div>
+                        <div className="font-display text-5xl mt-2">
+                            {isLoading ? (
+                                <Loader2 className="w-8 h-8 animate-spin" />
+                            ) : (
+                                `₹${balance.toLocaleString("en-IN")}`
+                            )}
+                        </div>
                     </div>
                     <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
                         <Wallet className="w-7 h-7 text-white" />
@@ -62,27 +67,57 @@ export default function WalletPage() {
                 className="bg-white rounded-2xl border border-sand-dark p-6"
             >
                 <h2 className="font-body font-medium text-charcoal mb-4">Recent Transactions</h2>
-                <div className="space-y-3">
-                    {TRANSACTIONS.map((tx, idx) => (
-                        <div key={idx} className="flex items-center gap-4 p-3 rounded-xl hover:bg-sand-light/50 transition-colors">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.type === "credit" ? "bg-sage-muted/20" : "bg-terracotta-raw/10"
-                                }`}>
-                                {tx.type === "credit"
-                                    ? <ArrowDownLeft className="w-5 h-5 text-sage-muted" />
-                                    : <ArrowUpRight className="w-5 h-5 text-terracotta-raw" />
-                                }
+
+                {isLoading && (
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-charcoal/30" />
+                    </div>
+                )}
+
+                {error && (
+                    <div className="py-8 text-center">
+                        <p className="font-body text-sm text-charcoal/50">Unable to load transactions</p>
+                    </div>
+                )}
+
+                {!isLoading && !error && transactions.length === 0 && (
+                    <div className="py-8 text-center">
+                        <p className="font-body text-sm text-charcoal/50">No transactions yet. Add funds to get started.</p>
+                    </div>
+                )}
+
+                {transactions.length > 0 && (
+                    <div className="space-y-3">
+                        {transactions.map((tx) => (
+                            <div key={tx.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-sand-light/50 transition-colors">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.type === "credit" ? "bg-sage-muted/20" : "bg-terracotta-raw/10"
+                                    }`}>
+                                    {tx.type === "credit"
+                                        ? <ArrowDownLeft className="w-5 h-5 text-sage-muted" />
+                                        : <ArrowUpRight className="w-5 h-5 text-terracotta-raw" />
+                                    }
+                                </div>
+                                <div className="flex-1">
+                                    <span className="font-body text-sm font-medium text-charcoal block">
+                                        {tx.description || tx.source}
+                                    </span>
+                                    <span className="font-mono text-[10px] text-charcoal/50">
+                                        {new Date(tx.createdAt).toLocaleDateString("en-IN", {
+                                            day: "numeric",
+                                            month: "short",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    </span>
+                                </div>
+                                <span className={`font-mono text-sm font-medium ${tx.type === "credit" ? "text-sage-muted" : "text-charcoal"
+                                    }`}>
+                                    {tx.type === "credit" ? "+" : "-"}₹{tx.amount.toLocaleString("en-IN")}
+                                </span>
                             </div>
-                            <div className="flex-1">
-                                <span className="font-body text-sm font-medium text-charcoal block">{tx.label}</span>
-                                <span className="font-mono text-[10px] text-charcoal/50">{tx.date}</span>
-                            </div>
-                            <span className={`font-mono text-sm font-medium ${tx.type === "credit" ? "text-sage-muted" : "text-charcoal"
-                                }`}>
-                                {tx.type === "credit" ? "+" : "-"}₹{tx.amount}
-                            </span>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </motion.div>
         </div>
     );
