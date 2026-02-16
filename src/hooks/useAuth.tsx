@@ -35,13 +35,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // ─── Helper: Fetch profile from Supabase ─────────────────────
 async function fetchProfile(supabaseUser: SupabaseUser): Promise<UserProfile | null> {
+    console.log("[Auth] Fetching profile for UID:", supabaseUser.id);
     const { data, error } = await supabase
         .from("profiles")
         .select("id, user_id, full_name, avatar_url, kyc_status, is_active")
         .eq("user_id", supabaseUser.id)
         .single();
 
-    if (error || !data) return null;
+    if (error) {
+        console.error("[Auth] Error fetching profile:", error.message, error.details);
+        return null;
+    }
+
+    if (!data) {
+        console.error("[Auth] No profile data found for this user");
+        return null;
+    }
+
+    console.log("[Auth] Profile found:", data.full_name);
 
     return {
         id: data.id,
@@ -138,25 +149,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Sign in with email/password
     const signIn = useCallback(async (email: string, password: string) => {
-        console.log("[Auth] Signing in with email/password...");
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        console.log("[Auth] Attempting sign in...");
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-        if (error) return { error: error.message };
+            if (error) {
+                console.error("[Auth] Sign in failed:", error.message);
+                return { error: error.message };
+            }
 
-        // Wait for profile to be loaded by onAuthStateChange
-        // We poll for up to 5 seconds
-        let attempts = 0;
-        while (!user && attempts < 25) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-            attempts++;
+            if (data.session?.user) {
+                console.log("[Auth] Sign in success, fetching profile immediately...");
+                setSession(data.session);
+                const profile = await fetchProfile(data.session.user);
+                setUser(profile);
+
+                if (!profile) {
+                    console.warn("[Auth] Sign in worked but profile is missing in the database");
+                }
+            }
+
+            return { error: null };
+        } catch (err) {
+            console.error("[Auth] Unexpected error during sign in:", err);
+            return { error: "An unexpected error occurred. Please try again." };
+        } finally {
+            setIsLoading(false);
         }
-
-        if (!user) {
-            console.warn("[Auth] Signed in but profile fetch is taking too long");
-        }
-
-        return { error: null };
-    }, [user]);
+    }, []);
 
     // Sign in with Google OAuth
     const signInWithGoogle = useCallback(async () => {
