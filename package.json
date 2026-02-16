@@ -7,13 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "content-audit": "node scripts/content_audit.js",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "content-audit": "node scripts/content_audit.js"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.95.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

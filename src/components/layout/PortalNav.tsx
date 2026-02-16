@@ -14,7 +14,6 @@ import {
     User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
 
 interface NavItem {
     label: string;
@@ -44,7 +43,6 @@ interface PortalNavProps {
 export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
     const pathname = usePathname();
     const navItems = role === "student" ? STUDENT_NAV : PARENT_NAV;
-    const { signOut } = useAuth();
 
     return (
         <aside className="fixed left-0 top-0 h-screen w-[280px] bg-ivory border-r border-sand-dark flex flex-col z-40">
@@ -118,13 +116,13 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
 
             {/* Footer Actions */}
             <div className="p-4 border-t border-sand-dark">
-                <button
-                    onClick={() => signOut()}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-charcoal/60 hover:text-terracotta-raw hover:bg-sand-dark/30 transition-all duration-300 w-full"
+                <Link
+                    href="/"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-charcoal/60 hover:text-terracotta-raw hover:bg-sand-dark/30 transition-all duration-300"
                 >
                     <LogOut className="w-5 h-5" />
                     <span className="font-body text-sm">Sign Out</span>
-                </button>
+                </Link>
             </div>
         </aside>
     );
