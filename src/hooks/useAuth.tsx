@@ -125,10 +125,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Sign in with Google OAuth
     const signInWithGoogle = useCallback(async () => {
+        // Use NEXT_PUBLIC_SITE_URL for Vercel deployments, fallback to window.location.origin for local dev
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${window.location.origin}/login`,
+                redirectTo: `${siteUrl}/auth/callback?next=/login`,
             },
         });
 
