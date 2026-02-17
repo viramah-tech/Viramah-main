@@ -8,7 +8,7 @@
    =================== */
 .hero-viewport {
     width: 100%;
-    padding: 0 5vw 10vw 5vw;
+    padding: 0 5vw 5vw 5vw;
 }
 
 .hero-header {
@@ -54,12 +54,12 @@
 .hero-gallery {
     position: relative;
     z-index: 2;
-    margin-top: -20vh;
+    margin-top: -30vh;
 }
 
 .hero-scroll-item {
     position: relative;
-    margin-bottom: 30vh;
+    margin-bottom: 15vh;
     width: 100%;
     display: flex;
     justify-content: flex-end;
@@ -76,7 +76,14 @@
     aspect-ratio: 4 / 5;
     overflow: hidden;
     background: var(--terracotta-soft);
-    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Dramatic shadow behind images */
+    box-shadow:
+        0 25px 60px -10px rgba(0, 0, 0, 0.4),
+        0 10px 25px -5px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 /* Hover effects — moved to @media (hover) guard below */
@@ -84,8 +91,61 @@
 .hero-gallery-img {
     object-fit: cover;
     filter: sepia(0.3) saturate(0.85) contrast(1.1);
-    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     scale: 1.2;
+}
+
+/* Edge-fade vignette overlay — darkens image as it enters/exits */
+.hero-image-wrapper::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center,
+            transparent 40%,
+            rgba(0, 0, 0, 0.15) 100%);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+/* Scroll-triggered vignette states (controlled by JS) */
+.hero-image-wrapper.hero-img-entering::after {
+    opacity: 1;
+    background: radial-gradient(ellipse at center,
+            transparent 20%,
+            rgba(0, 0, 0, 0.35) 70%,
+            rgba(0, 0, 0, 0.6) 100%);
+}
+
+.hero-image-wrapper.hero-img-exiting::after {
+    opacity: 1;
+    background: radial-gradient(ellipse at center,
+            transparent 15%,
+            rgba(0, 0, 0, 0.4) 65%,
+            rgba(0, 0, 0, 0.7) 100%);
+}
+
+/* When fully in view — subtle ambient vignette */
+.hero-image-wrapper.hero-img-visible::after {
+    opacity: 0.4;
+    background: radial-gradient(ellipse at center,
+            transparent 55%,
+            rgba(0, 0, 0, 0.12) 100%);
+}
+
+/* Blur the image itself at edges */
+.hero-image-wrapper.hero-img-entering .hero-gallery-img {
+    filter: sepia(0.3) saturate(0.85) contrast(1.1) blur(2px) brightness(0.7);
+}
+
+.hero-image-wrapper.hero-img-exiting .hero-gallery-img {
+    filter: sepia(0.3) saturate(0.85) contrast(1.1) blur(3px) brightness(0.6);
+}
+
+.hero-image-wrapper.hero-img-visible .hero-gallery-img {
+    filter: sepia(0.3) saturate(0.85) contrast(1.1) blur(0px) brightness(1);
 }
 
 /* ===================
@@ -190,8 +250,8 @@
    9. GALLERY END MARKER
    =================== */
 .hero-gallery-end {
-    margin-top: 15vh;
-    padding: 6vh 0;
+    margin-top: 5vh;
+    padding: 4vh 0;
     border-top: 1px solid var(--terracotta-soft);
 }
 
@@ -266,7 +326,7 @@
 
     .hero-scroll-item {
         justify-content: center !important;
-        margin-bottom: 15vh;
+        margin-bottom: 8vh;
     }
 
     /* Captions — centered below image */

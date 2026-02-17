@@ -16,7 +16,7 @@ interface ComparisonItem {
 
 const COMPARISONS: ComparisonItem[] = [
     {
-        beforeSrc: "/diffrence section images/before.jpg",
+        beforeSrc: "/diffrence section images/before(1).jpg",
         afterSrc: "/diffrence section images/after (1).jpg",
         beforeAlt: "Before Viramah — original space",
         afterAlt: "After Viramah — modern living transformation",
@@ -24,7 +24,7 @@ const COMPARISONS: ComparisonItem[] = [
         index: "// 001",
     },
     {
-        beforeSrc: "/diffrence section images/before.jpg",
+        beforeSrc: "/diffrence section images/before(2).jpg",
         afterSrc: "/diffrence section images/after (2).jpg",
         beforeAlt: "Before Viramah — original area",
         afterAlt: "After Viramah — enhanced community area",

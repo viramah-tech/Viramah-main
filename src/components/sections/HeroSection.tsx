@@ -204,6 +204,64 @@ export function HeroSection() {
         return () => observer.disconnect();
     }, []);
 
+    // ── Edge-Fade Vignette (scroll-driven) ──────────────────
+    useEffect(() => {
+        const prefersReducedMotion = window.matchMedia(
+            "(prefers-reduced-motion: reduce)"
+        ).matches;
+        if (prefersReducedMotion) return;
+
+        let rafId: number;
+
+        const updateVignettes = () => {
+            if (!galleryRef.current) {
+                rafId = requestAnimationFrame(updateVignettes);
+                return;
+            }
+
+            const wrappers =
+                galleryRef.current.querySelectorAll<HTMLElement>(
+                    ".hero-image-wrapper"
+                );
+            const vh = window.innerHeight;
+            const enterZone = vh * 0.85; // bottom 15% = entering
+            const exitZone = vh * 0.15;  // top 15% = exiting
+
+            wrappers.forEach((wrapper) => {
+                const rect = wrapper.getBoundingClientRect();
+                const centerY = rect.top + rect.height / 2;
+
+                // Remove all states first
+                wrapper.classList.remove(
+                    "hero-img-entering",
+                    "hero-img-visible",
+                    "hero-img-exiting"
+                );
+
+                if (rect.bottom < 0 || rect.top > vh) {
+                    // Fully off-screen — no class
+                    return;
+                }
+
+                if (centerY > enterZone) {
+                    // Entering from bottom
+                    wrapper.classList.add("hero-img-entering");
+                } else if (centerY < exitZone) {
+                    // Exiting at top
+                    wrapper.classList.add("hero-img-exiting");
+                } else {
+                    // Fully visible
+                    wrapper.classList.add("hero-img-visible");
+                }
+            });
+
+            rafId = requestAnimationFrame(updateVignettes);
+        };
+
+        rafId = requestAnimationFrame(updateVignettes);
+        return () => cancelAnimationFrame(rafId);
+    }, []);
+
     return (
         <div className="hero-viewport">
             {/* ── Sticky Hero Header ──────────────────────────── */}
