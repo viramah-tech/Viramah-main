@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./hero-section.css";
 @import "./difference-section.css";
+@import "./life-at-viramah-section.css";
 
 @theme {
   --font-display: var(--font-display), "DM Serif Display", serif;

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=JetBrains+Mono:wght@300;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --slate-base: #1a1a1a;
+            --slate-edge: #333333;
+            --accent: #ffffff;
+            --text-muted: #666666;
+            --transition: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--accent);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .monolith-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 120px 40px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 80px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--slate-edge);
+        }
+
+        .header-title h2 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            line-height: 0.9;
+            text-transform: uppercase;
+            letter-spacing: -0.04em;
+        }
+
+        .header-meta {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            text-align: right;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Tectonic Grid Layout */
+        .tectonic-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            perspective: 2000px;
+        }
+
+        .slate-item {
+            position: relative;
+            background: var(--slate-base);
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.8s var(--transition), box-shadow 0.8s var(--transition);
+            box-shadow: 0 0 0 1px var(--slate-edge);
+            opacity: 0;
+            transform: translateY(100px) rotateX(10deg);
+        }
+
+        .slate-item.visible {
+            opacity: 1;
+            transform: translateY(0) rotateX(0);
+        }
+
+        /* Varying Spans for Monolithic feel */
+        .span-8 {
+            grid-column: span 8;
+            height: 600px;
+        }
+
+        .span-4 {
+            grid-column: span 4;
+            height: 600px;
+        }
+
+        .span-5 {
+            grid-column: span 5;
+            height: 500px;
+        }
+
+        .span-7 {
+            grid-column: span 7;
+            height: 500px;
+        }
+
+        .span-12 {
+            grid-column: span 12;
+            height: 700px;
+        }
+
+        .slate-image-wrapper {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slate-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%) contrast(1.1);
+            transition: transform 1.2s var(--transition), filter 0.8s var(--transition);
+            opacity: 0.6;
+        }
+
+        /* Displacement Overlay */
+        .displacement-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, transparent 50%);
+            z-index: 2;
+            transition: opacity 0.4s ease;
+        }
+
+        /* Monolithic Typography Overlay */
+        .slate-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 40px;
+            z-index: 3;
+            transform: translateY(20px);
+            transition: transform 0.6s var(--transition);
+        }
+
+        .slate-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .slate-title {
+            font-size: 24px;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+
+        .slate-stats {
+            margin-top: 15px;
+            display: flex;
+            gap: 20px;
+            opacity: 0;
+            transition: opacity 0.4s var(--transition);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* Hover Mechanics: The "Displacement" */
+        .slate-item:hover {
+            transform: translateY(-10px) scale(1.01);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--accent);
+            z-index: 10;
+        }
+
+        .slate-item:hover .slate-image-wrapper img {
+            transform: scale(1.1);
+            filter: grayscale(0%) contrast(1);
+            opacity: 0.8;
+        }
+
+        .slate-item:hover .slate-content {
+            transform: translateY(0);
+        }
+
+        .slate-item:hover .slate-stats {
+            opacity: 1;
+        }
+
+        /* Grain Texture */
+        .grain {
+            position: fixed;
+            top: -100%;
+            left: -100%;
+            width: 300%;
+            height: 300%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 9999;
+            animation: noise 2s steps(10) infinite;
+        }
+
+        @keyframes noise {
+            0% {
+                transform: translate(0, 0)
+            }
+
+            10% {
+                transform: translate(-5%, -5%)
+            }
+
+            20% {
+                transform: translate(-10%, 5%)
+            }
+
+            30% {
+                transform: translate(5%, -10%)
+            }
+
+            40% {
+                transform: translate(-5%, 15%)
+            }
+
+            50% {
+                transform: translate(-10%, 5%)
+            }
+
+            60% {
+                transform: translate(15%, 0)
+            }
+
+            70% {
+                transform: translate(0, 10%)
+            }
+
+            80% {
+                transform: translate(-15%, 0)
+            }
+
+            90% {
+                transform: translate(10%, 5%)
+            }
+
+            100% {
+                transform: translate(5%, 0)
+            }
+        }
+
+        @media (max-width: 900px) {
+
+            .span-8,
+            .span-4,
+            .span-5,
+            .span-7,
+            .span-12 {
+                grid-column: span 12;
+                height: 400px;
+            }
+
+            .header-title h2 {
+                font-size: 3rem;
+            }
+
+            .header-meta {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="grain"></div>
+
+    <main class="monolith-container">
+        <header>
+            <div class="header-title">
+                <span style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--text-muted);">EXTRACTED / VOL.
+                    01</span>
+                <h2>Slab Series</h2>
+            </div>
+            <div class="header-meta">
+                COORD: 40.7128° N, 74.0060° W<br>
+                MATERIAL: BRUTALIST SLATE<br>
+                REF: #000-88
+            </div>
+        </header>
+
+        <section class="tectonic-grid">
+            <!-- Item 1 -->
+            <article class="slate-item span-8">
+                <div class="slate-image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1200"
+                        alt="Monolith Structure">
+                    <div class="displacement-overlay"></div>
+                </div>
+                <div class="slate-content">
+                    <span class="slate-label">Archive No. 129</span>
+                    <h3 class="slate-title">Oblique Displacement</h3>
+                    <div class="slate-stats">
+                        <span>MASS: 450KG</span>
+                        <span>DENSITY: 2.8 g/cm³</span>
+                        <span>STATUS: STABLE</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Item 2 -->
+            <article class="slate-item span-4">
+                <div class="slate-image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1518005020251-58296d293d3d?auto=format&fit=crop&q=80&w=1200"
+                        alt="Architecture Detail">
+                    <div class="displacement-overlay"></div>
+                </div>
+                <div class="slate-content">
+                    <span class="slate-label">Archive No. 044</span>
+                    <h3 class="slate-title">Vertical Core</h3>
+                    <div class="slate-stats">
+                        <span>MASS: 110KG</span>
+                        <span>STATUS: ACTIVE</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Item 3 -->
+            <article class="slate-item span-5">
+                <div class="slate-image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1449156001533-cb39c7324c58?auto=format&fit=crop&q=80&w=1200"
+                        alt="Minimal Concrete">
+                    <div class="displacement-overlay"></div>
+                </div>
+                <div class="slate-content">
+                    <span class="slate-label">Archive No. 312</span>
+                    <h3 class="slate-title">Eroded Plane</h3>
+                    <div class="slate-stats">
+                        <span>MASS: 890KG</span>
+                        <span>STATUS: OBSERVED</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Item 4 -->
+            <article class="slate-item span-7">
+                <div class="slate-image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&q=80&w=1200"
+                        alt="Dusk Structural">
+                    <div class="displacement-overlay"></div>
+                </div>
+                <div class="slate-content">
+                    <span class="slate-label">Archive No. 881</span>
+                    <h3 class="slate-title">Fractal Horizon</h3>
+                    <div class="slate-stats">
+                        <span>MASS: 1.2T</span>
+                        <span>DENSITY: 3.1 g/cm³</span>
+                        <span>STATUS: CRITICAL</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Item 5 -->
+            <article class="slate-item span-12">
+                <div class="slate-image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000"
+                        alt="Wide Slab">
+                    <div class="displacement-overlay"></div>
+                </div>
+                <div class="slate-content">
+                    <span class="slate-label">Archive No. 001</span>
+                    <h3 class="slate-title">The Foundation Monolith</h3>
+                    <div class="slate-stats">
+                        <span>MASS: 44.5T</span>
+                        <span>DENSITY: MAX</span>
+                        <span>STATUS: ANCHORED</span>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <script>
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, index * 100);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.slate-item').forEach(item => {
+            observer.observe(item);
+        });
+
+        // Tectonic tilt effect on mouse move
+        document.querySelectorAll('.slate-item').forEach(item => {
+            item.addEventListener('mousemove', (e) => {
+                const rect = item.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                const rotateX = (y - centerY) / 50;
+                const rotateY = (centerX - x) / 50;
+
+                item.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02) translateY(-10px)`;
+            });
+
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1) translateY(0)`;
+            });
+        });
+    </script>
+</body>
+
+</html>
