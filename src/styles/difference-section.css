@@ -10,14 +10,14 @@
     --diff-text: var(--sand-light);
     --diff-accent: var(--champagne-gold);
     --diff-border: rgba(243, 237, 226, 0.08);
-    --diff-glow: rgba(216, 181, 106, 0.35);
+    --diff-glow: rgba(255, 255, 255, 0.35);
     --diff-easing: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* ── 1. Section Layout ─────────────────────── */
 .diff-section {
     position: relative;
-    background-color: var(--diff-bg);
+    background-color: var(--luxury-green);
     color: var(--diff-text);
     padding: 7rem 2rem 6rem;
     overflow: hidden;

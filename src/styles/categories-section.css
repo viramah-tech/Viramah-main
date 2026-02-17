@@ -5,12 +5,12 @@
 
 /* ── Section Variables ─────────────────────── */
 .cat-section {
-    --cat-bg: var(--sand-light);
-    --cat-shadow-dark: var(--sand-dark);
-    --cat-shadow-light: #ffffff;
-    --cat-accent: var(--terracotta-raw);
-    --cat-text: var(--charcoal);
-    --cat-muted: rgba(46, 42, 38, 0.4);
+    --cat-bg: var(--luxury-green);
+    --cat-shadow-dark: rgba(0, 0, 0, 0.4);
+    --cat-shadow-light: rgba(255, 255, 255, 0.05);
+    --cat-accent: var(--champagne-gold);
+    --cat-text: var(--off-white);
+    --cat-muted: rgba(246, 244, 239, 0.5);
     --cat-easing: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
@@ -19,22 +19,12 @@
     position: relative;
     background-color: var(--cat-bg);
     color: var(--cat-text);
-    padding: 4rem 2rem;
+    padding: 6rem 0;
+    /* More vertical breathing room since header is gone */
     overflow: hidden;
 }
 
-/* Top gradient: dark → light (from preceding dark section) */
-.cat-section::before {
-    content: "";
-    position: absolute;
-    top: -100px;
-    left: 0;
-    right: 0;
-    height: 100px;
-    background: linear-gradient(to bottom, var(--charcoal), var(--cat-bg));
-    pointer-events: none;
-    z-index: 1;
-}
+/* Removed top gradient overlay */
 
 .cat-container {
     max-width: 1600px;
@@ -75,11 +65,65 @@
     line-height: 1.6;
 }
 
-/* ── 3. Category Grid ──────────────────────── */
-.cat-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 0.6rem;
+/* ── 3. Marquee Wrapper ────────────────────── */
+.cat-marquee-wrap {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Edge fade masks */
+.cat-marquee-mask-left,
+.cat-marquee-mask-right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: clamp(40px, 8vw, 120px);
+    z-index: 3;
+    pointer-events: none;
+}
+
+.cat-marquee-mask-left {
+    left: 0;
+    background: linear-gradient(to right, var(--cat-bg), transparent);
+}
+
+.cat-marquee-mask-right {
+    right: 0;
+    background: linear-gradient(to left, var(--cat-bg), transparent);
+}
+
+/* ── Marquee Track ─────────────────────────── */
+.cat-marquee {
+    display: flex;
+    width: max-content;
+    animation: catMarqueeScroll 30s linear infinite;
+    gap: 1.2rem;
+    padding: 1rem 0;
+}
+
+.cat-marquee:hover {
+    animation-play-state: paused;
+}
+
+@keyframes catMarqueeScroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+/* ── Tile sizing for marquee ───────────────── */
+.cat-tile {
+    width: clamp(260px, 22vw, 340px);
+    flex-shrink: 0;
+}
+
+.cat-marquee.cat-marquee-paused {
+    animation-play-state: paused;
 }
 
 /* ── 4. Tile ───────────────────────────────── */
@@ -97,11 +141,21 @@
     text-decoration: none;
     color: inherit;
 
-    /* Neumorphic extrusion */
+    /* Neumorphic extrusion for dark backgrounds */
     box-shadow:
-        8px 8px 18px var(--cat-shadow-dark),
-        -8px -8px 18px var(--cat-shadow-light);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+        12px 12px 24px rgba(0, 0, 0, 0.5),
+        -4px -4px 12px rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Active state for mobile taps */
+.cat-tile.cat-tile-active {
+    transform: scale(0.98);
+    box-shadow:
+        2px 2px 5px var(--cat-shadow-dark),
+        -2px -2px 5px var(--cat-shadow-light),
+        inset 4px 4px 10px rgba(0, 0, 0, 0.05);
+    /* Sunken effect */
 }
 
 /* ── 5. Tile Content ───────────────────────── */
@@ -115,6 +169,7 @@
 }
 
 .cat-tile-title {
+    color: white;
     font-family: var(--font-body);
     font-size: clamp(1.1rem, 1.5vw, 1.4rem);
     font-weight: 900;
@@ -223,7 +278,7 @@
 /* ── XS PHONES (< 375px) ──────────────────── */
 @media (max-width: 374px) {
     .cat-section {
-        padding: 3rem 4vw 2rem;
+        padding: 3rem 0 2rem;
     }
 
     .cat-section::before {
@@ -231,12 +286,13 @@
         height: 50px;
     }
 
-    .cat-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.5rem;
+    .cat-marquee {
+        animation-duration: 18s;
+        gap: 0.8rem;
     }
 
     .cat-tile {
+        width: 200px;
         min-height: 120px;
         padding: 0.7rem;
         box-shadow:
@@ -274,7 +330,7 @@
 /* ── PHONES (375px – 767px) ────────────────── */
 @media (min-width: 375px) and (max-width: 767px) {
     .cat-section {
-        padding: 3rem 4vw 2rem;
+        padding: 3rem 0 2rem;
     }
 
     .cat-section::before {
@@ -282,12 +338,13 @@
         height: 50px;
     }
 
-    .cat-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.6rem;
+    .cat-marquee {
+        animation-duration: 22s;
+        gap: 1rem;
     }
 
     .cat-tile {
+        width: 240px;
         padding: 1rem;
         min-height: 140px;
         box-shadow:
@@ -303,6 +360,7 @@
         font-size: 0.5rem;
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -321,15 +379,15 @@
 /* ── TABLET (768px – 1024px) ───────────────── */
 @media (min-width: 768px) and (max-width: 1024px) {
     .cat-section {
-        padding: 3rem 3vw;
+        padding: 3rem 0;
     }
 
-    .cat-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.6rem;
+    .cat-marquee {
+        animation-duration: 26s;
     }
 
     .cat-tile {
+        width: 280px;
         padding: 1.1rem;
         min-height: 155px;
     }
@@ -342,6 +400,7 @@
         font-size: 0.55rem;
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -349,12 +408,8 @@
 
 /* ── SMALL DESKTOP (1025px – 1200px) ───────── */
 @media (min-width: 1025px) and (max-width: 1200px) {
-    .cat-grid {
-        grid-template-columns: repeat(6, 1fr);
-        gap: 0.5rem;
-    }
-
     .cat-tile {
+        width: 300px;
         padding: 1rem;
         min-height: 165px;
     }
@@ -370,6 +425,10 @@
 
 /* ── PREFERS REDUCED MOTION ────────────────── */
 @media (prefers-reduced-motion: reduce) {
+    .cat-marquee {
+        animation: none !important;
+    }
+
     .cat-tile {
         transition: none !important;
         transform: none !important;

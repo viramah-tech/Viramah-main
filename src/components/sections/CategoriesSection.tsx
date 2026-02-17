@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -58,20 +58,10 @@ const CATEGORIES: CategoryItem[] = [
     },
 ];
 
-// ── Animation Variants ───────────────────────────────────
-const tileVariants = {
-    hidden: { opacity: 0, y: 35 },
-    visible: (i: number) => ({
-        opacity: 1,
-        y: 0,
-        transition: {
-            duration: 0.7,
-            ease: [0.25, 1, 0.5, 1] as const,
-            delay: i * 0.1,
-        },
-    }),
-};
+// Duplicate tiles for seamless marquee loop
+const MARQUEE_TILES = [...CATEGORIES, ...CATEGORIES];
 
+// ── Animation Variants ───────────────────────────────────
 const headerVariants = {
     hidden: { opacity: 0, y: 25 },
     visible: {
@@ -103,6 +93,8 @@ function ArrowIcon() {
 // ── Component ────────────────────────────────────────────
 export function CategoriesSection() {
     const [canHover, setCanHover] = useState(false);
+    const [activeTileIndex, setActiveTileIndex] = useState<number | null>(null);
+    const marqueeRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setCanHover(
@@ -110,60 +102,51 @@ export function CategoriesSection() {
         );
     }, []);
 
-    // ── Mouse-parallax shadow effect (desktop only) ──
-    const handleGlobalPointerMove = useCallback(
-        (e: React.PointerEvent<HTMLElement>) => {
-            if (!canHover) return;
+    // ── Tap to Pause/Highlight (mobile only) ──
+    const handleTileTap = useCallback(
+        (index: number) => {
+            if (canHover) return; // Desktop uses CSS :hover
 
-            const moveX = (e.clientX - window.innerWidth / 2) * 0.008;
-            const moveY = (e.clientY - window.innerHeight / 2) * 0.008;
-
-            const tiles = e.currentTarget.querySelectorAll<HTMLElement>(
-                ".cat-tile:not(:hover)"
-            );
-            tiles.forEach((t) => {
-                t.style.boxShadow = `
-                    ${12 + moveX}px ${12 + moveY}px 24px var(--cat-shadow-dark),
-                    ${-12 + moveX}px ${-12 + moveY}px 24px var(--cat-shadow-light)
-                `;
-            });
+            if (activeTileIndex === index) {
+                // Tap same tile again — deactivate & resume
+                setActiveTileIndex(null);
+                marqueeRef.current?.classList.remove("cat-marquee-paused");
+            } else {
+                // Tap new tile — activate & pause
+                setActiveTileIndex(index);
+                marqueeRef.current?.classList.add("cat-marquee-paused");
+            }
         },
-        [canHover]
+        [canHover, activeTileIndex]
     );
-
-    const handleGlobalPointerLeave = useCallback(() => {
-        // Reset all tiles to default shadow
-        document
-            .querySelectorAll<HTMLElement>(".cat-tile")
-            .forEach((t) => {
-                t.style.boxShadow = "";
-            });
-    }, []);
 
     return (
         <section
             className="cat-section"
             id="categories"
-            onPointerMove={handleGlobalPointerMove}
-            onPointerLeave={handleGlobalPointerLeave}
         >
             <div className="cat-container">
-                {/* ── Tile Grid ── */}
-                <div className="cat-grid" role="list">
-                    {CATEGORIES.map((cat, i) => (
-                        <motion.div
-                            key={cat.id}
-                            custom={i}
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true, amount: 0.2 }}
-                            variants={tileVariants}
-                            role="listitem"
-                        >
+                {/* ── Marquee ── */}
+                <div className="cat-marquee-wrap">
+                    {/* Edge fade masks */}
+                    <div className="cat-marquee-mask-left" aria-hidden="true" />
+                    <div className="cat-marquee-mask-right" aria-hidden="true" />
+
+                    {/* Scrolling track */}
+                    <div
+                        className="cat-marquee"
+                        ref={marqueeRef}
+                        role="list"
+                        aria-label="Browse living categories"
+                    >
+                        {MARQUEE_TILES.map((cat, i) => (
                             <Link
+                                key={`${cat.id}-${i}`}
                                 href={cat.href}
-                                className="cat-tile"
+                                className={`cat-tile${activeTileIndex === i ? " cat-tile-active" : ""}`}
+                                onClick={() => handleTileTap(i)}
                                 aria-label={`${cat.title} — ${cat.count}`}
+                                role="listitem"
                             >
                                 {/* ID Badge */}
                                 <span className="cat-tile-id">{cat.id}</span>
@@ -188,8 +171,8 @@ export function CategoriesSection() {
                                     </div>
                                 </div>
                             </Link>
-                        </motion.div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

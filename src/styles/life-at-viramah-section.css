@@ -17,7 +17,7 @@
 /* ── 1. Section Layout ─────────────────────── */
 .lav-section {
     position: relative;
-    background-color: var(--lav-bg);
+    background-color: var(--luxury-green);
     color: var(--lav-text);
     padding: 7rem 2.5rem 6rem;
     overflow: hidden;

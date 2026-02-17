@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machined Copper Chronometry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --base-dark: #0a0908;
+            --copper-bright: #e38d5f;
+            --copper-mid: #b87333;
+            --copper-dark: #5d3a24;
+            --oiled-steel: #1a1a1a;
+            --verdigris: #4fb3a5;
+            --lathe-texture: repeating-radial-gradient(circle at 50% 50%, transparent 0, rgba(0, 0, 0, 0.1) 1px, transparent 2px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--base-dark);
+            background-image:
+                radial-gradient(circle at 2px 2px, rgba(184, 115, 51, 0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+            color: #f0ead6;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .viewport {
+            width: 100%;
+            max-width: 1200px;
+            padding: 4rem 2rem;
+            position: relative;
+        }
+
+        .header {
+            margin-bottom: 5rem;
+            border-left: 4px solid var(--copper-mid);
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            line-height: 0.9;
+            color: var(--copper-bright);
+            text-shadow: 0 4px 20px rgba(227, 141, 95, 0.2);
+        }
+
+        .header .serial {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--copper-dark);
+            margin-top: 0.5rem;
+            display: block;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 2rem;
+            perspective: 1000px;
+        }
+
+        .icon-cell {
+            position: relative;
+            aspect-ratio: 1 / 1.1;
+            background: linear-gradient(145deg, #161616, #0d0d0d);
+            border: 1px solid rgba(184, 115, 51, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            overflow: hidden;
+        }
+
+        .icon-cell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: var(--lathe-texture);
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .icon-cell:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            border-color: var(--copper-mid);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6),
+                inset 0 0 20px rgba(184, 115, 51, 0.1);
+        }
+
+        .machined-circle {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg,
+                    var(--copper-dark),
+                    var(--copper-bright),
+                    var(--copper-dark),
+                    var(--copper-mid),
+                    var(--copper-dark));
+            padding: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .icon-cell:hover .machined-circle {
+            transform: rotate(180deg);
+        }
+
+        .inner-plate {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .inner-plate::after {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg,
+                    transparent 45%,
+                    rgba(255, 255, 255, 0.1) 50%,
+                    transparent 55%);
+            animation: sweep 4s infinite linear;
+        }
+
+        @keyframes sweep {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        .icon-svg {
+            width: 40px;
+            height: 40px;
+            fill: none;
+            stroke: var(--copper-bright);
+            stroke-width: 1.5;
+            z-index: 2;
+            transition: all 0.4s ease;
+            filter: drop-shadow(0 0 8px rgba(227, 141, 95, 0.4));
+        }
+
+        .icon-cell:hover .icon-svg {
+            stroke: #fff;
+            transform: rotate(-180deg) scale(1.1);
+        }
+
+        .data-overlay {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #888;
+            transition: color 0.3s ease;
+        }
+
+        .icon-cell:hover .label {
+            color: var(--copper-bright);
+        }
+
+        .measurement {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--copper-dark);
+            margin-top: 0.4rem;
+            opacity: 0.6;
+        }
+
+        .corner-bracket {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border: 1px solid var(--copper-dark);
+        }
+
+        .tl {
+            top: 15px;
+            left: 15px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .tr {
+            top: 15px;
+            right: 15px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .bl {
+            bottom: 15px;
+            left: 15px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .br {
+            bottom: 15px;
+            right: 15px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .gear-background {
+            position: fixed;
+            top: 50%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: -1;
+            animation: gearRotate 60s infinite linear;
+        }
+
+        @keyframes gearRotate {
+            from {
+                transform: translateY(-50%) rotate(0deg);
+            }
+
+            to {
+                transform: translateY(-50%) rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .grid-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <svg class="gear-background" viewBox="0 0 100 100">
+        <path fill="var(--copper-bright)"
+            d="M94.5,43.5l-9.7-1.6c-0.6-2-1.4-4-2.4-5.9l5.6-8.2c0.8-1.2,0.7-2.7-0.3-3.7l-7.1-7.1c-1-1-2.5-1.1-3.7-0.3l-8.2,5.6 c-1.9-1-3.9-1.8-5.9-2.4l-1.6-9.7C61.1,8.9,60,8,58.7,8h-10c-1.3,0-2.4,0.9-2.6,2.2l-1.6,9.7c-2,0.6-4,1.4-5.9,2.4l-8.2-5.6 c-1.2-0.8-2.7-0.7-3.7,0.3l-7.1,7.1c-1,1-1.1,2.5-0.3,3.7l5.6,8.2c-1,1.9-1.8,3.9-2.4,5.9l-9.7,1.6C10.9,43.7,10,44.8,10,46.1v10 c0,1.3,0.9,2.4,2.2,2.6l9.7,1.6c0.6,2,1.4,4,2.4,5.9l-5.6,8.2c-0.8,1.2-0.7,2.7,0.3,3.7l7.1,7.1c1,1,2.5,1.1,3.7,0.3l8.2-5.6 c1.9,1,3.9,1.8,5.9,2.4l1.6,9.7c0.2,1.3,1.3,2.2,2.6,2.2h10c1.3,0,2.4-0.9,2.6-2.2l1.6-9.7c2-0.6,4-1.4,5.9-2.4l8.2,5.6 c1.2,0.8,2.7,0.7,3.7-0.3l7.1-7.1c1-1,1.1-2.5,0.3-3.7l-5.6-8.2c1-1.9,1.8-3.9,2.4-5.9l9.7-1.6c1.3-0.2,2.2-1.3,2.2-2.6v-10 C96.7,44.8,95.8,43.7,94.5,43.5z M53.7,73c-11,0-20-9-20-20s9-20,20-20s20,9,20,20S64.7,73,53.7,73z" />
+    </svg>
+
+    <div class="viewport">
+        <header class="header">
+            <span class="serial">Ref. No. 2024-MK-IV</span>
+            <h1>Machined<br>Chronometry</h1>
+        </header>
+
+        <div class="grid-container">
+            <!-- Cell 1 -->
+            <div class="icon-cell">
+                <div class="corner-bracket tl"></div>
+                <div class="corner-bracket tr"></div>
+                <div class="corner-bracket bl"></div>
+                <div class="corner-bracket br"></div>
+                <div class="machined-circle">
+                    <div class="inner-plate">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2v20M2 12h20M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10 10 10 0 0 1-10-10 10 10 0 0 1 10-10z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="data-overlay">
+                    <div class="label">Precision</div>
+                    <div class="measurement">LAT: 51.5074° N</div>
+                </div>
+            </div>
+
+            <!-- Cell 2 -->
+            <div class="icon-cell">
+                <div class="corner-bracket tl"></div>
+                <div class="corner-bracket tr"></div>
+                <div class="corner-bracket bl"></div>
+                <div class="corner-bracket br"></div>
+                <div class="machined-circle">
+                    <div class="inner-plate">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="data-overlay">
+                    <div class="label">Kinetic</div>
+                    <div class="measurement">VEL: 299,792 km/s</div>
+                </div>
+            </div>
+
+            <!-- Cell 3 -->
+            <div class="icon-cell">
+                <div class="corner-bracket tl"></div>
+                <div class="corner-bracket tr"></div>
+                <div class="corner-bracket bl"></div>
+                <div class="corner-bracket br"></div>
+                <div class="machined-circle">
+                    <div class="inner-plate">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3" />
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="data-overlay">
+                    <div class="label">Torque</div>
+                    <div class="measurement">RPM: 12,400.00</div>
+                </div>
+            </div>
+
+            <!-- Cell 4 -->
+            <div class="icon-cell">
+                <div class="corner-bracket tl"></div>
+                <div class="corner-bracket tr"></div>
+                <div class="corner-bracket bl"></div>
+                <div class="corner-bracket br"></div>
+                <div class="machined-circle">
+                    <div class="inner-plate">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="data-overlay">
+                    <div class="label">Nocturnal</div>
+                    <div class="measurement">LUM: 0.0042 lx</div>
+                </div>
+            </div>
+
+            <!-- Cell 5 -->
+            <div class="icon-cell">
+                <div class="corner-bracket tl"></div>
+                <div class="corner-bracket tr"></div>
+                <div class="corner-bracket bl"></div>
+                <div class="corner-bracket br"></div>
+                <div class="machined-circle">
+                    <div class="inner-plate">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                            <line x1="8" y1="21" x2="16" y2="21" />
+                            <line x1="12" y1="17" x2="12" y2="21" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="data-overlay">
+                    <div class="label">Interface</div>
+                    <div class="measurement">RES: 5120x2880</div>
+                </div>
+            </div>
+
+            <!-- Cell 6 -->
+            <div class="icon-cell">
+                <div class="corner-bracket tl"></div>
+                <div class="corner-bracket tr"></div>
+                <div class="corner-bracket bl"></div>
+                <div class="corner-bracket br"></div>
+                <div class="machined-circle">
+                    <div class="inner-plate">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="data-overlay">
+                    <div class="label">Structure</div>
+                    <div class="measurement">MAT: Cu + Sn 88/12</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Subtle Mouse parallax for the grid
+        const container = document.querySelector('.grid-container');
+        const cells = document.querySelectorAll('.icon-cell');
+
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 20;
+            const y = (e.clientY / window.innerHeight - 0.5) * 20;
+
+            cells.forEach(cell => {
+                const rect = cell.getBoundingClientRect();
+                const cellX = rect.left + rect.width / 2;
+                const cellY = rect.top + rect.height / 2;
+
+                const dist = Math.hypot(e.clientX - cellX, e.clientY - cellY);
+                if (dist < 400) {
+                    const power = (400 - dist) / 400;
+                    cell.style.transform = `translateY(${y * power}px) rotateX(${y * power * -1}deg) rotateY(${x * power}deg)`;
+                }
+            });
+        });
+
+        // Reset transform when mouse leaves
+        container.addEventListener('mouseleave', () => {
+            cells.forEach(cell => {
+                cell.style.transform = `translateY(0) rotateX(0) rotateY(0)`;
+            });
+        });
+    </script>
+</body>
+
+</html>

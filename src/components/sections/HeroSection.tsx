@@ -1,43 +1,46 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-// ─── Gallery Data ───────────────────────────────────────────
-interface GalleryItem {
+// ─── Tile Data ──────────────────────────────────────────────
+interface MarqueeTile {
     src: string;
     alt: string;
-    caption: string;
-    style?: React.CSSProperties;
+    meta: string;
+    title: string;
 }
 
-const GALLERY_ITEMS: GalleryItem[] = [
+const TILES: MarqueeTile[] = [
     {
-        src: "/diffrence section images/after (2).jpg",
-        alt: "Viramah living spaces — premium community living",
-        caption: "01 // LIVING_SPACE",
-        style: { aspectRatio: "16/9", width: "40vw" },
+        src: "/diffrence section images/after (1).jpg",
+        alt: "Viramah — modern living space transformation",
+        meta: "LIVING_SPACE",
+        title: "Living Space",
     },
     {
         src: "/life at viramah images/common area.jpg",
-        alt: "Viramah common area — community gathering space",
-        caption: "02 // COMMON_AREA",
-        style: { aspectRatio: "16/9", width: "45vw" },
+        alt: "Viramah — community common area",
+        meta: "THE_COMMONS",
+        title: "Common Area",
     },
     {
         src: "/life at viramah images/gaming zone.jpg",
-        alt: "Viramah gaming zone — recreation and leisure",
-        caption: "03 // RECREATION_ZONE",
-        style: { aspectRatio: "16/9", width: "40vw" },
+        alt: "Viramah — recreation gaming zone",
+        meta: "RECREATION",
+        title: "Gaming Zone",
     },
     {
         src: "/life at viramah images/swiming pool.jpg",
-        alt: "Viramah swimming pool — wellness amenities",
-        caption: "04 // AQUA_WELLNESS",
-        style: { aspectRatio: "16/9", width: "35vw" },
+        alt: "Viramah — swimming pool wellness",
+        meta: "AQUATICS",
+        title: "Swimming Pool",
     },
 ];
+
+// Duplicate for seamless loop
+const DOUBLED_TILES = [...TILES, ...TILES];
 
 // ─── Animation Variants ─────────────────────────────────────
 const titleVariants = {
@@ -78,13 +81,36 @@ const subtitleVariants = {
     },
 };
 
+const stageVariants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 1,
+            ease: [0.25, 1, 0.5, 1] as [number, number, number, number],
+            delay: 0.7,
+        },
+    },
+};
+
 // ─── Component ──────────────────────────────────────────────
 export function HeroSection() {
-    const galleryRef = useRef<HTMLElement>(null);
+    const stageRef = useRef<HTMLDivElement>(null);
+    const marqueeRef = useRef<HTMLDivElement>(null);
     const particlesRef = useRef<HTMLDivElement[]>([]);
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+    const [canHover, setCanHover] = useState(false);
+    const [activeTileIndex, setActiveTileIndex] = useState<number | null>(null);
 
-    // ── Particle System ──────────────────────────────────────
+    // ── Detect hover capability ─────────────────────────────
+    useEffect(() => {
+        setCanHover(
+            window.matchMedia("(hover: hover) and (pointer: fine)").matches
+        );
+    }, []);
+
+    // ── Particle System ─────────────────────────────────────
     const createParticle = useCallback(() => {
         const particle = document.createElement("div");
         particle.className = "hero-particle";
@@ -119,18 +145,16 @@ export function HeroSection() {
     }, []);
 
     useEffect(() => {
-        // Respect reduced motion preference
         const prefersReducedMotion = window.matchMedia(
             "(prefers-reduced-motion: reduce)"
         ).matches;
-        if (prefersReducedMotion) return; // No particles for reduced motion
+        if (prefersReducedMotion) return;
 
-        // Tiered particle count by viewport width
         const width = window.innerWidth;
-        let particleCount = 30; // Desktop
-        if (width < 375) particleCount = 8;       // XS phone
-        else if (width < 768) particleCount = 15; // Phone
-        else if (width < 1024) particleCount = 25; // Tablet
+        let particleCount = 30;
+        if (width < 375) particleCount = 8;
+        else if (width < 768) particleCount = 15;
+        else if (width < 1024) particleCount = 25;
 
         for (let i = 0; i < particleCount; i++) {
             const timer = setTimeout(createParticle, Math.random() * 5000);
@@ -145,126 +169,46 @@ export function HeroSection() {
         };
     }, [createParticle]);
 
-    // ── Parallax Effect (desktop only) ──────────────────────
-    useEffect(() => {
-        // Disable parallax on mobile — causes scroll jank
-        const isMobile = window.innerWidth < 768;
-        // Respect reduced motion preference
-        const prefersReducedMotion = window.matchMedia(
-            "(prefers-reduced-motion: reduce)"
-        ).matches;
+    // ── Mouse Parallax on Stage (desktop only) ──────────────
+    const handleStageMouseMove = useCallback(
+        (e: React.MouseEvent<HTMLDivElement>) => {
+            if (!canHover || !stageRef.current) return;
 
-        if (isMobile || prefersReducedMotion) return;
+            const x = (e.clientX / window.innerWidth - 0.5) * 8;
+            const y = (e.clientY / window.innerHeight - 0.5) * 4;
 
-        const handleScroll = () => {
-            if (!galleryRef.current) return;
-            const images = galleryRef.current.querySelectorAll<HTMLImageElement>(
-                ".hero-gallery-img"
-            );
-            images.forEach((img) => {
-                const parent = img.parentElement;
-                if (!parent) return;
-                const rect = parent.getBoundingClientRect();
-                const offset = rect.top * 0.1;
-                img.style.transform = `translateY(${offset}px) scale(1.2)`;
-            });
-        };
+            stageRef.current.style.transform = `translate(${x}px, ${y}px)`;
+        },
+        [canHover]
+    );
 
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => window.removeEventListener("scroll", handleScroll);
+    const handleStageMouseLeave = useCallback(() => {
+        if (stageRef.current) {
+            stageRef.current.style.transform = "";
+        }
     }, []);
 
-    // ── Scroll Reveal Fallback (Intersection Observer) ───────
-    useEffect(() => {
-        // Check if CSS scroll-driven animations are supported
-        const supportsScrollTimeline =
-            typeof CSS !== "undefined" &&
-            CSS.supports &&
-            CSS.supports("animation-timeline", "--item");
+    // ── Mobile Tap-to-Pause Handler ───────────────────────
+    const handleTileTap = useCallback(
+        (index: number) => {
+            if (canHover) return; // Desktop uses CSS :hover
 
-        if (supportsScrollTimeline) return; // CSS handles it natively
-
-        // Fallback: add class for transition-based reveal
-        const items = document.querySelectorAll(".hero-reveal");
-        items.forEach((el) => el.classList.add("hero-reveal-fallback"));
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add("hero-revealed");
-                        observer.unobserve(entry.target);
-                    }
-                });
-            },
-            { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
-        );
-
-        items.forEach((el) => observer.observe(el));
-        return () => observer.disconnect();
-    }, []);
-
-    // ── Edge-Fade Vignette (scroll-driven) ──────────────────
-    useEffect(() => {
-        const prefersReducedMotion = window.matchMedia(
-            "(prefers-reduced-motion: reduce)"
-        ).matches;
-        if (prefersReducedMotion) return;
-
-        let rafId: number;
-
-        const updateVignettes = () => {
-            if (!galleryRef.current) {
-                rafId = requestAnimationFrame(updateVignettes);
-                return;
+            if (activeTileIndex === index) {
+                // Tap same tile again — deactivate & resume
+                setActiveTileIndex(null);
+                marqueeRef.current?.classList.remove("hero-marquee-paused");
+            } else {
+                // Tap new tile — activate & pause
+                setActiveTileIndex(index);
+                marqueeRef.current?.classList.add("hero-marquee-paused");
             }
-
-            const wrappers =
-                galleryRef.current.querySelectorAll<HTMLElement>(
-                    ".hero-image-wrapper"
-                );
-            const vh = window.innerHeight;
-            const enterZone = vh * 0.85; // bottom 15% = entering
-            const exitZone = vh * 0.15;  // top 15% = exiting
-
-            wrappers.forEach((wrapper) => {
-                const rect = wrapper.getBoundingClientRect();
-                const centerY = rect.top + rect.height / 2;
-
-                // Remove all states first
-                wrapper.classList.remove(
-                    "hero-img-entering",
-                    "hero-img-visible",
-                    "hero-img-exiting"
-                );
-
-                if (rect.bottom < 0 || rect.top > vh) {
-                    // Fully off-screen — no class
-                    return;
-                }
-
-                if (centerY > enterZone) {
-                    // Entering from bottom
-                    wrapper.classList.add("hero-img-entering");
-                } else if (centerY < exitZone) {
-                    // Exiting at top
-                    wrapper.classList.add("hero-img-exiting");
-                } else {
-                    // Fully visible
-                    wrapper.classList.add("hero-img-visible");
-                }
-            });
-
-            rafId = requestAnimationFrame(updateVignettes);
-        };
-
-        rafId = requestAnimationFrame(updateVignettes);
-        return () => cancelAnimationFrame(rafId);
-    }, []);
+        },
+        [canHover, activeTileIndex]
+    );
 
     return (
         <div className="hero-viewport">
-            {/* ── Sticky Hero Header ──────────────────────────── */}
+            {/* ── Hero Header ──────────────────────────────── */}
             <header className="hero-header">
                 <motion.div
                     className="hero-meta"
@@ -283,9 +227,7 @@ export function HeroSection() {
                     initial="hidden"
                     animate="visible"
                 >
-                    Viramah
-                    <br />
-                    Living
+                    Viramah stays
                 </motion.h1>
 
                 <motion.p
@@ -294,40 +236,93 @@ export function HeroSection() {
                     initial="hidden"
                     animate="visible"
                 >
-                    An intentional community-living experience designed for the modern
-                    Indian journey.
+                    An intentional community-living experience designed for the
+                    modern Indian journey.
                 </motion.p>
             </header>
 
-            {/* ── Scroll Gallery ──────────────────────────────── */}
-            <section className="hero-gallery" ref={galleryRef}>
-                {GALLERY_ITEMS.map((item, i) => (
-                    <div className="hero-scroll-item hero-reveal" key={i}>
-                        <div className="hero-image-wrapper" style={item.style}>
+            {/* ── Marquee Stage ─────────────────────────────── */}
+            <motion.div
+                className="hero-stage"
+                ref={stageRef}
+                variants={stageVariants}
+                initial="hidden"
+                animate="visible"
+                onMouseMove={handleStageMouseMove}
+                onMouseLeave={handleStageMouseLeave}
+                role="region"
+                aria-label="Viramah spaces gallery carousel"
+                aria-roledescription="carousel"
+            >
+                {/* Decorative wires */}
+                <div className="hero-tensile-wire top" aria-hidden="true" />
+                <div className="hero-tensile-wire bottom" aria-hidden="true" />
+                <div
+                    className="hero-anchor hero-anchor-tl"
+                    aria-hidden="true"
+                />
+                <div
+                    className="hero-anchor hero-anchor-tr"
+                    aria-hidden="true"
+                />
+
+                {/* Edge masks */}
+                <div className="hero-mask-left" aria-hidden="true" />
+                <div className="hero-mask-right" aria-hidden="true" />
+
+                {/* Marquee track */}
+                <div className="hero-marquee" ref={marqueeRef}>
+                    {DOUBLED_TILES.map((tile, i) => (
+                        <div
+                            className={`hero-tile${activeTileIndex === i ? " hero-tile-active" : ""}`}
+                            key={`tile-${i}`}
+                            onClick={() => handleTileTap(i)}
+                        >
                             <Image
-                                src={item.src}
-                                alt={item.alt}
+                                src={tile.src}
+                                alt={tile.alt}
                                 fill
-                                sizes="(max-width: 374px) 90vw, (max-width: 767px) 85vw, (max-width: 1024px) 55vw, 45vw"
-                                quality={85}
-                                className="hero-gallery-img"
-                                loading={i === 0 ? "eager" : "lazy"}
-                                priority={i === 0}
+                                sizes="(max-width: 374px) 70vw, (max-width: 767px) 65vw, (max-width: 1024px) 38vw, 420px"
+                                quality={80}
+                                className="hero-tile-img"
+                                loading={i < 4 ? "eager" : "lazy"}
+                                priority={i < 2}
                             />
-                            <div className="hero-caption">{item.caption}</div>
+                            <div className="hero-tile-overlay">
+                                <div className="hero-tile-meta">
+                                    {tile.meta}
+                                </div>
+                                <div className="hero-tile-title">
+                                    {tile.title}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                ))}
-
-                {/* Gallery End Marker */}
-
-                <div className="hero-gallery-end-title">Begin Your Journey</div>
-                <div className="hero-gallery-end-meta">
-                    <span>Viramah Residences</span>
-                    <span>India</span>
+                    ))}
                 </div>
+            </motion.div>
 
-            </section>
+            {/* ── Footer Blurbs ─────────────────────────────── */}
+            <motion.div
+                className="hero-blurbs"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 1.2 }}
+            >
+                <div className="hero-blurb">
+                    <h3>The Promise</h3>
+                    <p>
+                        Premium community living spaces designed for connection,
+                        growth, and the comfort of a second home.
+                    </p>
+                </div>
+                <div className="hero-blurb">
+                    <h3>The Experience</h3>
+                    <p>
+                        A seamless blend of private retreats and shared moments,
+                        bound by thoughtful design and warm hospitality.
+                    </p>
+                </div>
+            </motion.div>
         </div>
     );
 }
