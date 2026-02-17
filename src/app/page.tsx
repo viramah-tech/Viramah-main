@@ -2,7 +2,6 @@ import { Navigation } from "@/components/layout/Navigation";
 import Link from "next/link";
 import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/layout/Container";
-import { SearchBar } from "@/components/search/SearchBar";
 import { RoomCard } from "@/components/ui/RoomCard";
 // import { RealitySection } from "@/components/sections/RealitySection";
 import { AmenitiesSection } from "@/components/sections/AmenitiesSection";
@@ -13,51 +12,17 @@ import { CommunitySection } from "@/components/sections/CommunitySection";
 import { FounderSection } from "@/components/sections/FounderSection";
 import { AudienceSection } from "@/components/sections/AudienceSection";
 import { ClosingSection } from "@/components/sections/ClosingSection";
+import { HeroSection } from "@/components/sections/HeroSection";
 
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col">
       <Navigation />
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col justify-end pb-20 overflow-hidden">
-        {/* Hero Background Image */}
-        <div
-          className="absolute inset-0 -z-10"
-          style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 40%, var(--sand-light) 95%), url('/HERO.jpg')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'grayscale(10%) contrast(95%)',
-          }}
-        />
-
-        <Container className="relative z-10">
-          <div className="max-w-3xl">
-            <span 
-              className="font-mono text-s uppercase tracking-[0.2em] text-charcoal opacity-90 block mb-6"
-              style={{ textShadow: '0 4px 12px rgb(255, 255, 255)' }}
-            >
-              विरामाह — The Art of the REST 
-            </span>
-            <h1 
-              className="font-display text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.1] text-charcoal mb-6"
-              style={{ textShadow: '0 8px 24px rgb(255, 255, 255)' }}
-            >
-              For the life you are building, a place to breathe.
-            </h1>
-            <p 
-              className="font-body text-xl max-w-lg text-charcoal/80"
-              style={{ textShadow: '0 4px 16px rgba(21, 61, 24, 0.83)' }}
-            >
-              An intentional community-living experience designed for the modern Indian journey.
-            </p>
-          </div>
-        </Container>
-      </section>
+      {/* Terra-inspired Hero Section with Scroll Gallery */}
+      <HeroSection />
 
 
-      
       <DifferenceSection />
 
       {/* Rooms Showcase Section */}

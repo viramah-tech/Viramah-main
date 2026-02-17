@@ -58,7 +58,7 @@ export function Navigation() {
     }, []);
 
     return (
-        <header className="fixed top-0 left-0 w-full z-50 pointer-events-none flex justify-center pt-10">
+        <header className="fixed top-0 left-0 w-full z-[1000] pointer-events-none flex justify-center pt-10">
             <nav
                 className={cn(
                     "pointer-events-auto relative flex items-center justify-between px-3 pl-6 pr-3 h-[70px] gap-6",

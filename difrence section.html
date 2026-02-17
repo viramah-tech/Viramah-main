@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@800&family=Space+Mono&display=swap');
+
+        :root {
+            --basalt-dark: #0a0a0b;
+            --basalt-grey: #1c1c1e;
+            --basalt-texture: rgba(255, 255, 255, 0.03);
+            --accent-glow: rgba(255, 255, 255, 0.15);
+            --bifurcation-line: #ffffff;
+            --transition-speed: 0.6s;
+            --easing: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: crosshair;
+        }
+
+        body {
+            background-color: var(--basalt-dark);
+            color: #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            padding: 4rem 2rem;
+        }
+
+        /* Basalt Grain Overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3ExternalLink %3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 6rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 5rem;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+            line-height: 0.9;
+        }
+
+        .header .meta {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #666;
+            text-align: right;
+        }
+
+        /* The Grid */
+        .monolith-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4rem;
+        }
+
+        /* Bifurcation Component */
+        .monolith {
+            position: relative;
+            height: 600px;
+            background: var(--basalt-grey);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            transition: transform var(--transition-speed) var(--easing);
+        }
+
+        .monolith:hover {
+            transform: translateY(-10px);
+        }
+
+        .monolith-image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            user-select: none;
+        }
+
+        .image-after {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(0.5) contrast(1.1);
+        }
+
+        .image-before {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(1) contrast(1.2) brightness(0.8);
+            clip-path: inset(0 var(--split, 50%) 0 0);
+            z-index: 2;
+        }
+
+        /* The Bifurcation Line */
+        .fissure {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: calc(100% - var(--split, 50%));
+            width: 1px;
+            background: var(--bifurcation-line);
+            z-index: 3;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+        }
+
+        .fissure::after {
+            content: "BIFURCATION";
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) rotate(-90deg);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            letter-spacing: 0.4em;
+            white-space: nowrap;
+            color: #fff;
+            background: #000;
+            padding: 4px 10px;
+        }
+
+        .labels {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .label-tag {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            letter-spacing: 0.1em;
+        }
+
+        .monolith-info {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .monolith-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .monolith-index {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: #555;
+        }
+
+        @media (max-width: 900px) {
+            .monolith-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 3rem;
+            }
+        }
+
+        /* Animation for entry */
+        @keyframes reveal {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .monolith-wrap {
+            animation: reveal 1s var(--easing) both;
+        }
+
+        .monolith-wrap:nth-child(1) {
+            animation-delay: 0.2s;
+        }
+
+        .monolith-wrap:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header class="header">
+            <h1>Basalt<br>Bifurcation</h1>
+            <div class="meta">
+                [ GRID_SYSTEM_V.01 ]<br>
+                EST. REF_0992-X
+            </div>
+        </header>
+
+        <main class="monolith-grid">
+
+            <!-- Monolith Item 1 -->
+            <div class="monolith-wrap">
+                <div class="monolith" id="monolith-1" onmousemove="handleSplit(event, this)">
+                    <div class="labels">
+                        <span class="label-tag">PRIMARY_STATE</span>
+                        <span class="label-tag">MUTATED_STATE</span>
+                    </div>
+                    <div class="monolith-image-container">
+                        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200"
+                            alt="After" class="image-after">
+                        <div class="image-before" style="--split: 50%;">
+                            <img src="https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1200"
+                                alt="Before" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div class="fissure" style="--split: 50%;"></div>
+                    </div>
+                </div>
+                <div class="monolith-info">
+                    <div class="monolith-title">CORE_STRATA_01</div>
+                    <div class="monolith-index">// 001</div>
+                </div>
+            </div>
+
+            <!-- Monolith Item 2 -->
+            <div class="monolith-wrap">
+                <div class="monolith" id="monolith-2" onmousemove="handleSplit(event, this)">
+                    <div class="labels">
+                        <span class="label-tag">PRIMARY_STATE</span>
+                        <span class="label-tag">MUTATED_STATE</span>
+                    </div>
+                    <div class="monolith-image-container">
+                        <img src="https://images.unsplash.com/photo-1633167606207-d840b5070fc2?auto=format&fit=crop&q=80&w=1200"
+                            alt="After" class="image-after">
+                        <div class="image-before" style="--split: 30%;">
+                            <img src="https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&q=80&w=1200"
+                                alt="Before" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div class="fissure" style="--split: 30%;"></div>
+                    </div>
+                </div>
+                <div class="monolith-info">
+                    <div class="monolith-title">CORE_STRATA_02</div>
+                    <div class="monolith-index">// 002</div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        /**
+         * Dynamic interaction for the Bifurcation Slider
+         * Calculates cursor percentage relative to the monolith container
+         */
+        function handleSplit(e, container) {
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const percentage = ((rect.width - x) / rect.width) * 100;
+
+            // Constrain limits
+            const constrained = Math.min(Math.max(percentage, 0), 100);
+
+            const beforeImg = container.querySelector('.image-before');
+            const fissure = container.querySelector('.fissure');
+
+            // Apply variables
+            beforeImg.style.setProperty('--split', `${constrained}%`);
+            fissure.style.setProperty('--split', `${constrained}%`);
+        }
+
+        // Smooth entry for labels
+        document.querySelectorAll('.monolith').forEach(m => {
+            m.addEventListener('mouseleave', () => {
+                const beforeImg = m.querySelector('.image-before');
+                const fissure = m.querySelector('.fissure');
+                beforeImg.style.transition = 'all 0.8s cubic-bezier(0.23, 1, 0.32, 1)';
+                fissure.style.transition = 'all 0.8s cubic-bezier(0.23, 1, 0.32, 1)';
+                beforeImg.style.setProperty('--split', '50%');
+                fissure.style.setProperty('--split', '50%');
+
+                setTimeout(() => {
+                    beforeImg.style.transition = 'none';
+                    fissure.style.transition = 'none';
+                }, 800);
+            });
+        });
+    </script>
+</body>
+
+</html>

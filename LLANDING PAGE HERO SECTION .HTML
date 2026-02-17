@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@800&family=Space+Mono&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --terra-clay: #F2E7DC;
+            --terra-dust: #EBC8B2;
+            --terra-core: #D99077;
+            --terra-deep: #7A443A;
+            --terra-accent: #C04000;
+            --dust-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--terra-clay);
+            color: var(--terra-deep);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        /* The Dust Suspension Overlay */
+        .dust-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.12;
+            background-image: var(--dust-grain);
+            mix-blend-mode: multiply;
+        }
+
+        .viewport {
+            width: 100%;
+            padding: 10vw 5vw;
+        }
+
+        header {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .hero-title {
+            font-size: clamp(4rem, 15vw, 12rem);
+            line-height: 0.85;
+            text-transform: uppercase;
+            letter-spacing: -0.04em;
+            color: var(--terra-deep);
+            margin-bottom: 2rem;
+        }
+
+        .meta-data {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            display: flex;
+            gap: 4rem;
+        }
+
+        /* Scroll Gallery Container */
+        .gallery {
+            position: relative;
+            z-index: 2;
+            margin-top: -20vh;
+        }
+
+        .scroll-item {
+            position: relative;
+            margin-bottom: 30vh;
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            will-change: transform;
+        }
+
+        .scroll-item:nth-child(even) {
+            justify-content: flex-start;
+        }
+
+        .image-wrapper {
+            position: relative;
+            width: 45vw;
+            aspect-ratio: 4/5;
+            overflow: hidden;
+            background: var(--terra-dust);
+            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .scroll-item:hover .image-wrapper {
+            transform: scale(0.98);
+        }
+
+        .scroll-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: sepia(0.4) saturate(0.8) contrast(1.1);
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            scale: 1.2;
+        }
+
+        .scroll-item:hover img {
+            transform: scale(1.1) rotate(1deg);
+        }
+
+        .caption {
+            position: absolute;
+            bottom: -2rem;
+            right: 0;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--terra-accent);
+        }
+
+        .scroll-item:nth-child(even) .caption {
+            left: 0;
+            right: auto;
+        }
+
+        /* Subtle Motion - Dust Particles */
+        .particle {
+            position: fixed;
+            background: var(--terra-core);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+            filter: blur(2px);
+            opacity: 0.4;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--terra-clay);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--terra-core);
+        }
+
+        @media (max-width: 768px) {
+            .image-wrapper {
+                width: 80vw;
+            }
+
+            .hero-title {
+                font-size: 4rem;
+            }
+
+            .meta-data {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        /* Scroll Reveal Animation */
+        @keyframes reveal {
+            from {
+                clip-path: inset(100% 0 0 0);
+                transform: translateY(100px);
+            }
+
+            to {
+                clip-path: inset(0 0 0 0);
+                transform: translateY(0);
+            }
+        }
+
+        .reveal {
+            view-timeline-name: --item;
+            view-timeline-axis: block;
+            animation: reveal both;
+            animation-timeline: --item;
+            animation-range: entry 10% cover 30%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dust-overlay"></div>
+
+    <main class="viewport">
+        <header>
+            <div class="meta-data">
+                <span>Ref. No. 882-OC</span>
+                <span>Suspended Sediment</span>
+                <span>© 2024 Flash UI</span>
+            </div>
+            <h1 class="hero-title">Sifted<br>Ochre</h1>
+        </header>
+
+        <section class="gallery">
+            <!-- Item 1 -->
+            <div class="scroll-item reveal">
+                <div class="image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1505142446710-c60207ed2049?auto=format&fit=crop&q=80&w=1200"
+                        alt="Arid architecture">
+                    <div class="caption">01 // TOPOGRAPHY_DRY</div>
+                </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="scroll-item reveal">
+                <div class="image-wrapper" style="aspect-ratio: 16/9; width: 60vw;">
+                    <img src="https://images.unsplash.com/photo-1504159506876-f8338247a14a?auto=format&fit=crop&q=80&w=1200"
+                        alt="Abstract clay">
+                    <div class="caption">02 // SEDIMENTARY_STRATA</div>
+                </div>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="scroll-item reveal">
+                <div class="image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1508918293003-9975776d5483?auto=format&fit=crop&q=80&w=1200"
+                        alt="Dust light">
+                    <div class="caption">03 // PHOTON_SUSPENSION</div>
+                </div>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="scroll-item reveal">
+                <div class="image-wrapper" style="width: 35vw;">
+                    <img src="https://images.unsplash.com/photo-1444491741275-3747c53c99b4?auto=format&fit=crop&q=80&w=1200"
+                        alt="Desert minimalism">
+                    <div class="caption">04 // THERMAL_INERTIA</div>
+                </div>
+            </div>
+        </section>
+
+        <footer style="margin-top: 20vh; padding-bottom: 10vh; border-top: 1px solid var(--terra-dust);">
+            <div class="hero-title" style="font-size: 5vw; margin-top: 2rem;">End of Grain</div>
+            <div class="meta-data">
+                <span>Lat: 34.0522° N</span>
+                <span>Long: 118.2437° W</span>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        // Floating Dust Particle Simulation
+        const createParticle = () => {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+
+            const size = Math.random() * 4 + 1;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+
+            particle.style.left = `${Math.random() * 100}vw`;
+            particle.style.top = `${Math.random() * 100}vh`;
+
+            document.body.appendChild(particle);
+
+            const duration = Math.random() * 20000 + 10000;
+            const animation = particle.animate([
+                { transform: 'translate(0, 0) scale(1)', opacity: 0.4 },
+                { transform: `translate(${Math.random() * 100 - 50}px, ${Math.random() * -100 - 50}px) scale(0)`, opacity: 0 }
+            ], {
+                duration: duration,
+                easing: 'linear'
+            });
+
+            animation.onfinish = () => {
+                particle.remove();
+                createParticle();
+            };
+        };
+
+        // Initialize particles
+        for (let i = 0; i < 30; i++) {
+            setTimeout(createParticle, Math.random() * 5000);
+        }
+
+        // Parallax Effect for Images
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const images = document.querySelectorAll('img');
+
+            images.forEach(img => {
+                const parent = img.parentElement;
+                const speed = 0.1;
+                const rect = parent.getBoundingClientRect();
+                const offset = rect.top * speed;
+                img.style.transform = `translateY(${offset}px) scale(1.2)`;
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,415 @@
+/* =============================================
+   HERO SECTION — Viramah Landing Page
+   Terra-inspired sticky hero + scroll gallery
+   ============================================= */
+
+/* ===================
+   1. LAYOUT
+   =================== */
+.hero-viewport {
+    width: 100%;
+    padding: 0 5vw 10vw 5vw;
+}
+
+.hero-header {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    padding-top: 120px;
+    /* Clear the Navigation bar (~70px height + ~50px offset) */
+    z-index: 1;
+}
+
+/* ===================
+   2. TYPOGRAPHY
+   =================== */
+.hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 15vw, 12rem);
+    line-height: 0.85;
+    text-transform: uppercase;
+    letter-spacing: -0.04em;
+    color: var(--charcoal);
+    margin-bottom: 2rem;
+}
+
+.hero-meta {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    display: flex;
+    gap: 4rem;
+    color: var(--charcoal);
+    opacity: 0.7;
+    margin-bottom: 1.5rem;
+}
+
+/* ===================
+   3. SCROLL GALLERY
+   =================== */
+.hero-gallery {
+    position: relative;
+    z-index: 2;
+    margin-top: -20vh;
+}
+
+.hero-scroll-item {
+    position: relative;
+    margin-bottom: 30vh;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    will-change: transform;
+}
+
+.hero-scroll-item:nth-child(even) {
+    justify-content: flex-start;
+}
+
+.hero-image-wrapper {
+    position: relative;
+    width: 45vw;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--terracotta-soft);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Hover effects — moved to @media (hover) guard below */
+
+.hero-gallery-img {
+    object-fit: cover;
+    filter: sepia(0.3) saturate(0.85) contrast(1.1);
+    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    scale: 1.2;
+}
+
+/* ===================
+   4. CAPTIONS
+   =================== */
+.hero-caption {
+    position: absolute;
+    bottom: -2rem;
+    right: 0;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--terracotta-raw);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+}
+
+.hero-scroll-item:nth-child(even) .hero-caption {
+    left: 0;
+    right: auto;
+}
+
+/* ===================
+   5. DUST PARTICLES
+   =================== */
+.hero-particle {
+    position: fixed;
+    background: var(--terracotta-raw);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 40;
+    filter: blur(2px);
+    opacity: 0.4;
+}
+
+/* ===================
+   6. SCROLL REVEAL
+   =================== */
+@keyframes heroReveal {
+    from {
+        clip-path: inset(100% 0 0 0);
+        transform: translateY(100px);
+    }
+
+    to {
+        clip-path: inset(0 0 0 0);
+        transform: translateY(0);
+    }
+}
+
+@supports (animation-timeline: --item) {
+    .hero-reveal {
+        view-timeline-name: --item;
+        view-timeline-axis: block;
+        animation: heroReveal both;
+        animation-timeline: --item;
+        animation-range: entry 10% cover 30%;
+    }
+}
+
+.hero-reveal-fallback {
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(100px);
+    transition: clip-path 1s cubic-bezier(0.23, 1, 0.32, 1),
+        transform 1s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.hero-reveal-fallback.hero-revealed {
+    clip-path: inset(0 0 0 0);
+    transform: translateY(0);
+}
+
+/* ===================
+   7. HERO SUBTITLE
+   =================== */
+.hero-subtitle {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 2vw, 1.35rem);
+    color: var(--charcoal);
+    opacity: 0.65;
+    max-width: 500px;
+    line-height: 1.6;
+    margin-top: 1.5rem;
+}
+
+/* ===================
+   8. CUSTOM SCROLLBAR
+   =================== */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--sand-light);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--terracotta-raw);
+    border-radius: 2px;
+}
+
+/* ===================
+   9. GALLERY END MARKER
+   =================== */
+.hero-gallery-end {
+    margin-top: 15vh;
+    padding: 6vh 0;
+    border-top: 1px solid var(--terracotta-soft);
+}
+
+.hero-gallery-end-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 4rem);
+    color: var(--charcoal);
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+}
+
+.hero-gallery-end-meta {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--charcoal);
+    opacity: 0.5;
+    display: flex;
+    gap: 3rem;
+}
+
+/* =============================================
+   10. RESPONSIVE — Mobile-First Overhaul
+   ============================================= */
+
+/* ── ALL PHONES (< 768px) ──────────────────── */
+@media (max-width: 767px) {
+    .hero-viewport {
+        padding: 0 5vw 8vw 5vw;
+    }
+
+    .hero-header {
+        padding-top: 90px;
+        height: auto;
+        min-height: 100svh;
+    }
+
+    .hero-title {
+        font-size: clamp(3rem, 14vw, 5rem);
+        line-height: 0.88;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.6rem;
+        margin-bottom: 1rem;
+    }
+
+    .hero-meta span:last-child {
+        display: none;
+    }
+
+    .hero-subtitle {
+        font-size: 0.9rem;
+        max-width: 100%;
+        line-height: 1.5;
+    }
+
+    /* Gallery — Full width, taller images */
+    .hero-gallery {
+        margin-top: -10vh;
+    }
+
+    .hero-image-wrapper {
+        width: 85vw !important;
+        aspect-ratio: 4/3 !important;
+    }
+
+    .hero-scroll-item {
+        justify-content: center !important;
+        margin-bottom: 15vh;
+    }
+
+    /* Captions — centered below image */
+    .hero-caption {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        left: auto;
+        margin-top: 0.75rem;
+        text-align: center;
+        font-size: 0.6rem;
+    }
+
+    .hero-scroll-item:nth-child(even) .hero-caption {
+        left: auto;
+        text-align: center;
+    }
+
+    /* Gallery End */
+    .hero-gallery-end {
+        margin-top: 8vh;
+        padding: 4vh 0;
+    }
+
+    .hero-gallery-end-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* Reduce scroll-reveal distance */
+    @keyframes heroReveal {
+        from {
+            clip-path: inset(100% 0 0 0);
+            transform: translateY(50px);
+        }
+
+        to {
+            clip-path: inset(0 0 0 0);
+            transform: translateY(0);
+        }
+    }
+
+    .hero-reveal-fallback {
+        transform: translateY(50px);
+    }
+}
+
+/* ── XS PHONES (< 375px) ──────────────────── */
+@media (max-width: 374px) {
+    .hero-title {
+        font-size: 2.8rem;
+        line-height: 0.9;
+    }
+
+    .hero-image-wrapper {
+        width: 90vw !important;
+    }
+
+    .hero-subtitle {
+        font-size: 0.85rem;
+    }
+}
+
+/* ── TABLET (768px – 1024px) ───────────────── */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .hero-image-wrapper {
+        width: 55vw !important;
+    }
+
+    .hero-title {
+        font-size: clamp(4rem, 12vw, 8rem);
+    }
+
+    .hero-scroll-item {
+        margin-bottom: 25vh;
+    }
+
+    .hero-gallery {
+        margin-top: -15vh;
+    }
+}
+
+/* ── HOVER-CAPABLE DEVICES ONLY ────────────── */
+@media (hover: hover) and (pointer: fine) {
+    .hero-scroll-item:hover .hero-image-wrapper {
+        transform: scale(0.98);
+    }
+
+    .hero-scroll-item:hover .hero-gallery-img {
+        transform: scale(1.1) rotate(1deg);
+    }
+}
+
+/* ── TOUCH DEVICES — no stuck hover ────────── */
+@media (hover: none) {
+    .hero-scroll-item:hover .hero-image-wrapper {
+        transform: none;
+    }
+
+    .hero-scroll-item:hover .hero-gallery-img {
+        transform: none;
+    }
+}
+
+/* ── LANDSCAPE PHONES ──────────────────────── */
+@media (max-height: 500px) and (orientation: landscape) {
+    .hero-header {
+        height: auto;
+        min-height: 100svh;
+        padding-top: 80px;
+        padding-bottom: 2rem;
+    }
+
+    .hero-title {
+        font-size: clamp(2.5rem, 8vh, 4rem);
+    }
+}
+
+/* ── PREFERS REDUCED MOTION ────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .hero-particle {
+        display: none !important;
+    }
+
+    .hero-gallery-img {
+        transition: none !important;
+        scale: 1 !important;
+    }
+
+    .hero-image-wrapper {
+        transition: none !important;
+    }
+
+    .hero-reveal,
+    .hero-reveal-fallback {
+        clip-path: none !important;
+        transform: none !important;
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .hero-reveal-fallback.hero-revealed {
+        clip-path: none !important;
+        transform: none !important;
+    }
+}
