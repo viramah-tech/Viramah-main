@@ -173,25 +173,19 @@ export function EnquiryModal() {
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const firstInputRef = useRef<HTMLInputElement>(null);
 
-    // Intelligent Auto-open Logic
+    // Mandatory Lead Capture Logic
     useEffect(() => {
         const SUBMITTED_KEY = "viramah_enquiry_data_submitted";
-        const SESSION_SHOWN_KEY = "viramah_enquiry_session_shown";
-
         const hasSubmitted = localStorage.getItem(SUBMITTED_KEY);
-        const alreadyShownThisSession = sessionStorage.getItem(SESSION_SHOWN_KEY);
 
         // If they've already given us their data, never bother them again.
-        if (hasSubmitted) return;
-
-        // If they haven't submitted, show it ONCE per session (on entry).
-        if (!alreadyShownThisSession) {
-            const timer = setTimeout(() => {
-                setIsOpen(true);
-                sessionStorage.setItem(SESSION_SHOWN_KEY, "1");
-            }, 1500); // 1.5s delay to let the Hero animation breathe
-            return () => clearTimeout(timer);
+        if (hasSubmitted) {
+            setIsOpen(false);
+            return;
         }
+
+        // If they haven't submitted, force it open immediately.
+        setIsOpen(true);
     }, []);
 
     // Lock body scroll when open
@@ -205,17 +199,12 @@ export function EnquiryModal() {
         }
     }, [isOpen]);
 
-    // Close on Escape
+    // Disable manual dismissal
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape") setIsOpen(false);
-        };
-        // Listen for global open trigger from any page
+        // Listen for global open trigger (though it should already be open or submitted)
         const onOpenEvent = () => setIsOpen(true);
-        window.addEventListener("keydown", onKey);
         window.addEventListener("viramah:open-enquiry", onOpenEvent);
         return () => {
-            window.removeEventListener("keydown", onKey);
             window.removeEventListener("viramah:open-enquiry", onOpenEvent);
         };
     }, []);
@@ -333,12 +322,11 @@ export function EnquiryModal() {
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            onClick={() => setIsOpen(false)}
                             className="fixed inset-0 z-[999]"
                             style={{
-                                background: "rgba(10, 20, 15, 0.65)",
-                                backdropFilter: "blur(6px)",
-                                WebkitBackdropFilter: "blur(6px)",
+                                background: "rgba(10, 20, 15, 0.85)",
+                                backdropFilter: "blur(12px)",
+                                WebkitBackdropFilter: "blur(12px)",
                             }}
                             aria-hidden="true"
                         />
@@ -410,7 +398,7 @@ export function EnquiryModal() {
                                                     marginBottom: 8,
                                                 }}
                                             >
-                                                Lodging Inquiry
+                                                Identity Verification
                                             </p>
                                             <h2
                                                 style={{
@@ -421,46 +409,18 @@ export function EnquiryModal() {
                                                     fontWeight: 400,
                                                 }}
                                             >
-                                                CONTACT US
+                                                UNLOCKED ACCESS
                                             </h2>
-                                        </div>
-
-                                        {/* Close button */}
-                                        <button
-                                            id="enquiry-close-btn"
-                                            onClick={() => setIsOpen(false)}
-                                            aria-label="Close enquiry form"
-                                            className="group"
-                                            style={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: "50%",
-                                                background: "rgba(45,43,40,0.08)",
-                                                border: "1px solid rgba(45,43,40,0.12)",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                cursor: "pointer",
-                                                transition: "all 0.25s ease",
-                                                flexShrink: 0,
+                                            <p style={{
+                                                fontFamily: "var(--font-body, sans-serif)",
+                                                fontSize: "0.75rem",
                                                 color: "#2d2b28",
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.background = "#1F3A2D";
-                                                e.currentTarget.style.color = "#D8B56A";
-                                                e.currentTarget.style.borderColor = "#1F3A2D";
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.background = "rgba(45,43,40,0.08)";
-                                                e.currentTarget.style.color = "#2d2b28";
-                                                e.currentTarget.style.borderColor = "rgba(45,43,40,0.12)";
-                                            }}
-                                        >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                                <line x1="18" y1="6" x2="6" y2="18" />
-                                                <line x1="6" y1="6" x2="18" y2="18" />
-                                            </svg>
-                                        </button>
+                                                opacity: 0.7,
+                                                marginTop: "1rem"
+                                            }}>
+                                                Please introduce yourself to view the Viramah experience.
+                                            </p>
+                                        </div>
                                     </div>
 
                                     {/* Decorative divider */}
