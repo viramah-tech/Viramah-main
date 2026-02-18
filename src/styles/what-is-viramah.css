@@ -1,0 +1,118 @@
+.wv-intro-section {
+    padding: 8rem 0;
+    background-color: #F6F4EF;
+    overflow: hidden;
+}
+
+.wv-intro-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 5rem;
+    align-items: center;
+}
+
+.wv-intro-eyebrow {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4em;
+    color: #2E6B4F;
+    margin-bottom: 2rem;
+    display: block;
+}
+
+.wv-intro-title {
+    font-family: var(--font-display, serif);
+    font-size: clamp(2.5rem, 5vw, 4.2rem);
+    line-height: 1.1;
+    color: #1a1a1a;
+    margin-bottom: 2.5rem;
+    font-weight: 400;
+}
+
+.wv-highlight {
+    color: #2E6B4F;
+    font-style: italic;
+}
+
+.wv-intro-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 580px;
+}
+
+.wv-intro-body p {
+    font-size: clamp(1rem, 1.2vw, 1.15rem);
+    color: rgba(26, 26, 26, 0.7);
+    line-height: 1.7;
+}
+
+.wv-intro-bold {
+    font-weight: 700;
+    color: #1a1a1a !important;
+    font-size: 1.2rem !important;
+    margin-top: 0.5rem;
+}
+
+.wv-intro-ctas {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 3.5rem;
+    flex-wrap: wrap;
+}
+
+.wv-intro-visual {
+    position: relative;
+    padding: 2rem;
+}
+
+.wv-visual-card {
+    background: linear-gradient(145deg, #1a3328, #0f2018);
+    padding: 3.5rem;
+    position: relative;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.15);
+}
+
+.wv-visual-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+}
+
+.wv-visual-tag {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: #D8B56A;
+    margin-bottom: 1.5rem;
+    display: block;
+}
+
+.wv-visual-text {
+    font-family: var(--font-display, serif);
+    font-size: 1.6rem;
+    color: #F6F4EF;
+    line-height: 1.5;
+    font-style: italic;
+}
+
+@media (max-width: 1024px) {
+    .wv-intro-grid {
+        grid-template-columns: 1fr;
+        gap: 4rem;
+    }
+
+    .wv-intro-content {
+        order: 2;
+    }
+
+    .wv-intro-visual {
+        order: 1;
+        padding: 0;
+    }
+}

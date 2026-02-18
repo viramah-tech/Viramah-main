@@ -17,26 +17,26 @@ interface GalleryItem {
 const GALLERY_ITEMS: GalleryItem[] = [
     {
         src: "/life at viramah images/common area.jpg",
-        alt: "Common area — the social hub of Viramah with shared seating and workspaces",
-        label: "THE_COMMONS",
-        title: "Common Area",
-        stats: ["CAPACITY: 50+", "TYPE: SOCIAL_HUB", "STATUS: ACTIVE"],
+        alt: "Common area — the social hub for meetups and workshops",
+        label: "COMMUNITY_RITUALS",
+        title: "Weekly Meetups",
+        stats: ["SUNDAY DINNERS", "GAME NIGHTS", "STUDY GROUPS"],
         span: 8,
     },
     {
         src: "/life at viramah images/swiming pool.jpg",
-        alt: "Swimming pool — aquatic facilities at Viramah for relaxation",
-        label: "AQUATICS",
-        title: "Swimming Pool",
-        stats: ["TEMP: 28°C", "ACCESS: DAILY"],
+        alt: "Swimming pool and wellness deck",
+        label: "WELLNESS_CORE",
+        title: "Fitness & Zen",
+        stats: ["YOGA SESSIONS", "POOL RECOVERY"],
         span: 4,
     },
     {
         src: "/life at viramah images/gaming zone.jpg",
-        alt: "Gaming zone — entertainment and recreation area at Viramah",
-        label: "RECREATION_LAB",
-        title: "Gaming Zone",
-        stats: ["CONSOLES: 4+", "GENRE: ALL", "STATUS: LIVE"],
+        alt: "Gaming and skills lab",
+        label: "CREATIVE_LAB",
+        title: "Workshops & Play",
+        stats: ["SKILL SESSIONS", "TOURNAMENTS", "LIVE"],
         span: 12,
     },
 ];
@@ -122,10 +122,12 @@ export function LifeAtViramahSection() {
                     <div className="lav-header-left">
 
                         <h2 className="lav-header-title">
-                            Life at
-                            <br />
-                            Viramah
+                            Never a dull moment
                         </h2>
+                        <p className="lav-subtitle">
+                            From weekly meetups to game nights and skill workshops —
+                            your stay with us will be the most memorable chapter of your student life.
+                        </p>
                     </div>
 
                 </motion.header>

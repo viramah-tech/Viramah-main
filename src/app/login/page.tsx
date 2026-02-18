@@ -85,27 +85,8 @@ export default function LoginPage() {
                     }}
                 />
 
-                {/* Logo */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-                    className="flex items-center gap-3 relative z-10"
-                >
-                    <div className="w-11 h-11">
-                        <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
-                    </div>
-                    <span
-                        style={{
-                            fontFamily: "var(--font-display, serif)",
-                            fontSize: "1.4rem",
-                            color: "#F6F4EF",
-                            letterSpacing: "0.05em",
-                        }}
-                    >
-                        VIRAMAH
-                    </span>
-                </motion.div>
+                {/* Spacer — keeps justify-between pushing copy to centre */}
+                <div aria-hidden="true" />
 
                 {/* Centre copy */}
                 <motion.div
@@ -114,6 +95,15 @@ export default function LoginPage() {
                     transition={{ duration: 1, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
                     className="relative z-10"
                 >
+                    {/* Logo + name grouped above the copy */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+                        <div style={{ width: 40, height: 40 }}>
+                            <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                        </div>
+                        <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.4rem", color: "#F6F4EF", letterSpacing: "0.05em" }}>
+                            VIRAMAH
+                        </span>
+                    </div>
                     <p
                         style={{
                             fontFamily: "var(--font-mono, monospace)",
@@ -193,21 +183,7 @@ export default function LoginPage() {
 
             {/* ── Right Panel — Form ────────────────────────── */}
             <div className="flex-1 flex items-center justify-center p-6 lg:p-16 bg-sand-light relative">
-                {/* Mobile logo */}
-                <div className="absolute top-6 left-6 lg:hidden flex items-center gap-2">
-                    <div className="w-8 h-8">
-                        <img src="/logo.png" alt="Viramah" className="w-full h-full object-contain" />
-                    </div>
-                    <span
-                        style={{
-                            fontFamily: "var(--font-display, serif)",
-                            fontSize: "1.1rem",
-                            color: "#1F3A2D",
-                        }}
-                    >
-                        VIRAMAH
-                    </span>
-                </div>
+
 
                 <motion.div
                     variants={containerVariants}
@@ -217,6 +193,24 @@ export default function LoginPage() {
                 >
                     {/* Heading */}
                     <motion.div variants={itemVariants} className="mb-10">
+                        {/* Logo + brand name above the heading */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
+                            <div style={{ width: 36, height: 36 }}>
+                                <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            </div>
+                            <span
+                                style={{
+                                    fontFamily: "var(--font-display, serif)",
+                                    fontSize: "1.15rem",
+                                    color: "#1F3A2D",
+                                    letterSpacing: "0.08em",
+                                    fontWeight: 400,
+                                }}
+                            >
+                                VIRAMAH
+                            </span>
+                        </div>
+
                         <p
                             style={{
                                 fontFamily: "var(--font-mono, monospace)",

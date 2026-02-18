@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 // ── Data ──────────────────────────────────────────────────
 interface CategoryItem {
@@ -61,16 +60,6 @@ const CATEGORIES: CategoryItem[] = [
 // Duplicate tiles for seamless marquee loop
 const MARQUEE_TILES = [...CATEGORIES, ...CATEGORIES];
 
-// ── Animation Variants ───────────────────────────────────
-const headerVariants = {
-    hidden: { opacity: 0, y: 25 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.7, ease: [0.25, 1, 0.5, 1] as const },
-    },
-};
-
 // ── Arrow SVG ────────────────────────────────────────────
 function ArrowIcon() {
     return (
@@ -92,33 +81,106 @@ function ArrowIcon() {
 
 // ── Component ────────────────────────────────────────────
 export function CategoriesSection() {
-    const [canHover, setCanHover] = useState(false);
-    const [activeTileIndex, setActiveTileIndex] = useState<number | null>(null);
     const marqueeRef = useRef<HTMLDivElement>(null);
+    const wrapRef = useRef<HTMLDivElement>(null);
 
+    // ── Pure JS RAF + drag/swipe (same pattern as HeroSection) ──
     useEffect(() => {
-        setCanHover(
-            window.matchMedia("(hover: hover) and (pointer: fine)").matches
-        );
-    }, []);
+        const el = marqueeRef.current;
+        const wrap = wrapRef.current;
+        if (!el || !wrap) return;
 
-    // ── Tap to Pause/Highlight (mobile only) ──
-    const handleTileTap = useCallback(
-        (index: number) => {
-            if (canHover) return; // Desktop uses CSS :hover
+        // Kill CSS animation — we drive translateX manually
+        el.style.animation = "none";
 
-            if (activeTileIndex === index) {
-                // Tap same tile again — deactivate & resume
-                setActiveTileIndex(null);
-                marqueeRef.current?.classList.remove("cat-marquee-paused");
-            } else {
-                // Tap new tile — activate & pause
-                setActiveTileIndex(index);
-                marqueeRef.current?.classList.add("cat-marquee-paused");
+        const BASE_VEL = 0.5;   // px/frame auto-scroll at 60fps
+        const DECAY = 0.92;  // momentum decay per frame
+
+        let position = 0;
+        let velocity = -BASE_VEL;
+        let isDragging = false;
+        let lastX = 0;
+        let lastTime = 0;
+        let dragVel = 0;
+        let loopWidth = 0;
+        let rafId: number;
+
+        const measure = () => { loopWidth = el.scrollWidth / 2; };
+        measure();
+        window.addEventListener("resize", measure);
+
+        // ── RAF tick ──────────────────────────────────────────
+        const tick = () => {
+            if (!isDragging) {
+                velocity += ((-BASE_VEL) - velocity) * (1 - DECAY);
+                position += velocity;
             }
-        },
-        [canHover, activeTileIndex]
-    );
+            if (loopWidth > 0) {
+                while (position <= -loopWidth) position += loopWidth;
+                while (position > 0) position -= loopWidth;
+            }
+            el.style.transform = `translateX(${position.toFixed(2)}px)`;
+            rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+
+        // ── Pointer helpers ───────────────────────────────────
+        const getClientX = (e: MouseEvent | TouchEvent) =>
+            "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+
+        const onPointerDown = (e: MouseEvent | TouchEvent) => {
+            isDragging = true;
+            lastX = getClientX(e);
+            lastTime = performance.now();
+            dragVel = 0;
+            velocity = 0;
+            wrap.style.cursor = "grabbing";
+            if (e.type === "mousedown") e.preventDefault();
+        };
+
+        const onPointerMove = (e: MouseEvent | TouchEvent) => {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault();
+            const now = performance.now();
+            const x = getClientX(e);
+            const dx = x - lastX;
+            const dt = Math.max(now - lastTime, 1);
+            dragVel = (dx / dt) * 16.67;
+            position += dx;
+            lastX = x;
+            lastTime = now;
+        };
+
+        const onPointerUp = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            wrap.style.cursor = "grab";
+            velocity = dragVel;
+        };
+
+        // All events on wrap — NOT window
+        wrap.addEventListener("mousedown", onPointerDown as EventListener);
+        wrap.addEventListener("mousemove", onPointerMove as EventListener);
+        wrap.addEventListener("mouseup", onPointerUp);
+        wrap.addEventListener("mouseleave", onPointerUp);
+        wrap.addEventListener("touchstart", onPointerDown as EventListener, { passive: true });
+        wrap.addEventListener("touchmove", onPointerMove as EventListener, { passive: false });
+        wrap.addEventListener("touchend", onPointerUp);
+
+        wrap.style.cursor = "grab";
+
+        return () => {
+            cancelAnimationFrame(rafId);
+            window.removeEventListener("resize", measure);
+            wrap.removeEventListener("mousedown", onPointerDown as EventListener);
+            wrap.removeEventListener("mousemove", onPointerMove as EventListener);
+            wrap.removeEventListener("mouseup", onPointerUp);
+            wrap.removeEventListener("mouseleave", onPointerUp);
+            wrap.removeEventListener("touchstart", onPointerDown as EventListener);
+            wrap.removeEventListener("touchmove", onPointerMove as EventListener);
+            wrap.removeEventListener("touchend", onPointerUp);
+        };
+    }, []);
 
     return (
         <section
@@ -127,7 +189,7 @@ export function CategoriesSection() {
         >
             <div className="cat-container">
                 {/* ── Marquee ── */}
-                <div className="cat-marquee-wrap">
+                <div className="cat-marquee-wrap" ref={wrapRef} style={{ userSelect: "none" }}>
                     {/* Edge fade masks */}
                     <div className="cat-marquee-mask-left" aria-hidden="true" />
                     <div className="cat-marquee-mask-right" aria-hidden="true" />
@@ -143,10 +205,10 @@ export function CategoriesSection() {
                             <Link
                                 key={`${cat.id}-${i}`}
                                 href={cat.href}
-                                className={`cat-tile${activeTileIndex === i ? " cat-tile-active" : ""}`}
-                                onClick={() => handleTileTap(i)}
+                                className="cat-tile"
                                 aria-label={`${cat.title} — ${cat.count}`}
                                 role="listitem"
+                                draggable={false}
                             >
                                 {/* ID Badge */}
                                 <span className="cat-tile-id">{cat.id}</span>

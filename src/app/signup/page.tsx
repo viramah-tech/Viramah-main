@@ -64,20 +64,8 @@ export default function SignUpPage() {
                 <div aria-hidden="true" style={{ position: "absolute", top: "-60px", right: "-60px", width: 250, height: 250, borderRadius: "50%", border: "1px solid rgba(216,181,106,0.08)" }} />
                 <div aria-hidden="true" style={{ position: "absolute", bottom: "80px", left: "-80px", width: 300, height: 300, borderRadius: "50%", border: "1px solid rgba(216,181,106,0.07)" }} />
 
-                {/* Logo */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-                    className="flex items-center gap-3 relative z-10"
-                >
-                    <div className="w-11 h-11">
-                        <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
-                    </div>
-                    <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.4rem", color: "#F6F4EF", letterSpacing: "0.05em" }}>
-                        VIRAMAH
-                    </span>
-                </motion.div>
+                {/* Spacer — keeps justify-between pushing copy to centre */}
+                <div aria-hidden="true" />
 
                 {/* Centre copy */}
                 <motion.div
@@ -86,6 +74,15 @@ export default function SignUpPage() {
                     transition={{ duration: 1, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
                     className="relative z-10"
                 >
+                    {/* Logo + name grouped above the copy */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+                        <div style={{ width: 40, height: 40 }}>
+                            <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                        </div>
+                        <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.4rem", color: "#F6F4EF", letterSpacing: "0.05em" }}>
+                            VIRAMAH
+                        </span>
+                    </div>
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.35em", color: "#D8B56A", marginBottom: 20 }}>
                         Join the Community
                     </p>

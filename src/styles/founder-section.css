@@ -1,0 +1,121 @@
+/* =============================================
+   FOUNDER SECTION — Visionary Quote
+   ============================================= */
+
+.fs-section {
+    position: relative;
+    background: linear-gradient(160deg, #1a3328 0%, #0f2018 100%);
+    padding: 10rem 0;
+    overflow: hidden;
+    text-align: center;
+}
+
+.fs-grain {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.fs-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+}
+
+/* Quote Icon */
+.fs-quote-icon {
+    font-family: var(--font-display, serif);
+    font-size: 8rem;
+    line-height: 1;
+    color: rgba(216, 181, 106, 0.15);
+    margin-bottom: -4rem;
+    user-select: none;
+}
+
+.fs-quote-text {
+    font-family: var(--font-display, serif);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: #F6F4EF;
+    line-height: 1.4;
+    font-weight: 400;
+    font-style: italic;
+}
+
+.fs-attribution {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fs-founder-name {
+    font-family: var(--font-display, serif);
+    font-size: 1.4rem;
+    color: #D8B56A;
+}
+
+.fs-founder-title {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: rgba(246, 244, 239, 0.45);
+}
+
+.fs-cta-wrap {
+    margin-top: 1rem;
+}
+
+.fs-about-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: rgba(246, 244, 239, 0.6);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(246, 244, 239, 0.2);
+    padding-bottom: 4px;
+    transition: all 0.3s ease;
+}
+
+.fs-about-link:hover {
+    color: #D8B56A;
+    border-color: #D8B56A;
+    transform: translateY(-2px);
+}
+
+/* Background Ornament */
+.fs-ornament {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    aspect-ratio: 1;
+    background: radial-gradient(circle at center, rgba(216, 181, 106, 0.03) 0%, transparent 70%);
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .fs-section {
+        padding: 7rem 0;
+    }
+
+    .fs-quote-text {
+        font-size: 1.6rem;
+    }
+}

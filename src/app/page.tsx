@@ -13,6 +13,8 @@ import { FounderSection } from "@/components/sections/FounderSection";
 import { AudienceSection } from "@/components/sections/AudienceSection";
 import { ClosingSection } from "@/components/sections/ClosingSection";
 import { HeroSection } from "@/components/sections/HeroSection";
+import { WhyViramahSection } from "@/components/sections/WhyViramahSection";
+import { FAQSection } from "@/components/sections/FAQSection";
 
 export default function Home() {
   return (
@@ -21,7 +23,7 @@ export default function Home() {
 
       {/* Terra-inspired Hero Section with Scroll Gallery */}
       <HeroSection />
-
+      <WhyViramahSection />
 
       <DifferenceSection />
 
@@ -68,11 +70,14 @@ export default function Home() {
         </Container>
       </section>
 
+
+
       <CategoriesSection />
       <AmenitiesSection />
       <LifeAtViramahSection />
       <CommunitySection />
       <FounderSection />
+      <FAQSection />
       <AudienceSection />
       <ClosingSection />
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, memo, useRef } from "react";
+import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 
 interface NavLink {
     label: string;
@@ -58,31 +59,30 @@ export function Navigation() {
     }, []);
 
     return (
-        <header className="fixed top-0 left-0 w-full z-[1000] pointer-events-none flex justify-center pt-10">
+        <header className="fixed top-0 left-0 w-full z-[1000] pointer-events-none flex justify-center pt-4 md:pt-10">
             <nav
                 className={cn(
-                    "pointer-events-auto relative flex items-center justify-between px-3 pl-6 pr-3 h-[70px] gap-6",
+                    "pointer-events-auto relative flex items-center justify-between px-2 pl-4 md:px-3 md:pl-6 md:pr-3 h-[60px] md:h-[70px] gap-2 md:gap-6",
                     "bg-luxury-green border border-white/10 rounded-full",
                     "shadow-[0_12px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]",
-                    "transition-all duration-500",
-                    scrolled && "bg-luxury-green/80 backdrop-blur-md h-[60px]"
+                    "transition-all duration-500 mx-4 md:mx-0",
+                    scrolled && "bg-luxury-green/90 backdrop-blur-md h-[55px] md:h-[60px]"
                 )}
             >
                 {/* Brand */}
-                <Link href="/" className="group flex items-center gap-3">
-                    <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.68,-0.6,0.32,1.6)] group-hover:scale-110">
+                <Link href="/" className="group flex items-center gap-2 md:gap-3 shrink-0">
+                    <div className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.68,-0.6,0.32,1.6)] group-hover:scale-110">
                         <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
                     </div>
-
                 </Link>
 
                 {/* Links - Pure CSS hover */}
-                <div className="hidden md:flex items-center gap-1 bg-white/5 p-1.5 rounded-full relative border border-white/5">
+                <div className="hidden lg:flex items-center gap-1 bg-white/5 p-1.5 rounded-full relative border border-white/5">
                     {NAV_LINKS.map((link) => (
                         <Link
                             key={link.href}
                             href={link.href}
-                            className="group/link relative px-5 py-2 rounded-full z-10 overflow-hidden"
+                            className="group/link relative px-4 xl:px-5 py-2 rounded-full z-10 overflow-hidden"
                         >
                             {/* Background indicator */}
                             <div className="absolute inset-0 bg-white/10 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.05),inset_0_0_0_1px_rgba(255,255,255,0.1)] opacity-0 group-hover/link:opacity-100 transition-opacity duration-300" />
@@ -91,11 +91,11 @@ export function Navigation() {
                             <div className="relative h-5 overflow-hidden z-10">
                                 <div className="flex flex-col transition-transform duration-300 ease-out group-hover/link:-translate-y-5">
                                     {/* Primary Label */}
-                                    <span className="font-body text-sm font-medium text-sand-light h-5 leading-5 whitespace-nowrap">
+                                    <span className="font-body text-[13px] xl:text-sm font-medium text-sand-light h-5 leading-5 whitespace-nowrap">
                                         {link.label}
                                     </span>
                                     {/* Secondary Label (Gold, Italic) */}
-                                    <span className="font-body text-sm font-medium text-gold-antique italic h-5 leading-5 whitespace-nowrap">
+                                    <span className="font-body text-[13px] xl:text-sm font-medium text-gold-antique italic h-5 leading-5 whitespace-nowrap">
                                         {link.labelAlt}
                                     </span>
                                 </div>
@@ -104,25 +104,26 @@ export function Navigation() {
                     ))}
                 </div>
 
-
-
                 {/* CTA */}
                 <div className="flex items-center gap-2">
+                    {/* 
                     <Link
                         href="/login"
-                        className="px-5 py-2.5 rounded-full text-sm font-medium text-sand-light/70 hover:text-sand-light hover:bg-white/10 transition-colors hidden sm:block font-mono text-xs uppercase tracking-wider"
+                        className="px-4 py-2 rounded-full text-sm font-medium text-sand-light/70 hover:text-sand-light hover:bg-white/10 transition-colors hidden xl:block font-mono text-[10px] uppercase tracking-wider"
                     >
                         ALREADY A MEMBER
                     </Link>
                     <Link
                         href="/signup"
-                        className="px-6 py-2.5 rounded-full text-sm font-medium bg-green-sage text-white shadow-lg shadow-green-sage/20 hover:bg-green-sage/90 hover:-translate-y-0.5 transition-all duration-300"
+                        className="px-4 md:px-6 py-2 md:py-2.5 rounded-full text-[11px] md:text-sm font-bold bg-green-sage text-white shadow-lg shadow-green-sage/20 hover:bg-green-sage/90 hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap uppercase tracking-tight"
                     >
-                        NEW TO VIRAMAH
+                        JOIN NOW
                     </Link>
+                    */}
+                    <EnquireNowButton variant="gold" label="Book a Room" rounded={true} />
                 </div>
-                {/* Mobile hamburger - shows links hidden on small screens */}
-                <div className="md:hidden relative">
+                {/* Mobile hamburger */}
+                <div className="lg:hidden relative">
                     <MobileMenuButtonAndPanel navLinks={NAV_LINKS} />
                 </div>
             </nav>
@@ -150,47 +151,54 @@ function MobileMenuButtonAndPanel({ navLinks }: { navLinks: NavLink[] }) {
                 aria-label="Open menu"
                 onClick={() => setOpen((v) => !v)}
                 className={cn(
-                    "inline-flex items-center justify-center p-2 rounded-full transition-all duration-300",
-                    open ? "bg-luxury-green text-champagne-gold rotate-90" : "bg-white/10 hover:bg-white/20 text-off-white"
+                    "inline-flex items-center justify-center gap-2 pl-4 pr-3 py-2 rounded-full transition-all duration-500",
+                    open
+                        ? "bg-gold text-luxury-green scale-95 shadow-inner"
+                        : "bg-white/5 hover:bg-white/10 text-sand-light border border-white/10"
                 )}
             >
-                {open ? (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                ) : (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="4" y1="12" x2="20" y2="12"></line>
-                        <line x1="4" y1="6" x2="20" y2="6"></line>
-                        <line x1="4" y1="18" x2="20" y2="18"></line>
-                    </svg>
-                )}
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold">
+                    {open ? "Close" : "Menu"}
+                </span>
+                <div className="relative w-5 h-5 flex flex-col items-center justify-center gap-1.5">
+                    <motion.span
+                        animate={open ? { rotate: 45, y: 3.5 } : { rotate: 0, y: 0 }}
+                        className="w-4 h-0.5 bg-current rounded-full transition-transform"
+                    />
+                    <motion.span
+                        animate={open ? { opacity: 0, x: 10 } : { opacity: 1, x: 0 }}
+                        className="w-4 h-0.5 bg-current rounded-full transition-all"
+                    />
+                    <motion.span
+                        animate={open ? { rotate: -45, y: -3.5 } : { rotate: 0, y: 0 }}
+                        className="w-4 h-0.5 bg-current rounded-full transition-transform"
+                    />
+                </div>
             </button>
 
             <AnimatePresence>
                 {open && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20, scale: 0.95, filter: "blur(10px)" }}
-                        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, y: -20, scale: 0.95, filter: "blur(10px)" }}
-                        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                        className="absolute right-0 top-full mt-4 w-80 bg-luxury-green border border-gold/30 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] p-4 flex flex-col gap-2 z-50 overflow-hidden origin-top-right backdrop-blur-xl"
+                        initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                        className="absolute right-0 top-full mt-3 w-72 bg-luxury-green border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-3 flex flex-col gap-1 z-50 overflow-hidden origin-top-right backdrop-blur-2xl"
                     >
                         {navLinks.map((l, i) => (
                             <motion.div
                                 key={l.href}
-                                initial={{ opacity: 0, x: -20 }}
+                                initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.1 + i * 0.05 }}
+                                transition={{ delay: 0.1 + i * 0.04 }}
                             >
                                 <Link
                                     href={l.href}
                                     onClick={() => setOpen(false)}
-                                    className="group flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 transition-colors"
+                                    className="group flex items-center justify-between px-4 py-3.5 rounded-xl hover:bg-white/5 transition-all"
                                 >
-                                    <span className="text-off-white font-medium group-hover:text-champagne-gold transition-colors">{l.label}</span>
-                                    <span className="text-xs text-champagne-gold/60 italic font-display tracking-wider group-hover:text-champagne-gold transition-colors">{l.labelAlt}</span>
+                                    <span className="text-sand-light/90 font-medium text-sm group-hover:text-gold transition-colors">{l.label}</span>
+                                    <span className="text-[10px] text-gold/40 italic font-mono uppercase tracking-widest group-hover:text-gold transition-colors">{l.labelAlt}</span>
                                 </Link>
                             </motion.div>
                         ))}
@@ -198,42 +206,22 @@ function MobileMenuButtonAndPanel({ navLinks }: { navLinks: NavLink[] }) {
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                            className="h-px w-full bg-gradient-to-r from-transparent via-gold/20 to-transparent my-2"
+                            transition={{ delay: 0.35 }}
+                            className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent my-2"
                         />
 
-                        <div className="grid grid-cols-2 gap-2">
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.4 }}
-                            >
-                                <Link
-                                    href="/login"
-                                    onClick={() => setOpen(false)}
-                                    className="flex items-center justify-center px-4 py-3 rounded-xl text-xs font-mono uppercase tracking-wider text-off-white/70 hover:text-off-white hover:bg-white/5 border border-white/5 transition-all"
-                                >
-                                    Log In
-                                </Link>
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5 }}
-                            >
-                                <Link
-                                    href="/signup"
-                                    onClick={() => setOpen(false)}
-                                    className="flex items-center justify-center px-4 py-3 rounded-xl text-xs font-mono uppercase tracking-wider bg-champagne-gold text-luxury-green font-bold shadow-lg shadow-champagne-gold/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                                >
-                                    Join
-                                </Link>
-                            </motion.div>
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="p-1"
+                        >
+                            <EnquireNowButton variant="gold" label="Book a Room" rounded={true} className="w-full" />
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
         </div>
     );
 }
+

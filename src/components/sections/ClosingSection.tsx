@@ -48,14 +48,17 @@ export function ClosingSection() {
                                 opacity: isVisible ? 1 : 0,
                                 transform: isVisible ? "translateY(0)" : "translateY(30px)",
                                 transition: "opacity 1s cubic-bezier(0.23,1,0.32,1) 0.2s, transform 1s cubic-bezier(0.23,1,0.32,1) 0.2s",
+                                fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
+                                lineHeight: "1.1",
+                                marginBottom: "1.5rem"
                             }}
                         >
-                            Ready to <br />rest?
+                            Everyone deserves <br />to live <span style={{ fontStyle: "italic", color: "#D8B56A" }}>better</span>.
                         </h2>
 
                         <p className="cta-description" style={reveal("0.3s")}>
-                            Applications for the upcoming academic year are now open.
-                            Spaces are limited — secure yours before the intake closes.
+                            We didn't find the perfect space for us, so we created it for you.
+                            Join the community building the future of student life. Admissions for 2025 are now open.
                         </p>
 
                         <div className="cta-btn-group" style={reveal("0.4s")}>

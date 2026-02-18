@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 
 // ─── Tile Data ──────────────────────────────────────────────
 interface MarqueeTile {
@@ -102,6 +103,112 @@ export function HeroSection() {
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
     const [canHover, setCanHover] = useState(false);
     const [activeTileIndex, setActiveTileIndex] = useState<number | null>(null);
+
+
+    // ── JS marquee driver + drag/swipe momentum ──────────────────
+    useEffect(() => {
+        const el = marqueeRef.current;
+        const stage = stageRef.current;
+        if (!el || !stage) return;
+
+        // Kill CSS animation — we drive translateX manually
+        el.style.animation = "none";
+
+        const BASE_VEL = 0.6;   // px/frame auto-scroll at 60fps
+        const DECAY = 0.92;  // momentum decay per frame (higher = longer glide)
+
+        let position = 0;
+        let velocity = 0;     // current momentum (negative = left)
+        let isDragging = false;
+        let lastX = 0;
+        let lastTime = 0;
+        let dragVel = 0;     // instantaneous drag velocity
+        let loopWidth = 0;
+        let rafId: number;
+
+        const measure = () => { loopWidth = el.scrollWidth / 2; };
+        measure();
+        window.addEventListener("resize", measure);
+
+        // ── RAF tick ──────────────────────────────────────────
+        const tick = () => {
+            if (!isDragging) {
+                // Decay drag momentum, blend toward base auto-scroll
+                velocity += ((-BASE_VEL) - velocity) * (1 - DECAY);
+                position += velocity;
+            }
+            // Seamless loop
+            if (loopWidth > 0) {
+                while (position <= -loopWidth) position += loopWidth;
+                while (position > 0) position -= loopWidth;
+            }
+            el.style.transform = `translateX(${position.toFixed(2)}px)`;
+            rafId = requestAnimationFrame(tick);
+        };
+        // Seed velocity so it starts at base speed immediately
+        velocity = -BASE_VEL;
+        rafId = requestAnimationFrame(tick);
+
+        // ── Pointer helpers ───────────────────────────────────
+        const getClientX = (e: MouseEvent | TouchEvent) =>
+            "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+
+        const onPointerDown = (e: MouseEvent | TouchEvent) => {
+            isDragging = true;
+            lastX = getClientX(e);
+            lastTime = performance.now();
+            dragVel = 0;
+            stage.style.cursor = "grabbing";
+            velocity = 0;
+            // Prevent browser native drag / text selection
+            if ("preventDefault" in e && e.type === "mousedown") e.preventDefault();
+        };
+
+        const onPointerMove = (e: MouseEvent | TouchEvent) => {
+            if (!isDragging) return;
+            // Prevent page scroll during touch swipe
+            if (e.cancelable) e.preventDefault();
+            const now = performance.now();
+            const x = getClientX(e);
+            const dx = x - lastX;
+            const dt = Math.max(now - lastTime, 1);
+            dragVel = (dx / dt) * 16.67;
+            position += dx;
+            lastX = x;
+            lastTime = now;
+        };
+
+        const onPointerUp = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            stage.style.cursor = "grab";
+            velocity = dragVel;
+        };
+
+        // All events on stage — NOT window — so only the marquee area responds
+        stage.addEventListener("mousedown", onPointerDown as EventListener);
+        stage.addEventListener("mousemove", onPointerMove as EventListener);
+        stage.addEventListener("mouseup", onPointerUp);
+        stage.addEventListener("mouseleave", onPointerUp);   // cancel on exit
+        stage.addEventListener("touchstart", onPointerDown as EventListener, { passive: true });
+        stage.addEventListener("touchmove", onPointerMove as EventListener, { passive: false });
+        stage.addEventListener("touchend", onPointerUp);
+
+        // Initial cursor
+        stage.style.cursor = "grab";
+
+        return () => {
+            cancelAnimationFrame(rafId);
+            window.removeEventListener("resize", measure);
+            stage.removeEventListener("mousedown", onPointerDown as EventListener);
+            stage.removeEventListener("mousemove", onPointerMove as EventListener);
+            stage.removeEventListener("mouseup", onPointerUp);
+            stage.removeEventListener("mouseleave", onPointerUp);
+            stage.removeEventListener("touchstart", onPointerDown as EventListener);
+            stage.removeEventListener("touchmove", onPointerMove as EventListener);
+            stage.removeEventListener("touchend", onPointerUp);
+        };
+    }, []);
 
     // ── Detect hover capability ─────────────────────────────
     useEffect(() => {
@@ -227,18 +334,39 @@ export function HeroSection() {
                     initial="hidden"
                     animate="visible"
                 >
-                    Viramah stays
+                    viramah
                 </motion.h1>
 
-                <motion.p
+                <motion.div
                     className="hero-subtitle"
                     variants={subtitleVariants}
                     initial="hidden"
                     animate="visible"
+                    style={{
+                        borderLeft: "3px solid #D8B56A",
+                        paddingLeft: "1.5rem",
+                        marginTop: "2.5rem",
+                        maxWidth: "600px",
+                    }}
                 >
-                    An intentional community-living experience designed for the
-                    modern Indian journey.
-                </motion.p>
+                    <span style={{
+                        fontFamily: "var(--font-display, serif)",
+                        fontSize: "clamp(1.4rem, 2.5vw, 1.8rem)",
+                        fontWeight: 400,
+                        color: "#1a1a1a",
+                        letterSpacing: "0.02em",
+                        lineHeight: 1.3,
+                        marginBottom: "0.8rem",
+                        display: "block"
+                    }}>
+                        AAP BAS APNA DHYAN RAKHO, <br />BAKI SAB HAM SAMBHAL LENEGE.
+                    </span>
+
+                    <div style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
+                        <EnquireNowButton variant="dark" label="Book a Room" />
+                        <EnquireNowButton variant="outline" label="Apply Now" />
+                    </div>
+                </motion.div>
             </header>
 
             {/* ── Marquee Stage ─────────────────────────────── */}
@@ -253,6 +381,7 @@ export function HeroSection() {
                 role="region"
                 aria-label="Viramah spaces gallery carousel"
                 aria-roledescription="carousel"
+                style={{ userSelect: "none" }}
             >
                 {/* Decorative wires */}
                 <div className="hero-tensile-wire top" aria-hidden="true" />
@@ -270,7 +399,7 @@ export function HeroSection() {
                 <div className="hero-mask-left" aria-hidden="true" />
                 <div className="hero-mask-right" aria-hidden="true" />
 
-                {/* Marquee track */}
+                {/* Marquee track — speed boosts on scroll */}
                 <div className="hero-marquee" ref={marqueeRef}>
                     {DOUBLED_TILES.map((tile, i) => (
                         <div

@@ -70,11 +70,11 @@
 
 .lav-header-title {
     font-family: var(--font-body);
+    line-height: 1.2;
+    letter-spacing: 0.1rem;
     font-size: clamp(3rem, 7vw, 5.5rem);
     font-weight: 900;
-    line-height: 0.92;
     text-transform: uppercase;
-    letter-spacing: -0.04em;
     color: var(--lav-text);
 }
 
@@ -180,6 +180,17 @@
     text-transform: uppercase;
     letter-spacing: -0.02em;
     color: var(--lav-text);
+}
+
+.lav-subtitle {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--sand-light);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.5rem;
+    display: block;
+    fill-opacity: 20%;
 }
 
 .lav-stats {

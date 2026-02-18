@@ -30,16 +30,18 @@ const backdropVariants = {
 };
 
 const panelVariants = {
-    hidden: { x: "100%", opacity: 0 },
+    hidden: { scale: 0.88, opacity: 0, y: 24 },
     visible: {
-        x: 0,
+        scale: 1,
         opacity: 1,
-        transition: { duration: 0.55, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] },
+        y: 0,
+        transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] },
     },
     exit: {
-        x: "100%",
+        scale: 0.92,
         opacity: 0,
-        transition: { duration: 0.4, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] },
+        y: 16,
+        transition: { duration: 0.35, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] },
     },
 };
 
@@ -110,7 +112,7 @@ const FieldInput = forwardRef<HTMLInputElement, FieldInputProps>(
 FieldInput.displayName = "FieldInput";
 
 // ── SubmitButton ─────────────────────────────────────────────
-function SubmitButton() {
+function SubmitButton({ loading }: { loading: boolean }) {
     const [hovered, setHovered] = useState(false);
     const [pressed, setPressed] = useState(false);
 
@@ -118,12 +120,13 @@ function SubmitButton() {
         <button
             id="enquiry-submit-btn"
             type="submit"
+            disabled={loading}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => { setHovered(false); setPressed(false); }}
             onMouseDown={() => setPressed(true)}
             onMouseUp={() => setPressed(false)}
             style={{
-                background: hovered ? "#2d2b28" : "#1F3A2D",
+                background: loading ? "#2d2b28" : hovered ? "#2d2b28" : "#1F3A2D",
                 color: "#D8B56A",
                 border: "none",
                 padding: "16px 36px",
@@ -132,21 +135,31 @@ function SubmitButton() {
                 textTransform: "uppercase",
                 letterSpacing: "0.2em",
                 fontSize: "0.7rem",
-                cursor: "pointer",
-                transform: pressed
+                cursor: loading ? "wait" : "pointer",
+                transform: loading ? "none" : pressed
                     ? "translate(2px, 2px)"
                     : hovered
                         ? "translate(-3px, -3px)"
                         : "translate(0, 0)",
-                boxShadow: pressed
+                boxShadow: loading ? "none" : pressed
                     ? "none"
                     : hovered
                         ? "6px 6px 0px #b5934a"
                         : "4px 4px 0px #6b5526",
                 transition: "all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1)",
+                opacity: loading ? 0.8 : 1,
+                display: "flex",
+                alignItems: "center",
+                gap: "10px"
             }}
         >
-            Send Dispatch
+            {loading ? (
+                <>
+                    <span className="animate-pulse">Dispatching...</span>
+                </>
+            ) : (
+                "Send Dispatch"
+            )}
         </button>
     );
 }
@@ -156,8 +169,30 @@ export function EnquiryModal() {
     const [isOpen, setIsOpen] = useState(false);
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [submitted, setSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const firstInputRef = useRef<HTMLInputElement>(null);
+
+    // Intelligent Auto-open Logic
+    useEffect(() => {
+        const SUBMITTED_KEY = "viramah_enquiry_data_submitted";
+        const SESSION_SHOWN_KEY = "viramah_enquiry_session_shown";
+
+        const hasSubmitted = localStorage.getItem(SUBMITTED_KEY);
+        const alreadyShownThisSession = sessionStorage.getItem(SESSION_SHOWN_KEY);
+
+        // If they've already given us their data, never bother them again.
+        if (hasSubmitted) return;
+
+        // If they haven't submitted, show it ONCE per session (on entry).
+        if (!alreadyShownThisSession) {
+            const timer = setTimeout(() => {
+                setIsOpen(true);
+                sessionStorage.setItem(SESSION_SHOWN_KEY, "1");
+            }, 1500); // 1.5s delay to let the Hero animation breathe
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     // Lock body scroll when open
     useEffect(() => {
@@ -175,22 +210,58 @@ export function EnquiryModal() {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") setIsOpen(false);
         };
+        // Listen for global open trigger from any page
+        const onOpenEvent = () => setIsOpen(true);
         window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
+        window.addEventListener("viramah:open-enquiry", onOpenEvent);
+        return () => {
+            window.removeEventListener("keydown", onKey);
+            window.removeEventListener("viramah:open-enquiry", onOpenEvent);
+        };
     }, []);
 
     const handleChange = (field: keyof FormState, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSubmitted(true);
-        setTimeout(() => {
-            setSubmitted(false);
-            setForm(INITIAL_FORM);
-            setIsOpen(false);
-        }, 2800);
+        setIsSubmitting(true);
+
+        const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycby42eCgxXVf4aeSPiR7caKIxwQhoXlL7x8e5VdWEbphhpfYzo8ObIrcmUqgLl0Sl4Zo/exec";
+
+        try {
+            // Perceived performance optimization: 
+            // We start the fetch but don't wait more than 1s for the UI to transition.
+            // Google Apps Script can be slow, but no-cors dispatches immediately.
+            const fetchPromise = fetch(GOOGLE_SHEET_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(form),
+            });
+
+            // If it takes longer than 1.2s, we move to success state anyway 
+            // as the request is likely already in flight.
+            await Promise.race([
+                fetchPromise,
+                new Promise((resolve) => setTimeout(resolve, 1200))
+            ]);
+
+            setIsSubmitting(false);
+            localStorage.setItem("viramah_enquiry_data_submitted", "true");
+            setSubmitted(true);
+
+            setTimeout(() => {
+                setSubmitted(false);
+                setForm(INITIAL_FORM);
+                setIsOpen(false);
+            }, 2500);
+        } catch (error) {
+            console.error("Submission failed:", error);
+            setIsSubmitting(false);
+            alert("Something went wrong. Please try again.");
+        }
     };
 
     const rivets = ["top-4 left-4", "top-4 right-4", "bottom-4 left-4", "bottom-4 right-4"];
@@ -272,334 +343,342 @@ export function EnquiryModal() {
                             aria-hidden="true"
                         />
 
-                        {/* Slide-in Panel */}
-                        <motion.aside
-                            key="enquiry-panel"
-                            role="dialog"
-                            aria-modal="true"
-                            aria-label="Enquiry Form"
-                            variants={panelVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            className="fixed right-0 top-0 h-full z-[1000] flex flex-col"
-                            style={{
-                                width: "min(520px, 100vw)",
-                                background: "#e8e2d6",
-                                boxShadow: "-20px 0 60px rgba(0,0,0,0.35)",
-                                overflowY: "auto",
-                            }}
+                        {/* Centered Modal Panel */}
+                        <div
+                            className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+                            style={{ pointerEvents: "none" }}
                         >
-                            {/* Grain texture */}
-                            <div
-                                aria-hidden="true"
+                            <motion.aside
+                                key="enquiry-panel"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-label="Enquiry Form"
+                                variants={panelVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
                                 style={{
-                                    position: "absolute",
-                                    inset: 0,
-                                    pointerEvents: "none",
-                                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
-                                    opacity: 0.12,
-                                    zIndex: 0,
+                                    width: "min(560px, 100%)",
+                                    maxHeight: "90vh",
+                                    background: "#e8e2d6",
+                                    boxShadow: "0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(181,147,74,0.15)",
+                                    overflowY: "auto",
+                                    borderRadius: 4,
+                                    pointerEvents: "all",
+                                    position: "relative",
                                 }}
-                            />
-
-                            {/* Brass corner rivets */}
-                            {rivets.map((pos, i) => (
+                            >
+                                {/* Grain texture */}
                                 <div
-                                    key={i}
                                     aria-hidden="true"
-                                    className={`absolute ${pos} w-3 h-3 rounded-full z-10`}
                                     style={{
-                                        background: "radial-gradient(circle at 30% 30%, #e2c07d, #b5934a, #6b5526)",
-                                        boxShadow: "1px 2px 4px rgba(0,0,0,0.4), inset -1px -1px 2px rgba(0,0,0,0.3)",
+                                        position: "absolute",
+                                        inset: 0,
+                                        pointerEvents: "none",
+                                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
+                                        opacity: 0.12,
+                                        zIndex: 0,
                                     }}
                                 />
-                            ))}
 
-                            {/* Panel Content */}
-                            <div className="relative z-10 flex flex-col h-full p-8 md:p-12">
-
-                                {/* Header row */}
-                                <div className="flex justify-between items-start mb-10">
-                                    <div>
-                                        <p
-                                            style={{
-                                                fontFamily: "var(--font-mono, monospace)",
-                                                fontSize: "0.65rem",
-                                                textTransform: "uppercase",
-                                                letterSpacing: "0.35em",
-                                                color: "#6b5526",
-                                                marginBottom: 8,
-                                            }}
-                                        >
-                                            Lodging Inquiry
-                                        </p>
-                                        <h2
-                                            style={{
-                                                fontFamily: "var(--font-display, serif)",
-                                                fontSize: "clamp(1.8rem, 4vw, 2.4rem)",
-                                                color: "#2d2b28",
-                                                lineHeight: 1.1,
-                                                fontWeight: 400,
-                                            }}
-                                        >
-                                            Secure Your Stay
-                                        </h2>
-                                    </div>
-
-                                    {/* Close button */}
-                                    <button
-                                        id="enquiry-close-btn"
-                                        onClick={() => setIsOpen(false)}
-                                        aria-label="Close enquiry form"
-                                        className="group"
+                                {/* Brass corner rivets */}
+                                {rivets.map((pos, i) => (
+                                    <div
+                                        key={i}
+                                        aria-hidden="true"
+                                        className={`absolute ${pos} w-3 h-3 rounded-full z-10`}
                                         style={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: "50%",
-                                            background: "rgba(45,43,40,0.08)",
-                                            border: "1px solid rgba(45,43,40,0.12)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            cursor: "pointer",
-                                            transition: "all 0.25s ease",
-                                            flexShrink: 0,
-                                            color: "#2d2b28",
+                                            background: "radial-gradient(circle at 30% 30%, #e2c07d, #b5934a, #6b5526)",
+                                            boxShadow: "1px 2px 4px rgba(0,0,0,0.4), inset -1px -1px 2px rgba(0,0,0,0.3)",
                                         }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = "#1F3A2D";
-                                            e.currentTarget.style.color = "#D8B56A";
-                                            e.currentTarget.style.borderColor = "#1F3A2D";
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = "rgba(45,43,40,0.08)";
-                                            e.currentTarget.style.color = "#2d2b28";
-                                            e.currentTarget.style.borderColor = "rgba(45,43,40,0.12)";
-                                        }}
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                            <line x1="18" y1="6" x2="6" y2="18" />
-                                            <line x1="6" y1="6" x2="18" y2="18" />
-                                        </svg>
-                                    </button>
-                                </div>
+                                    />
+                                ))}
 
-                                {/* Decorative divider */}
-                                <div
-                                    style={{
-                                        height: 1,
-                                        background: "linear-gradient(90deg, transparent, rgba(181,147,74,0.4), transparent)",
-                                        marginBottom: 36,
-                                    }}
-                                />
+                                {/* Panel Content */}
+                                <div className="relative z-10 flex flex-col h-full p-8 md:p-12">
 
-                                {/* ── Success / Form ─────────────────────── */}
-                                <AnimatePresence mode="wait">
-                                    {submitted ? (
-                                        /* Success State */
-                                        <motion.div
-                                            key="success"
-                                            initial={{ opacity: 0, scale: 0.9 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            className="flex-1 flex flex-col items-center justify-center text-center gap-6"
-                                        >
-                                            <motion.div
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                    {/* Header row */}
+                                    <div className="flex justify-between items-start mb-10">
+                                        <div>
+                                            <p
                                                 style={{
-                                                    width: 72,
-                                                    height: 72,
-                                                    borderRadius: "50%",
-                                                    background: "#1F3A2D",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
+                                                    fontFamily: "var(--font-mono, monospace)",
+                                                    fontSize: "0.65rem",
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: "0.35em",
+                                                    color: "#6b5526",
+                                                    marginBottom: 8,
                                                 }}
                                             >
-                                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D8B56A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                    <polyline points="20 6 9 17 4 12" />
-                                                </svg>
-                                            </motion.div>
-                                            <div>
-                                                <h3
-                                                    style={{
-                                                        fontFamily: "var(--font-display, serif)",
-                                                        fontSize: "1.8rem",
-                                                        color: "#2d2b28",
-                                                        marginBottom: 8,
-                                                    }}
-                                                >
-                                                    Dispatch Sent!
-                                                </h3>
-                                                <p
-                                                    style={{
-                                                        fontFamily: "var(--font-mono, monospace)",
-                                                        fontSize: "0.75rem",
-                                                        color: "#6b5526",
-                                                        letterSpacing: "0.1em",
-                                                    }}
-                                                >
-                                                    Our team will reach out to you shortly.
-                                                </p>
-                                            </div>
-                                        </motion.div>
-                                    ) : (
-                                        /* Form */
-                                        <motion.form
-                                            key="form"
-                                            variants={containerVariants}
-                                            initial="hidden"
-                                            animate="visible"
-                                            onSubmit={handleSubmit}
-                                            className="flex-1 flex flex-col gap-7"
-                                        >
-                                            {/* Full Name */}
-                                            <motion.div variants={itemVariants} className="flex flex-col gap-2">
-                                                <FieldLabel htmlFor="enquiry-fullname">Full Name</FieldLabel>
-                                                <FieldInput
-                                                    ref={firstInputRef}
-                                                    id="enquiry-fullname"
-                                                    type="text"
-                                                    placeholder="e.g. Arjun Mehta"
-                                                    value={form.fullName}
-                                                    onChange={(e) => handleChange("fullName", e.target.value)}
-                                                    focused={focusedField === "fullName"}
-                                                    onFocus={() => setFocusedField("fullName")}
-                                                    onBlur={() => setFocusedField(null)}
-                                                    required
-                                                />
-                                            </motion.div>
-
-                                            {/* Mobile + Email */}
-                                            <motion.div variants={itemVariants} className="grid grid-cols-2 gap-5">
-                                                <div className="flex flex-col gap-2">
-                                                    <FieldLabel htmlFor="enquiry-mobile">Mobile No.</FieldLabel>
-                                                    <FieldInput
-                                                        id="enquiry-mobile"
-                                                        type="tel"
-                                                        placeholder="+91 ··· ··· ····"
-                                                        value={form.mobile}
-                                                        onChange={(e) => handleChange("mobile", e.target.value)}
-                                                        focused={focusedField === "mobile"}
-                                                        onFocus={() => setFocusedField("mobile")}
-                                                        onBlur={() => setFocusedField(null)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="flex flex-col gap-2">
-                                                    <FieldLabel htmlFor="enquiry-email">Email Address</FieldLabel>
-                                                    <FieldInput
-                                                        id="enquiry-email"
-                                                        type="email"
-                                                        placeholder="hello@domain.com"
-                                                        value={form.email}
-                                                        onChange={(e) => handleChange("email", e.target.value)}
-                                                        focused={focusedField === "email"}
-                                                        onFocus={() => setFocusedField("email")}
-                                                        onBlur={() => setFocusedField(null)}
-                                                        required
-                                                    />
-                                                </div>
-                                            </motion.div>
-
-                                            {/* City + State + Country */}
-                                            <motion.div variants={itemVariants} className="grid grid-cols-3 gap-4">
-                                                <div className="flex flex-col gap-2">
-                                                    <FieldLabel htmlFor="enquiry-city">City</FieldLabel>
-                                                    <FieldInput
-                                                        id="enquiry-city"
-                                                        type="text"
-                                                        placeholder="Mumbai"
-                                                        value={form.city}
-                                                        onChange={(e) => handleChange("city", e.target.value)}
-                                                        focused={focusedField === "city"}
-                                                        onFocus={() => setFocusedField("city")}
-                                                        onBlur={() => setFocusedField(null)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="flex flex-col gap-2">
-                                                    <FieldLabel htmlFor="enquiry-state">State</FieldLabel>
-                                                    <FieldInput
-                                                        id="enquiry-state"
-                                                        type="text"
-                                                        placeholder="Maharashtra"
-                                                        value={form.state}
-                                                        onChange={(e) => handleChange("state", e.target.value)}
-                                                        focused={focusedField === "state"}
-                                                        onFocus={() => setFocusedField("state")}
-                                                        onBlur={() => setFocusedField(null)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="flex flex-col gap-2">
-                                                    <FieldLabel htmlFor="enquiry-country">Country</FieldLabel>
-                                                    <FieldInput
-                                                        id="enquiry-country"
-                                                        type="text"
-                                                        placeholder="India"
-                                                        value={form.country}
-                                                        onChange={(e) => handleChange("country", e.target.value)}
-                                                        focused={focusedField === "country"}
-                                                        onFocus={() => setFocusedField("country")}
-                                                        onBlur={() => setFocusedField(null)}
-                                                        required
-                                                    />
-                                                </div>
-                                            </motion.div>
-
-                                            {/* Spacer */}
-                                            <div className="flex-1" />
-
-                                            {/* Bottom divider */}
-                                            <div
+                                                Lodging Inquiry
+                                            </p>
+                                            <h2
                                                 style={{
-                                                    height: 1,
-                                                    background: "linear-gradient(90deg, transparent, rgba(181,147,74,0.3), transparent)",
+                                                    fontFamily: "var(--font-display, serif)",
+                                                    fontSize: "clamp(1.8rem, 4vw, 2.4rem)",
+                                                    color: "#2d2b28",
+                                                    lineHeight: 1.1,
+                                                    fontWeight: 400,
                                                 }}
-                                            />
+                                            >
+                                                CONTACT US
+                                            </h2>
+                                        </div>
 
-                                            {/* Submit row */}
-                                            <motion.div variants={itemVariants} className="flex justify-between items-center">
-                                                {/* Decorative stamp */}
-                                                <div
-                                                    aria-hidden="true"
+                                        {/* Close button */}
+                                        <button
+                                            id="enquiry-close-btn"
+                                            onClick={() => setIsOpen(false)}
+                                            aria-label="Close enquiry form"
+                                            className="group"
+                                            style={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: "50%",
+                                                background: "rgba(45,43,40,0.08)",
+                                                border: "1px solid rgba(45,43,40,0.12)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                cursor: "pointer",
+                                                transition: "all 0.25s ease",
+                                                flexShrink: 0,
+                                                color: "#2d2b28",
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = "#1F3A2D";
+                                                e.currentTarget.style.color = "#D8B56A";
+                                                e.currentTarget.style.borderColor = "#1F3A2D";
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = "rgba(45,43,40,0.08)";
+                                                e.currentTarget.style.color = "#2d2b28";
+                                                e.currentTarget.style.borderColor = "rgba(45,43,40,0.12)";
+                                            }}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    {/* Decorative divider */}
+                                    <div
+                                        style={{
+                                            height: 1,
+                                            background: "linear-gradient(90deg, transparent, rgba(181,147,74,0.4), transparent)",
+                                            marginBottom: 36,
+                                        }}
+                                    />
+
+                                    {/* ── Success / Form ─────────────────────── */}
+                                    <AnimatePresence mode="wait">
+                                        {submitted ? (
+                                            /* Success State */
+                                            <motion.div
+                                                key="success"
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                className="flex-1 flex flex-col items-center justify-center text-center gap-6"
+                                            >
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
                                                     style={{
-                                                        width: 60,
-                                                        height: 60,
-                                                        border: "2px double rgba(181,147,74,0.4)",
+                                                        width: 72,
+                                                        height: 72,
                                                         borderRadius: "50%",
+                                                        background: "#1F3A2D",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
-                                                        transform: "rotate(-15deg)",
-                                                        opacity: 0.6,
                                                     }}
                                                 >
-                                                    <span
+                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D8B56A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                </motion.div>
+                                                <div>
+                                                    <h3
                                                         style={{
-                                                            fontFamily: "var(--font-mono, monospace)",
-                                                            fontSize: "0.55rem",
-                                                            color: "#b5934a",
-                                                            textAlign: "center",
-                                                            lineHeight: 1.3,
-                                                            letterSpacing: "0.05em",
+                                                            fontFamily: "var(--font-display, serif)",
+                                                            fontSize: "1.8rem",
+                                                            color: "#2d2b28",
+                                                            marginBottom: 8,
                                                         }}
                                                     >
-                                                        ESTD.<br />2024<br />VIRAMAH
-                                                    </span>
+                                                        Dispatch Sent!
+                                                    </h3>
+                                                    <p
+                                                        style={{
+                                                            fontFamily: "var(--font-mono, monospace)",
+                                                            fontSize: "0.75rem",
+                                                            color: "#6b5526",
+                                                            letterSpacing: "0.1em",
+                                                        }}
+                                                    >
+                                                        Our team will reach out to you shortly.
+                                                    </p>
                                                 </div>
-
-                                                <SubmitButton />
                                             </motion.div>
-                                        </motion.form>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </motion.aside>
+                                        ) : (
+                                            /* Form */
+                                            <motion.form
+                                                key="form"
+                                                variants={containerVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                onSubmit={handleSubmit}
+                                                className="flex-1 flex flex-col gap-7"
+                                            >
+                                                {/* Full Name */}
+                                                <motion.div variants={itemVariants} className="flex flex-col gap-2">
+                                                    <FieldLabel htmlFor="enquiry-fullname">Full Name</FieldLabel>
+                                                    <FieldInput
+                                                        ref={firstInputRef}
+                                                        id="enquiry-fullname"
+                                                        type="text"
+                                                        placeholder="e.g. Arjun Mehta"
+                                                        value={form.fullName}
+                                                        onChange={(e) => handleChange("fullName", e.target.value)}
+                                                        focused={focusedField === "fullName"}
+                                                        onFocus={() => setFocusedField("fullName")}
+                                                        onBlur={() => setFocusedField(null)}
+                                                        required
+                                                    />
+                                                </motion.div>
+
+                                                {/* Mobile + Email */}
+                                                <motion.div variants={itemVariants} className="grid grid-cols-2 gap-5">
+                                                    <div className="flex flex-col gap-2">
+                                                        <FieldLabel htmlFor="enquiry-mobile">Mobile No.</FieldLabel>
+                                                        <FieldInput
+                                                            id="enquiry-mobile"
+                                                            type="tel"
+                                                            placeholder="+91 ··· ··· ····"
+                                                            value={form.mobile}
+                                                            onChange={(e) => handleChange("mobile", e.target.value)}
+                                                            focused={focusedField === "mobile"}
+                                                            onFocus={() => setFocusedField("mobile")}
+                                                            onBlur={() => setFocusedField(null)}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <FieldLabel htmlFor="enquiry-email">Email Address</FieldLabel>
+                                                        <FieldInput
+                                                            id="enquiry-email"
+                                                            type="email"
+                                                            placeholder="hello@domain.com"
+                                                            value={form.email}
+                                                            onChange={(e) => handleChange("email", e.target.value)}
+                                                            focused={focusedField === "email"}
+                                                            onFocus={() => setFocusedField("email")}
+                                                            onBlur={() => setFocusedField(null)}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </motion.div>
+
+                                                {/* City + State + Country */}
+                                                <motion.div variants={itemVariants} className="grid grid-cols-3 gap-4">
+                                                    <div className="flex flex-col gap-2">
+                                                        <FieldLabel htmlFor="enquiry-city">City</FieldLabel>
+                                                        <FieldInput
+                                                            id="enquiry-city"
+                                                            type="text"
+                                                            placeholder="Mumbai"
+                                                            value={form.city}
+                                                            onChange={(e) => handleChange("city", e.target.value)}
+                                                            focused={focusedField === "city"}
+                                                            onFocus={() => setFocusedField("city")}
+                                                            onBlur={() => setFocusedField(null)}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <FieldLabel htmlFor="enquiry-state">State</FieldLabel>
+                                                        <FieldInput
+                                                            id="enquiry-state"
+                                                            type="text"
+                                                            placeholder="Maharashtra"
+                                                            value={form.state}
+                                                            onChange={(e) => handleChange("state", e.target.value)}
+                                                            focused={focusedField === "state"}
+                                                            onFocus={() => setFocusedField("state")}
+                                                            onBlur={() => setFocusedField(null)}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <FieldLabel htmlFor="enquiry-country">Country</FieldLabel>
+                                                        <FieldInput
+                                                            id="enquiry-country"
+                                                            type="text"
+                                                            placeholder="India"
+                                                            value={form.country}
+                                                            onChange={(e) => handleChange("country", e.target.value)}
+                                                            focused={focusedField === "country"}
+                                                            onFocus={() => setFocusedField("country")}
+                                                            onBlur={() => setFocusedField(null)}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </motion.div>
+
+                                                {/* Spacer */}
+                                                <div className="flex-1" />
+
+                                                {/* Bottom divider */}
+                                                <div
+                                                    style={{
+                                                        height: 1,
+                                                        background: "linear-gradient(90deg, transparent, rgba(181,147,74,0.3), transparent)",
+                                                    }}
+                                                />
+
+                                                {/* Submit row */}
+                                                <motion.div variants={itemVariants} className="flex justify-between items-center">
+                                                    {/* Decorative stamp */}
+                                                    <div
+                                                        aria-hidden="true"
+                                                        style={{
+                                                            width: 60,
+                                                            height: 60,
+                                                            border: "2px double rgba(181,147,74,0.4)",
+                                                            borderRadius: "50%",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "center",
+                                                            transform: "rotate(-15deg)",
+                                                            opacity: 0.6,
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                fontFamily: "var(--font-mono, monospace)",
+                                                                fontSize: "0.55rem",
+                                                                color: "#b5934a",
+                                                                textAlign: "center",
+                                                                lineHeight: 1.3,
+                                                                letterSpacing: "0.05em",
+                                                            }}
+                                                        >
+                                                            ESTD.<br />2024<br />VIRAMAH
+                                                        </span>
+                                                    </div>
+
+                                                    <SubmitButton loading={isSubmitting} />
+                                                </motion.div>
+                                            </motion.form>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </motion.aside>
+                        </div>
                     </>
                 )}
             </AnimatePresence>

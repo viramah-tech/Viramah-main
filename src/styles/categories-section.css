@@ -97,33 +97,9 @@
 .cat-marquee {
     display: flex;
     width: max-content;
-    animation: catMarqueeScroll 30s linear infinite;
     gap: 1.2rem;
     padding: 1rem 0;
-}
-
-.cat-marquee:hover {
-    animation-play-state: paused;
-}
-
-@keyframes catMarqueeScroll {
-    0% {
-        transform: translateX(0);
-    }
-
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-/* ── Tile sizing for marquee ───────────────── */
-.cat-tile {
-    width: clamp(260px, 22vw, 340px);
-    flex-shrink: 0;
-}
-
-.cat-marquee.cat-marquee-paused {
-    animation-play-state: paused;
+    will-change: transform;
 }
 
 /* ── 4. Tile ───────────────────────────────── */
@@ -287,7 +263,6 @@
     }
 
     .cat-marquee {
-        animation-duration: 18s;
         gap: 0.8rem;
     }
 
@@ -339,7 +314,6 @@
     }
 
     .cat-marquee {
-        animation-duration: 22s;
         gap: 1rem;
     }
 
@@ -382,9 +356,6 @@
         padding: 3rem 0;
     }
 
-    .cat-marquee {
-        animation-duration: 26s;
-    }
 
     .cat-tile {
         width: 280px;
@@ -425,10 +396,6 @@
 
 /* ── PREFERS REDUCED MOTION ────────────────── */
 @media (prefers-reduced-motion: reduce) {
-    .cat-marquee {
-        animation: none !important;
-    }
-
     .cat-tile {
         transition: none !important;
         transform: none !important;

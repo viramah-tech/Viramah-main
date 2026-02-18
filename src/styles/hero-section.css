@@ -41,7 +41,7 @@
     font-size: clamp(4rem, 15vw, 12rem);
     line-height: 0.85;
     text-transform: uppercase;
-    letter-spacing: -0.04em;
+    letter-spacing: 0.1em;
     color: var(--ink-primary);
     margin-bottom: 2rem;
 }
@@ -50,7 +50,7 @@
     font-family: var(--font-mono);
     font-size: 1rem;
     text-transform: uppercase;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.1em;
     display: flex;
     gap: 4rem;
     color: var(--ink-primary);
@@ -165,9 +165,9 @@
    =================== */
 .hero-tile {
     position: relative;
-    width: clamp(280px, 28vw, 420px);
-    height: clamp(360px, 36vw, 560px);
-    margin: 0 clamp(12px, 2vw, 30px);
+    width: clamp(160px, 28vw, 420px);
+    height: clamp(200px, 36vw, 560px);
+    margin: 0 clamp(8px, 2vw, 30px);
     background: var(--luxury-green);
     border-radius: 4px;
     box-shadow:
@@ -280,9 +280,6 @@
    9. HOVER — Desktop Only
    ============================================= */
 @media (hover: hover) and (pointer: fine) {
-    .hero-marquee:hover {
-        animation-play-state: paused;
-    }
 
     .hero-tile:hover {
         transform: translateY(-15px) scale(1.02);
@@ -327,10 +324,6 @@
     }
 }
 
-/* Marquee paused state (tap on mobile) */
-.hero-marquee.hero-marquee-paused {
-    animation-play-state: paused;
-}
 
 /* =============================================
    10. RESPONSIVE
@@ -367,12 +360,14 @@
 
     .hero-stage {
         padding: 30px 0;
+        max-width: 100vw;
+        overflow: hidden;
     }
 
     .hero-tile {
-        width: 65vw;
-        height: 80vw;
-        margin: 0 12px;
+        width: 62vw;
+        height: 72vw;
+        margin: 0 10px;
     }
 
     .hero-viewport {
@@ -406,8 +401,8 @@
     }
 
     .hero-tile {
-        width: 70vw;
-        height: 85vw;
+        width: 68vw;
+        height: 78vw;
         margin: 0 8px;
     }
 

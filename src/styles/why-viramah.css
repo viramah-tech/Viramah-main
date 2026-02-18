@@ -1,0 +1,288 @@
+/* =============================================
+   WHY VIRAMAH SECTION
+   Dark green, gold accents, premium USP grid
+   ============================================= */
+
+/* ── Section ─────────────────────────────────── */
+.wv-section {
+    position: relative;
+    background: linear-gradient(160deg, #1a3328 0%, #0f2018 55%, #162b1e 100%);
+    color: #F6F4EF;
+    padding: 7rem 0 5rem;
+    overflow: hidden;
+}
+
+/* Grain texture overlay */
+.wv-grain {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+}
+
+/* Large decorative background text */
+.wv-bg-text {
+    position: absolute;
+    top: -0.1em;
+    right: -0.05em;
+    font-family: var(--font-display, serif);
+    font-size: clamp(10rem, 22vw, 22rem);
+    font-weight: 900;
+    color: rgba(216, 181, 106, 0.04);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -0.05em;
+}
+
+/* ── Inner container ─────────────────────────── */
+.wv-inner {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 clamp(1.5rem, 5vw, 5rem);
+    position: relative;
+    z-index: 2;
+}
+
+/* ── Header ──────────────────────────────────── */
+.wv-header {
+    max-width: 640px;
+    margin-bottom: 5rem;
+}
+
+.wv-eyebrow {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.35em;
+    color: #D8B56A;
+    margin-bottom: 1.2rem;
+}
+
+.wv-title {
+    font-family: var(--font-display, serif);
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    font-weight: 400;
+    line-height: 1.05;
+    color: #F6F4EF;
+    margin-bottom: 1.5rem;
+}
+
+.wv-title-gold {
+    color: #D8B56A;
+}
+
+.wv-subtitle {
+    font-family: var(--font-body, sans-serif);
+    font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+    color: rgba(246, 244, 239, 0.55);
+    line-height: 1.7;
+    max-width: 480px;
+}
+
+/* ── USP Grid ────────────────────────────────── */
+.wv-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5px;
+    background: rgba(216, 181, 106, 0.12);
+    border: 1.5px solid rgba(216, 181, 106, 0.12);
+    margin-bottom: 5rem;
+}
+
+/* ── Card ────────────────────────────────────── */
+.wv-card {
+    position: relative;
+    background: linear-gradient(145deg, #1a3328, #132619);
+    padding: clamp(1.8rem, 3vw, 2.8rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    transition: background 0.4s ease;
+    overflow: hidden;
+}
+
+.wv-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 0% 0%, rgba(216, 181, 106, 0.06) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.wv-card:hover::before {
+    opacity: 1;
+}
+
+.wv-card:hover .wv-card-line {
+    width: 100%;
+}
+
+.wv-card:hover .wv-card-icon {
+    color: #D8B56A;
+    transform: translateY(-3px);
+}
+
+/* Number badge */
+.wv-card-num {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: rgba(216, 181, 106, 0.5);
+    font-weight: 700;
+}
+
+/* Icon */
+.wv-card-icon {
+    color: rgba(246, 244, 239, 0.7);
+    transition: color 0.4s ease, transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    width: 28px;
+    height: 28px;
+    margin-bottom: 0.4rem;
+}
+
+/* Title */
+.wv-card-title {
+    font-family: var(--font-body, sans-serif);
+    font-size: clamp(1rem, 1.4vw, 1.2rem);
+    font-weight: 700;
+    color: #F6F4EF;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+/* Description */
+.wv-card-desc {
+    font-family: var(--font-body, sans-serif);
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
+    color: rgba(246, 244, 239, 0.5);
+    line-height: 1.65;
+    flex: 1;
+}
+
+/* Bottom accent line */
+.wv-card-line {
+    height: 1.5px;
+    width: 32px;
+    background: #D8B56A;
+    margin-top: 0.5rem;
+    transition: width 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* ── CTA Strip ───────────────────────────────── */
+.wv-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid rgba(216, 181, 106, 0.15);
+    flex-wrap: wrap;
+}
+
+.wv-cta-text {
+    font-family: var(--font-display, serif);
+    font-size: clamp(1.1rem, 2vw, 1.5rem);
+    color: rgba(246, 244, 239, 0.7);
+    font-weight: 400;
+}
+
+.wv-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: #D8B56A;
+    color: #0f2018;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.wv-cta-btn:hover {
+    background: #e8c97a;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(216, 181, 106, 0.3);
+}
+
+/* ── Section Divider ─────────────────────────── */
+.wv-divider {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 3;
+    line-height: 0;
+}
+
+.wv-divider-svg {
+    display: block;
+    width: 100%;
+    height: 56px;
+    overflow: visible;
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+
+/* ── TABLET ──────────────────────────────────── */
+@media (max-width: 1024px) {
+    .wv-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ── PHONES ──────────────────────────────────── */
+@media (max-width: 767px) {
+    .wv-section {
+        padding: 4rem 0 3.5rem;
+    }
+
+    .wv-header {
+        margin-bottom: 3rem;
+    }
+
+    .wv-grid {
+        grid-template-columns: 1fr;
+        gap: 1px;
+    }
+
+    .wv-bg-text {
+        font-size: 40vw;
+        opacity: 0.03;
+    }
+
+    .wv-cta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+}
+
+/* ── PREFERS REDUCED MOTION ──────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .wv-card {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    .wv-card-line {
+        transition: none !important;
+    }
+
+    .wv-card-icon {
+        transition: none !important;
+    }
+}

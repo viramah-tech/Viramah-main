@@ -5,6 +5,10 @@
 @import "./categories-section.css";
 @import "./amenities-section.css";
 @import "./cta-section.css";
+@import "./community-section.css";
+@import "./founder-section.css";
+@import "./faq-section.css";
+@import "./testimonials-section.css";
 @import "./footer-section.css";
 
 @theme {
