@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/Button";
 import { ArrowRight, ArrowLeft, Settings2, Moon, Sun, Volume2, VolumeX } from "lucide-react";
+
+const GREEN = "#1F3A2D";
+const GOLD = "#D8B56A";
 
 interface PreferenceOption {
     value: string;
@@ -27,120 +29,219 @@ const SLEEP_OPTIONS: PreferenceOption[] = [
 
 const NOISE_OPTIONS: PreferenceOption[] = [
     { value: "quiet", label: "Quiet", icon: VolumeX, description: "Prefer silence" },
-    { value: "moderate", label: "Moderate", icon: Volume2, description: "Some background noise is fine" },
+    { value: "moderate", label: "Moderate", icon: Volume2, description: "Some background noise" },
     { value: "social", label: "Social", icon: Volume2, description: "Love a lively environment" },
 ];
 
-export default function Step3Page() {
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] } },
+};
+
+function PreferenceGroup({
+    title,
+    options,
+    value,
+    onChange,
+}: {
+    title: string;
+    options: PreferenceOption[];
+    value: string;
+    onChange: (v: string) => void;
+}) {
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <p
+                style={{
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: "0.62rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.25em",
+                    color: "rgba(31,58,45,0.55)",
+                    fontWeight: 700,
+                    margin: 0,
+                }}
+            >
+                {title}
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                {options.map((opt) => {
+                    const isSelected = value === opt.value;
+                    const Icon = opt.icon;
+                    return (
+                        <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => onChange(opt.value)}
+                            style={{
+                                padding: "16px 12px",
+                                borderRadius: 12,
+                                border: `2px solid ${isSelected ? GREEN : "rgba(31,58,45,0.12)"}`,
+                                background: isSelected ? "rgba(31,58,45,0.06)" : "#fff",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                transition: "all 0.25s ease",
+                                boxShadow: isSelected ? "0 4px 16px rgba(31,58,45,0.1)" : "none",
+                            }}
+                        >
+                            <Icon
+                                size={20}
+                                color={isSelected ? GREEN : "rgba(31,58,45,0.3)"}
+                                style={{ marginBottom: 8, display: "block" }}
+                            />
+                            <span
+                                style={{
+                                    fontFamily: "var(--font-body, sans-serif)",
+                                    fontSize: "0.85rem",
+                                    fontWeight: 600,
+                                    color: isSelected ? GREEN : "rgba(31,58,45,0.7)",
+                                    display: "block",
+                                    marginBottom: 4,
+                                }}
+                            >
+                                {opt.label}
+                            </span>
+                            <span
+                                style={{
+                                    fontFamily: "var(--font-mono, monospace)",
+                                    fontSize: "0.6rem",
+                                    color: "rgba(31,58,45,0.4)",
+                                    letterSpacing: "0.03em",
+                                    display: "block",
+                                }}
+                            >
+                                {opt.description}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+export default function Step4Page() {
     const [preferences, setPreferences] = useState({
         dietary: "",
         sleep: "",
         noise: "",
     });
 
-    const PreferenceGroup = ({
-        title,
-        options,
-        value,
-        onChange
-    }: {
-        title: string;
-        options: PreferenceOption[];
-        value: string;
-        onChange: (v: string) => void;
-    }) => (
-        <div className="space-y-3">
-            <label className="font-body text-sm font-medium text-charcoal/70 block">
-                {title}
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-                {options.map((opt) => (
-                    <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => onChange(opt.value)}
-                        className={`p-4 rounded-xl border-2 text-left transition-all duration-300 ${value === opt.value
-                            ? "border-terracotta-raw bg-terracotta-raw/10"
-                            : "border-sand-dark hover:border-charcoal/30"
-                            }`}
-                    >
-                        <opt.icon className={`w-5 h-5 mb-2 ${value === opt.value ? "text-terracotta-raw" : "text-charcoal/40"
-                            }`} />
-                        <span className={`font-body text-sm font-medium block ${value === opt.value ? "text-terracotta-raw" : "text-charcoal"
-                            }`}>
-                            {opt.label}
-                        </span>
-                        <span className="font-mono text-[10px] text-charcoal/50 block mt-1">
-                            {opt.description}
-                        </span>
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-8"
-        >
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
             {/* Header */}
-            <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-terracotta-raw/10 mb-4">
-                    <Settings2 className="w-4 h-4 text-terracotta-raw" />
-                    <span className="font-mono text-xs text-terracotta-raw uppercase tracking-widest">
+            <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 999, background: "rgba(31,58,45,0.08)", border: "1px solid rgba(31,58,45,0.12)", marginBottom: 16 }}>
+                    <Settings2 size={14} color={GREEN} />
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.3em", color: GREEN }}>
                         Lifestyle Preferences
                     </span>
                 </div>
-                <h1 className="font-display text-4xl text-charcoal mb-2">
+                <h1 style={{ fontFamily: "var(--font-display, serif)", fontSize: "clamp(2rem, 4vw, 2.8rem)", color: GREEN, lineHeight: 1.1, fontWeight: 400, marginBottom: 10 }}>
                     Tell us about yourself
                 </h1>
-                <p className="font-body text-charcoal/60 max-w-md mx-auto">
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", color: "rgba(31,58,45,0.55)", maxWidth: 420, margin: "0 auto", lineHeight: 1.6 }}>
                     Help us match you with compatible roommates and provide personalized services.
                 </p>
-            </div>
+            </motion.div>
 
-            {/* Form */}
-            <div className="bg-white rounded-2xl border border-sand-dark p-8 shadow-lg shadow-charcoal/5 space-y-8">
+            {/* Preferences Card */}
+            <motion.div
+                variants={itemVariants}
+                style={{
+                    background: "#fff",
+                    borderRadius: 20,
+                    border: "1px solid rgba(31,58,45,0.1)",
+                    padding: 32,
+                    boxShadow: "0 4px 24px rgba(31,58,45,0.07)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 32,
+                }}
+            >
                 <PreferenceGroup
                     title="Dietary Preference"
                     options={DIET_OPTIONS}
                     value={preferences.dietary}
                     onChange={(v) => setPreferences({ ...preferences, dietary: v })}
                 />
-
+                <div style={{ height: 1, background: "rgba(31,58,45,0.08)" }} />
                 <PreferenceGroup
                     title="Sleep Schedule"
                     options={SLEEP_OPTIONS}
                     value={preferences.sleep}
                     onChange={(v) => setPreferences({ ...preferences, sleep: v })}
                 />
-
+                <div style={{ height: 1, background: "rgba(31,58,45,0.08)" }} />
                 <PreferenceGroup
                     title="Noise Preference"
                     options={NOISE_OPTIONS}
                     value={preferences.noise}
                     onChange={(v) => setPreferences({ ...preferences, noise: v })}
                 />
-            </div>
+            </motion.div>
 
             {/* Navigation */}
-            <div className="flex justify-between pt-4">
-                <Link href="/user-onboarding/step-3">
-                    <Button variant="secondary" size="lg" className="gap-2">
-                        <ArrowLeft className="w-4 h-4" />
-                        Back
-                    </Button>
+            <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
+                <Link href="/user-onboarding/step-3" style={{ textDecoration: "none" }}>
+                    <SecondaryButton><ArrowLeft size={16} /> Back</SecondaryButton>
                 </Link>
-                <Link href="/user-onboarding/confirm">
-                    <Button size="lg" className="gap-2">
-                        Continue to Review
-                        <ArrowRight className="w-4 h-4" />
-                    </Button>
+                <Link href="/user-onboarding/confirm" style={{ textDecoration: "none" }}>
+                    <NavButton>Continue to Review <ArrowRight size={16} /></NavButton>
                 </Link>
-            </div>
+            </motion.div>
         </motion.div>
+    );
+}
+
+function NavButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
+    const [hovered, setHovered] = useState(false);
+    return (
+        <button
+            disabled={disabled}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 28px",
+                background: disabled ? "rgba(31,58,45,0.15)" : hovered ? "linear-gradient(135deg, #2a4d3a, #1F3A2D)" : "linear-gradient(135deg, #1F3A2D, #162b1e)",
+                color: disabled ? "rgba(31,58,45,0.35)" : GOLD,
+                border: "none", borderRadius: 10,
+                fontFamily: "var(--font-mono, monospace)", fontWeight: 700, fontSize: "0.7rem",
+                textTransform: "uppercase", letterSpacing: "0.18em",
+                cursor: disabled ? "not-allowed" : "pointer",
+                transform: hovered && !disabled ? "translateY(-2px)" : "translateY(0)",
+                boxShadow: hovered && !disabled ? "0 10px 28px rgba(31,58,45,0.3)" : "0 4px 14px rgba(31,58,45,0.18)",
+                transition: "all 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
+            }}
+        >
+            {children}
+        </button>
+    );
+}
+
+function SecondaryButton({ children }: { children: React.ReactNode }) {
+    const [hovered, setHovered] = useState(false);
+    return (
+        <button
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 24px",
+                background: hovered ? "rgba(31,58,45,0.06)" : "transparent",
+                color: GREEN,
+                border: `1.5px solid ${hovered ? GREEN : "rgba(31,58,45,0.2)"}`,
+                borderRadius: 10,
+                fontFamily: "var(--font-mono, monospace)", fontWeight: 700, fontSize: "0.7rem",
+                textTransform: "uppercase", letterSpacing: "0.15em",
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+            }}
+        >
+            {children}
+        </button>
     );
 }

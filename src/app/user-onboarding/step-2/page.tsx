@@ -3,9 +3,10 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FormInput } from "@/components/ui/FormInput";
-import { Button } from "@/components/ui/Button";
-import { ArrowRight, ArrowLeft, Phone, Upload, X, Image, Users } from "lucide-react";
+import { ArrowRight, ArrowLeft, Phone, Upload, X, Users } from "lucide-react";
+
+const GREEN = "#1F3A2D";
+const GOLD = "#D8B56A";
 
 interface UploadedFile {
     name: string;
@@ -16,7 +17,7 @@ function PhotoUpload({
     label,
     file,
     onUpload,
-    onRemove
+    onRemove,
 }: {
     label: string;
     file: UploadedFile | null;
@@ -24,61 +25,93 @@ function PhotoUpload({
     onRemove: () => void;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
+    const [hovered, setHovered] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
             const reader = new FileReader();
             reader.onload = () => {
-                onUpload({
-                    name: selectedFile.name,
-                    preview: reader.result as string,
-                });
+                onUpload({ name: selectedFile.name, preview: reader.result as string });
             };
             reader.readAsDataURL(selectedFile);
         }
     };
 
     return (
-        <div className="flex-1">
-            <span className="font-mono text-[10px] text-charcoal/50 uppercase tracking-widest block mb-2">
+        <div style={{ flex: 1 }}>
+            <span
+                style={{
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: "0.6rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.25em",
+                    color: "rgba(31,58,45,0.5)",
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 700,
+                }}
+            >
                 {label}
             </span>
             {file ? (
-                <div className="relative aspect-[3/2] rounded-xl overflow-hidden border-2 border-sage-muted bg-sage-muted/10">
-                    <img
-                        src={file.preview}
-                        alt={label}
-                        className="w-full h-full object-cover"
-                    />
+                <div style={{ position: "relative", aspectRatio: "3/2", borderRadius: 12, overflow: "hidden", border: `2px solid ${GREEN}` }}>
+                    <img src={file.preview} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     <button
                         onClick={onRemove}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 shadow-lg flex items-center justify-center hover:bg-white transition-colors"
+                        style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.95)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
                     >
-                        <X className="w-4 h-4 text-charcoal" />
+                        <X size={14} color={GREEN} />
                     </button>
                 </div>
             ) : (
                 <button
                     onClick={() => inputRef.current?.click()}
-                    className="w-full aspect-[3/2] rounded-xl border-2 border-dashed border-sand-dark hover:border-terracotta-raw bg-sand-light/50 hover:bg-terracotta-raw/5 transition-all flex flex-col items-center justify-center gap-2"
+                    onMouseEnter={() => setHovered(true)}
+                    onMouseLeave={() => setHovered(false)}
+                    style={{
+                        width: "100%",
+                        aspectRatio: "3/2",
+                        borderRadius: 12,
+                        border: `2px dashed ${hovered ? GREEN : "rgba(31,58,45,0.2)"}`,
+                        background: hovered ? "rgba(31,58,45,0.04)" : "rgba(255,255,255,0.5)",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        transition: "all 0.25s ease",
+                    }}
                 >
-                    <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
-                        <Upload className="w-5 h-5 text-charcoal/40" />
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fff", boxShadow: "0 2px 8px rgba(31,58,45,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Upload size={18} color={hovered ? GREEN : "rgba(31,58,45,0.35)"} />
                     </div>
-                    <span className="font-mono text-xs text-charcoal/50">Click to upload</span>
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: hovered ? GREEN : "rgba(31,58,45,0.4)", letterSpacing: "0.05em" }}>
+                        Click to upload
+                    </span>
                 </button>
             )}
-            <input
-                ref={inputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-            />
+            <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
         </div>
     );
 }
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] } },
+};
+
+const RELATIONS = ["Father", "Mother", "Guardian", "Other"];
+const ID_TYPES = [
+    { value: "aadhaar", label: "Aadhaar" },
+    { value: "passport", label: "Passport" },
+    { value: "voter_id", label: "Voter ID" },
+];
 
 export default function Step2Page() {
     const [formData, setFormData] = useState({
@@ -89,64 +122,64 @@ export default function Step2Page() {
         parentIdType: "aadhaar",
         parentIdNumber: "",
     });
-
     const [parentIdFront, setParentIdFront] = useState<UploadedFile | null>(null);
     const [parentIdBack, setParentIdBack] = useState<UploadedFile | null>(null);
+    const [focusedField, setFocusedField] = useState<string | null>(null);
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-8"
-        >
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
             {/* Header */}
-            <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-terracotta-raw/10 mb-4">
-                    <Phone className="w-4 h-4 text-terracotta-raw" />
-                    <span className="font-mono text-xs text-terracotta-raw uppercase tracking-widest">
+            <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 999, background: "rgba(31,58,45,0.08)", border: "1px solid rgba(31,58,45,0.12)", marginBottom: 16 }}>
+                    <Phone size={14} color={GREEN} />
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.3em", color: GREEN }}>
                         Emergency Contact
                     </span>
                 </div>
-                <h1 className="font-display text-4xl text-charcoal mb-2">
+                <h1 style={{ fontFamily: "var(--font-display, serif)", fontSize: "clamp(2rem, 4vw, 2.8rem)", color: GREEN, lineHeight: 1.1, fontWeight: 400, marginBottom: 10 }}>
                     Emergency contact details
                 </h1>
-                <p className="font-body text-charcoal/60 max-w-md mx-auto">
-                    Please provide emergency contact information. We&apos;ll only use this in case of emergencies.
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", color: "rgba(31,58,45,0.55)", maxWidth: 420, margin: "0 auto", lineHeight: 1.6 }}>
+                    Please provide emergency contact information. We'll only use this in case of emergencies.
                 </p>
-            </div>
+            </motion.div>
 
-            {/* Contact Info Form */}
-            <div className="bg-white rounded-2xl border border-sand-dark p-8 shadow-lg shadow-charcoal/5 space-y-6">
-                <FormInput
-                    label="Emergency Contact Name"
-                    value={formData.emergencyName}
-                    onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
-                    hint="Parent or guardian name"
-                />
+            {/* Contact Info Card */}
+            <motion.div variants={itemVariants} style={{ background: "#fff", borderRadius: 20, border: "1px solid rgba(31,58,45,0.1)", padding: 32, boxShadow: "0 4px 24px rgba(31,58,45,0.07)", display: "flex", flexDirection: "column", gap: 24 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <FieldLabel htmlFor="s2-name">Emergency Contact Name</FieldLabel>
+                    <FieldInput id="s2-name" type="text" placeholder="Parent or guardian name" value={formData.emergencyName} onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })} focused={focusedField === "name"} onFocus={() => setFocusedField("name")} onBlur={() => setFocusedField(null)} />
+                </div>
 
-                <FormInput
-                    label="Emergency Contact Phone"
-                    type="tel"
-                    value={formData.emergencyPhone}
-                    onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
-                    hint="Include country code (+91)"
-                />
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <FieldLabel htmlFor="s2-phone">Emergency Contact Phone</FieldLabel>
+                    <FieldInput id="s2-phone" type="tel" placeholder="+91 98XXX XXXXX" value={formData.emergencyPhone} onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })} focused={focusedField === "phone"} onFocus={() => setFocusedField("phone")} onBlur={() => setFocusedField(null)} />
+                    <FieldHint>Include country code (+91)</FieldHint>
+                </div>
 
-                <div className="space-y-2">
-                    <label className="font-body text-sm font-medium text-charcoal/70 block">
-                        Relationship
-                    </label>
-                    <div className="grid grid-cols-4 gap-3">
-                        {["Father", "Mother", "Guardian", "Other"].map((rel) => (
+                {/* Relationship */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <FieldLabel>Relationship</FieldLabel>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                        {RELATIONS.map((rel) => (
                             <button
                                 key={rel}
                                 type="button"
                                 onClick={() => setFormData({ ...formData, emergencyRelation: rel })}
-                                className={`py-3 rounded-xl border-2 font-mono text-xs uppercase tracking-widest transition-all duration-300 ${formData.emergencyRelation === rel
-                                    ? "border-terracotta-raw bg-terracotta-raw/10 text-terracotta-raw"
-                                    : "border-sand-dark text-charcoal/60 hover:border-charcoal/30"
-                                    }`}
+                                style={{
+                                    padding: "12px 8px",
+                                    borderRadius: 10,
+                                    border: `2px solid ${formData.emergencyRelation === rel ? GREEN : "rgba(31,58,45,0.15)"}`,
+                                    background: formData.emergencyRelation === rel ? "rgba(31,58,45,0.06)" : "#fff",
+                                    fontFamily: "var(--font-mono, monospace)",
+                                    fontSize: "0.62rem",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.1em",
+                                    color: formData.emergencyRelation === rel ? GREEN : "rgba(31,58,45,0.45)",
+                                    cursor: "pointer",
+                                    fontWeight: formData.emergencyRelation === rel ? 700 : 400,
+                                    transition: "all 0.2s ease",
+                                }}
                             >
                                 {rel}
                             </button>
@@ -154,97 +187,178 @@ export default function Step2Page() {
                     </div>
                 </div>
 
-                <FormInput
-                    label="Alternate Phone (Optional)"
-                    type="tel"
-                    value={formData.alternatePhone}
-                    onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
-                />
-            </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <FieldLabel htmlFor="s2-alt">Alternate Phone <span style={{ opacity: 0.5, fontWeight: 400 }}>(Optional)</span></FieldLabel>
+                    <FieldInput id="s2-alt" type="tel" placeholder="+91 98XXX XXXXX" value={formData.alternatePhone} onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })} focused={focusedField === "alt"} onFocus={() => setFocusedField("alt")} onBlur={() => setFocusedField(null)} />
+                </div>
+            </motion.div>
 
-            {/* Parent/Guardian ID Verification */}
-            <div className="bg-white rounded-2xl border border-sand-dark p-8 shadow-lg shadow-charcoal/5 space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center">
-                        <Users className="w-5 h-5 text-gold" />
+            {/* Guardian ID Card */}
+            <motion.div variants={itemVariants} style={{ background: "#fff", borderRadius: 20, border: "1px solid rgba(31,58,45,0.1)", padding: 32, boxShadow: "0 4px 24px rgba(31,58,45,0.07)", display: "flex", flexDirection: "column", gap: 24 }}>
+                {/* Section header */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(216,181,106,0.15)", border: "1px solid rgba(216,181,106,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Users size={18} color={GOLD} />
                     </div>
                     <div>
-                        <span className="font-body font-medium text-charcoal block">Parent/Guardian ID Verification</span>
-                        <span className="font-mono text-[10px] text-charcoal/50">Required for student safety</span>
+                        <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 600, color: GREEN, margin: 0 }}>Parent / Guardian ID Verification</p>
+                        <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.45)", margin: 0, letterSpacing: "0.05em" }}>Required for student safety</p>
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <label className="font-body text-sm font-medium text-charcoal/70 block">
-                        ID Type
-                    </label>
-                    <div className="grid grid-cols-3 gap-3">
-                        {["aadhaar", "passport", "voter_id"].map((type) => (
+                {/* ID Type */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <FieldLabel>ID Type</FieldLabel>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                        {ID_TYPES.map((type) => (
                             <button
-                                key={type}
+                                key={type.value}
                                 type="button"
-                                onClick={() => setFormData({ ...formData, parentIdType: type })}
-                                className={`py-3 rounded-xl border-2 font-mono text-xs uppercase tracking-widest transition-all duration-300 ${formData.parentIdType === type
-                                    ? "border-gold bg-gold/10 text-gold"
-                                    : "border-sand-dark text-charcoal/60 hover:border-charcoal/30"
-                                    }`}
+                                onClick={() => setFormData({ ...formData, parentIdType: type.value })}
+                                style={{
+                                    padding: "12px 8px",
+                                    borderRadius: 10,
+                                    border: `2px solid ${formData.parentIdType === type.value ? GOLD : "rgba(31,58,45,0.15)"}`,
+                                    background: formData.parentIdType === type.value ? "rgba(216,181,106,0.08)" : "#fff",
+                                    fontFamily: "var(--font-mono, monospace)",
+                                    fontSize: "0.65rem",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.15em",
+                                    color: formData.parentIdType === type.value ? "#9a7a3a" : "rgba(31,58,45,0.45)",
+                                    cursor: "pointer",
+                                    fontWeight: formData.parentIdType === type.value ? 700 : 400,
+                                    transition: "all 0.2s ease",
+                                }}
                             >
-                                {type.replace("_", " ")}
+                                {type.label}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                <FormInput
-                    label={`${formData.parentIdType === "aadhaar" ? "Aadhaar" : formData.parentIdType === "passport" ? "Passport" : "Voter ID"} Number`}
-                    value={formData.parentIdNumber}
-                    onChange={(e) => setFormData({ ...formData, parentIdNumber: e.target.value })}
-                    hint="Parent/Guardian ID number"
-                />
+                {/* ID Number */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <FieldLabel htmlFor="s2-pidnum">
+                        {formData.parentIdType === "aadhaar" ? "Aadhaar" : formData.parentIdType === "passport" ? "Passport" : "Voter ID"} Number
+                    </FieldLabel>
+                    <FieldInput id="s2-pidnum" type="text" placeholder="Parent/Guardian ID number" value={formData.parentIdNumber} onChange={(e) => setFormData({ ...formData, parentIdNumber: e.target.value })} focused={focusedField === "pidnum"} onFocus={() => setFocusedField("pidnum")} onBlur={() => setFocusedField(null)} />
+                </div>
 
-                {/* Parent ID Photo Upload Section */}
-                <div className="pt-4 border-t border-sand-dark">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Image className="w-5 h-5 text-gold" />
-                        <span className="font-body text-sm font-medium text-charcoal">
-                            Upload Parent/Guardian ID Photos
-                        </span>
+                {/* Photo Upload */}
+                <div style={{ paddingTop: 20, borderTop: "1px solid rgba(31,58,45,0.1)", display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div>
+                        <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 600, color: GREEN, marginBottom: 4 }}>Upload Parent/Guardian ID Photos</p>
+                        <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)" }}>Please upload clear photos. Make sure all details are visible.</p>
                     </div>
-                    <p className="font-mono text-[11px] text-charcoal/50 mb-4">
-                        Please upload clear photos of the parent/guardian ID. Make sure all details are visible.
-                    </p>
-                    <div className="grid grid-cols-2 gap-4">
-                        <PhotoUpload
-                            label="Front Side"
-                            file={parentIdFront}
-                            onUpload={setParentIdFront}
-                            onRemove={() => setParentIdFront(null)}
-                        />
-                        <PhotoUpload
-                            label="Back Side"
-                            file={parentIdBack}
-                            onUpload={setParentIdBack}
-                            onRemove={() => setParentIdBack(null)}
-                        />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <PhotoUpload label="Front Side" file={parentIdFront} onUpload={setParentIdFront} onRemove={() => setParentIdFront(null)} />
+                        <PhotoUpload label="Back Side" file={parentIdBack} onUpload={setParentIdBack} onRemove={() => setParentIdBack(null)} />
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Navigation */}
-            <div className="flex justify-between pt-4">
-                <Link href="/user-onboarding/step-1">
-                    <Button variant="secondary" size="lg" className="gap-2">
-                        <ArrowLeft className="w-4 h-4" />
-                        Back
-                    </Button>
+            <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
+                <Link href="/user-onboarding/step-1" style={{ textDecoration: "none" }}>
+                    <SecondaryButton><ArrowLeft size={16} /> Back</SecondaryButton>
                 </Link>
-                <Link href="/user-onboarding/step-3">
-                    <Button size="lg" className="gap-2">
-                        Continue to Room Selection
-                        <ArrowRight className="w-4 h-4" />
-                    </Button>
+                <Link href="/user-onboarding/step-3" style={{ textDecoration: "none" }}>
+                    <NavButton>Continue to Room Selection <ArrowRight size={16} /></NavButton>
                 </Link>
-            </div>
+            </motion.div>
         </motion.div>
+    );
+}
+
+// ── Shared sub-components ────────────────────────────────────
+
+function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
+    return (
+        <label htmlFor={htmlFor} style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(31,58,45,0.55)", fontWeight: 700 }}>
+            {children}
+        </label>
+    );
+}
+
+function FieldHint({ children }: { children: React.ReactNode }) {
+    return (
+        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.35)", letterSpacing: "0.03em" }}>
+            {children}
+        </span>
+    );
+}
+
+interface FieldInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    focused?: boolean;
+}
+
+function FieldInput({ focused, style, ...props }: FieldInputProps) {
+    return (
+        <input
+            {...props}
+            style={{
+                width: "100%",
+                background: focused ? "#fff" : "rgba(246,244,239,0.7)",
+                border: `1.5px solid ${focused ? GREEN : "rgba(31,58,45,0.15)"}`,
+                borderRadius: 10,
+                padding: "12px 14px",
+                fontFamily: "var(--font-body, sans-serif)",
+                fontSize: "0.9rem",
+                color: "#1a2e1f",
+                outline: "none",
+                transition: "all 0.25s ease",
+                boxShadow: focused ? "0 0 0 4px rgba(31,58,45,0.07)" : "none",
+                boxSizing: "border-box",
+                ...style,
+            }}
+        />
+    );
+}
+
+function NavButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
+    const [hovered, setHovered] = useState(false);
+    return (
+        <button
+            disabled={disabled}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 28px",
+                background: disabled ? "rgba(31,58,45,0.15)" : hovered ? "linear-gradient(135deg, #2a4d3a, #1F3A2D)" : "linear-gradient(135deg, #1F3A2D, #162b1e)",
+                color: disabled ? "rgba(31,58,45,0.35)" : GOLD,
+                border: "none", borderRadius: 10,
+                fontFamily: "var(--font-mono, monospace)", fontWeight: 700, fontSize: "0.7rem",
+                textTransform: "uppercase", letterSpacing: "0.18em",
+                cursor: disabled ? "not-allowed" : "pointer",
+                transform: hovered && !disabled ? "translateY(-2px)" : "translateY(0)",
+                boxShadow: hovered && !disabled ? "0 10px 28px rgba(31,58,45,0.3)" : "0 4px 14px rgba(31,58,45,0.18)",
+                transition: "all 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
+            }}
+        >
+            {children}
+        </button>
+    );
+}
+
+function SecondaryButton({ children }: { children: React.ReactNode }) {
+    const [hovered, setHovered] = useState(false);
+    return (
+        <button
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 24px",
+                background: hovered ? "rgba(31,58,45,0.06)" : "transparent",
+                color: GREEN,
+                border: `1.5px solid ${hovered ? GREEN : "rgba(31,58,45,0.2)"}`,
+                borderRadius: 10,
+                fontFamily: "var(--font-mono, monospace)", fontWeight: 700, fontSize: "0.7rem",
+                textTransform: "uppercase", letterSpacing: "0.15em",
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+            }}
+        >
+            {children}
+        </button>
     );
 }

@@ -82,11 +82,12 @@ function RoomCard({ room, isSelected, onSelect, onViewDetails }: {
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
             className={`group relative bg-ivory rounded-xl overflow-hidden transition-all duration-300 ${isSelected
-                    ? "ring-2 ring-terracotta-raw shadow-xl shadow-terracotta-raw/15"
-                    : room.available
-                        ? "shadow-lg shadow-charcoal/5 hover:shadow-xl hover:shadow-charcoal/10"
-                        : "opacity-60 grayscale-[30%]"
+                ? "ring-2 shadow-xl"
+                : room.available
+                    ? "shadow-lg shadow-charcoal/5 hover:shadow-xl hover:shadow-charcoal/10"
+                    : "opacity-60 grayscale-[30%]"
                 }`}
+            style={isSelected ? { boxShadow: "0 0 0 2px #1F3A2D, 0 20px 40px rgba(31,58,45,0.15)" } : {}}
         >
             {/* Image Section */}
             <div className="relative aspect-[4/3] overflow-hidden">
@@ -106,8 +107,8 @@ function RoomCard({ room, isSelected, onSelect, onViewDetails }: {
                         {typeLabels[room.type]}
                     </div>
                     <div className={`px-3 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-wider shadow-lg ${room.available
-                            ? "bg-white/95 text-sage-muted"
-                            : "bg-terracotta-raw text-white"
+                        ? "bg-white/95 text-sage-muted"
+                        : "bg-terracotta-raw text-white"
                         }`}>
                         {room.available ? "● Available" : "● Occupied"}
                     </div>
@@ -118,9 +119,10 @@ function RoomCard({ room, isSelected, onSelect, onViewDetails }: {
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="absolute top-3 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-terracotta-raw shadow-lg flex items-center justify-center"
+                        className="absolute top-3 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full shadow-lg flex items-center justify-center"
+                        style={{ background: "#1F3A2D" }}
                     >
-                        <Check className="w-5 h-5 text-white" />
+                        <Check className="w-5 h-5" style={{ color: "#D8B56A" }} />
                     </motion.div>
                 )}
 
@@ -184,13 +186,13 @@ function RoomCard({ room, isSelected, onSelect, onViewDetails }: {
                         const Icon = amenityData.icon;
                         return (
                             <div key={amenity} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sand-light/80 border border-sand-dark/20">
-                                <Icon className="w-3.5 h-3.5 text-terracotta-raw/70" />
+                                <Icon className="w-3.5 h-3.5" style={{ color: "rgba(31,58,45,0.55)" }} />
                                 <span className="font-mono text-[10px] text-charcoal/70">{amenityData.label}</span>
                             </div>
                         );
                     })}
                     {room.amenities.length > 4 && (
-                        <span className="px-2.5 py-1.5 rounded-lg bg-terracotta-raw/10 font-mono text-[10px] text-terracotta-raw">
+                        <span className="px-2.5 py-1.5 rounded-lg font-mono text-[10px]" style={{ background: "rgba(31,58,45,0.08)", color: "#1F3A2D" }}>
                             +{room.amenities.length - 4} more
                         </span>
                     )}
@@ -208,12 +210,14 @@ function RoomCard({ room, isSelected, onSelect, onViewDetails }: {
                     <button
                         onClick={() => room.available && onSelect()}
                         disabled={!room.available}
-                        className={`flex-1 py-3 rounded-xl font-mono text-xs transition-all flex items-center justify-center gap-2 ${!room.available
-                                ? "bg-sand-dark/30 text-charcoal/30 cursor-not-allowed"
-                                : isSelected
-                                    ? "bg-terracotta-raw text-white shadow-lg shadow-terracotta-raw/25"
-                                    : "bg-charcoal text-ivory hover:bg-terracotta-raw hover:shadow-lg hover:shadow-terracotta-raw/25"
-                            }`}
+                        className="flex-1 py-3 rounded-xl font-mono text-xs transition-all flex items-center justify-center gap-2"
+                        style={{
+                            background: !room.available ? "rgba(31,58,45,0.08)" : isSelected ? "#1F3A2D" : "#1F3A2D",
+                            color: !room.available ? "rgba(31,58,45,0.3)" : "#D8B56A",
+                            cursor: !room.available ? "not-allowed" : "pointer",
+                            opacity: !room.available ? 0.5 : 1,
+                            boxShadow: isSelected ? "0 4px 16px rgba(31,58,45,0.25)" : "none",
+                        }}
                     >
                         {isSelected ? (
                             <>
@@ -319,9 +323,13 @@ function RoomDetailModal({ room, onClose, onSelect, isSelected }: {
                     <button
                         onClick={() => { onSelect(); onClose(); }}
                         disabled={!room.available}
-                        className={`w-full py-4 rounded-xl font-body font-medium transition-all ${!room.available ? "bg-sand-dark/50 text-charcoal/40 cursor-not-allowed" :
-                                isSelected ? "bg-sage-muted text-white" : "bg-terracotta-raw text-white hover:bg-terracotta-raw/90 shadow-lg shadow-terracotta-raw/25"
-                            }`}
+                        className="w-full py-4 rounded-xl font-body font-medium transition-all"
+                        style={{
+                            background: !room.available ? "rgba(31,58,45,0.1)" : "#1F3A2D",
+                            color: !room.available ? "rgba(31,58,45,0.3)" : "#D8B56A",
+                            cursor: !room.available ? "not-allowed" : "pointer",
+                            boxShadow: room.available ? "0 4px 16px rgba(31,58,45,0.2)" : "none",
+                        }}
                     >
                         {isSelected ? "✓ Room Selected" : room.available ? "Select This Room" : "Room Occupied"}
                     </button>
@@ -413,12 +421,12 @@ export default function Step3Page() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8">
             {/* Header */}
             <div className="text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-terracotta-raw/10 mb-4">
-                    <Home className="w-4 h-4 text-terracotta-raw" />
-                    <span className="font-mono text-xs text-terracotta-raw uppercase tracking-widest">Room Selection</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ background: "rgba(31,58,45,0.08)", border: "1px solid rgba(31,58,45,0.12)" }}>
+                    <Home className="w-4 h-4" style={{ color: "#1F3A2D" }} />
+                    <span className="font-mono text-xs uppercase tracking-widest" style={{ color: "#1F3A2D" }}>Room Selection</span>
                 </div>
-                <h1 className="font-display text-4xl md:text-5xl text-charcoal mb-3">Choose your room</h1>
-                <p className="font-body text-charcoal/60 max-w-lg mx-auto">Browse available rooms and select one that fits your preferences.</p>
+                <h1 className="font-display text-4xl md:text-5xl mb-3" style={{ color: "#1F3A2D" }}>Choose your room</h1>
+                <p className="font-body max-w-lg mx-auto" style={{ color: "rgba(31,58,45,0.55)" }}>Browse available rooms and select one that fits your preferences.</p>
             </div>
 
             {/* Search & Filters */}
@@ -517,8 +525,26 @@ export default function Step3Page() {
 
             {/* Navigation */}
             <div className="flex justify-between pt-4">
-                <Link href="/user-onboarding/step-2"><Button variant="secondary" size="lg" className="gap-2"><ArrowLeft className="w-4 h-4" />Back</Button></Link>
-                <Link href={selectedRoom ? "/user-onboarding/step-4" : "#"}><Button size="lg" className="gap-2" disabled={!selectedRoom}>Continue to Preferences<ArrowRight className="w-4 h-4" /></Button></Link>
+                <Link href="/user-onboarding/step-2">
+                    <button className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-mono text-xs uppercase tracking-widest transition-all" style={{ border: "1.5px solid rgba(31,58,45,0.2)", color: "#1F3A2D", background: "transparent" }}>
+                        <ArrowLeft className="w-4 h-4" />Back
+                    </button>
+                </Link>
+                <Link href={selectedRoom ? "/user-onboarding/step-4" : "#"}>
+                    <button
+                        disabled={!selectedRoom}
+                        className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-mono text-xs uppercase tracking-widest transition-all"
+                        style={{
+                            background: selectedRoom ? "linear-gradient(135deg, #1F3A2D, #162b1e)" : "rgba(31,58,45,0.1)",
+                            color: selectedRoom ? "#D8B56A" : "rgba(31,58,45,0.3)",
+                            border: "none",
+                            cursor: selectedRoom ? "pointer" : "not-allowed",
+                            boxShadow: selectedRoom ? "0 4px 14px rgba(31,58,45,0.18)" : "none",
+                        }}
+                    >
+                        Continue to Preferences<ArrowRight className="w-4 h-4" />
+                    </button>
+                </Link>
             </div>
 
             {/* Modal */}

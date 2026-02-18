@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0a0b;
+            --thread-dim: rgba(255, 255, 255, 0.04);
+            --thread-bright: rgba(255, 255, 255, 0.15);
+            --accent-primary: #6366f1;
+            --text-main: #f4f4f5;
+            --text-muted: #71717a;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        /* The Fiber Filter */
+        .fiber-svg {
+            position: absolute;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+
+        .woven-footer {
+            position: relative;
+            background: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            padding: 120px 8vw 60px 8vw;
+            overflow: hidden;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Woven Texture Overlay */
+        .woven-footer::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            opacity: 0.4;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(90deg, var(--thread-dim) 1px, transparent 1px),
+                linear-gradient(0deg, var(--thread-dim) 1px, transparent 1px);
+            background-size: 24px 24px;
+            filter: url(#rough-fiber);
+        }
+
+        /* Interlacing Threads Animation */
+        .thread-accent {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+            width: 100%;
+            left: 0;
+            z-index: 2;
+            opacity: 0.3;
+            animation: weave-h 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .thread-accent-v {
+            position: absolute;
+            width: 1px;
+            background: linear-gradient(180deg, transparent, var(--accent-primary), transparent);
+            height: 100%;
+            top: 0;
+            right: 15%;
+            z-index: 2;
+            opacity: 0.2;
+            animation: weave-v 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes weave-h {
+            0%, 100% { transform: translateY(0px) scaleX(0.8); opacity: 0; }
+            50% { transform: translateY(400px) scaleX(1.2); opacity: 0.4; }
+        }
+
+        @keyframes weave-v {
+            0%, 100% { transform: translateX(0px) scaleY(0.8); opacity: 0; }
+            50% { transform: translateX(-200px) scaleY(1.2); opacity: 0.3; }
+        }
+
+        .footer-content {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 80px;
+        }
+
+        .brand-section {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .logo-mark {
+            font-weight: 800;
+            font-size: 2.5rem;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #fff 30%, var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mission-statement {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-muted);
+            max-width: 400px;
+        }
+
+        .nav-group {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .nav-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent-primary);
+            margin-bottom: 8px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 1rem;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .nav-links a::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent-primary);
+            transition: width 0.4s ease;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+            transform: translateX(8px);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .footer-bottom {
+            margin-top: 100px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            position: relative;
+        }
+
+        .metadata {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 40px;
+        }
+
+        .timestamp {
+            color: var(--accent-primary);
+        }
+
+        .social-cluster {
+            display: flex;
+            gap: 24px;
+        }
+
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--thread-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .social-link:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Entry Reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 900px) {
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 60px;
+            }
+            .footer-bottom {
+                flex-direction: column;
+                gap: 30px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SVG Filters for Materiality -->
+    <svg class="fiber-svg">
+        <filter id="rough-fiber">
+            <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+        </filter>
+    </svg>
+
+    <footer class="woven-footer">
+        <div class="thread-accent" style="top: 20%;"></div>
+        <div class="thread-accent" style="top: 60%; animation-delay: -4s;"></div>
+        <div class="thread-accent-v"></div>
+
+        <div class="footer-content">
+            <div class="brand-section reveal">
+                <div class="logo-mark">Nexus.</div>
+                <p class="mission-statement">
+                    Architecting digital experiences through the lens of organic interlacing and computational precision. Every thread intentional. Every pixel woven.
+                </p>
+            </div>
+
+            <div class="nav-group reveal" style="transition-delay: 0.1s;">
+                <span class="nav-label">Navigation</span>
+                <ul class="nav-links">
+                    <li><a href="#">Showcase</a></li>
+                    <li><a href="#">The Method</a></li>
+                    <li><a href="#">Laboratories</a></li>
+                    <li><a href="#">Archive</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-group reveal" style="transition-delay: 0.2s;">
+                <span class="nav-label">System</span>
+                <ul class="nav-links">
+                    <li><a href="#">Privacy Protocol</a></li>
+                    <li><a href="#">Terminal Access</a></li>
+                    <li><a href="#">Neural Link</a></li>
+                    <li><a href="#">Support</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom reveal" style="transition-delay: 0.3s;">
+            <div class="metadata">
+                <span>&copy; 2024 NEXUS CORE</span>
+                <span class="timestamp" id="clock">00:00:00 UTC</span>
+                <span>LOC: 37.7749° N, 122.4194° W</span>
+            </div>
+
+            <div class="social-cluster">
+                <a href="#" class="social-link">𝕏</a>
+                <a href="#" class="social-link">IG</a>
+                <a href="#" class="social-link">LN</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Update Monospace Clock
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getUTCHours()).padStart(2, '0');
+            const m = String(now.getUTCMinutes()).padStart(2, '0');
+            const s = String(now.getUTCSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${h}:${m}:${s} UTC`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Intersection Observer for staggered entry
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>

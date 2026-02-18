@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google"; // id: 2
 import "../styles/globals.css"; // id: 3
+import { EnquiryModal } from "@/components/ui/EnquiryModal";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -38,6 +39,7 @@ export default function RootLayout({
         className={`${dmSerif.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
         {children}
+        <EnquiryModal />
       </body>
     </html>
   );
