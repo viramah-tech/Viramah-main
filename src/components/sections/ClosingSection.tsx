@@ -1,51 +1,111 @@
 "use client";
 
-import { useState } from "react";
-import { Container } from "@/components/layout/Container";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
 import { ScheduleVisitModal } from "@/components/ui/ScheduleVisitModal";
 
 export function ClosingSection() {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const sectionRef = useRef<HTMLElement>(null);
+
+    // Scroll reveal — fires once when section enters viewport
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0, rootMargin: "0px 0px -60px 0px" }
+        );
+        if (sectionRef.current) observer.observe(sectionRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    const reveal = (delay: string): React.CSSProperties => ({
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(24px)",
+        transition: `opacity 1s cubic-bezier(0.23,1,0.32,1) ${delay}, transform 1s cubic-bezier(0.23,1,0.32,1) ${delay}`,
+    });
 
     return (
         <>
-            <section className="py-32 relative overflow-hidden bg-gradient-to-b from-terracotta-soft to-terracotta-raw text-white text-center">
-                <Container>
-                    <div className="relative z-10 flex flex-col items-center gap-8">
-                        <h2 className="font-display text-5xl md:text-7xl lg:text-8xl leading-none">
-                            Ready to rest?
+            <section ref={sectionRef} className="cta-section-wrapper">
+                <div className="cta-pulp-card">
+                    <div className="cta-fiber-line" aria-hidden="true" />
+
+                    {/* Left — Primary content */}
+                    <div className="cta-content">
+                        <span className="cta-mono-label" style={reveal("0.1s")}>
+                            Admissions // 2025.AUG
+                        </span>
+
+                        <h2
+                            className="cta-headline"
+                            style={{
+                                opacity: isVisible ? 1 : 0,
+                                transform: isVisible ? "translateY(0)" : "translateY(30px)",
+                                transition: "opacity 1s cubic-bezier(0.23,1,0.32,1) 0.2s, transform 1s cubic-bezier(0.23,1,0.32,1) 0.2s",
+                            }}
+                        >
+                            Ready to <br />rest?
                         </h2>
-                        <p className="text-xl opacity-90 max-w-lg">
-                            Applications for the upcoming academic year are now open. Spaces are limited.
+
+                        <p className="cta-description" style={reveal("0.3s")}>
+                            Applications for the upcoming academic year are now open.
+                            Spaces are limited — secure yours before the intake closes.
                         </p>
-                        <div className="flex gap-4 mt-8">
-                            <Link href="/signup">
-                                <Button size="lg" className="bg-cream-warm text-terracotta-raw hover:bg-cream-warm/90 shadow-2xl">
-                                    Apply Now
-                                </Button>
+
+                        <div className="cta-btn-group" style={reveal("0.4s")}>
+                            <Link href="/signup" className="cta-stamped-btn">
+                                APPLY NOW
                             </Link>
-                            <Button 
-                                size="lg" 
-                                variant="secondary" 
-                                className="border-white text-white hover:bg-white/10"
+                            <button
+                                className="cta-ghost-btn"
                                 onClick={() => setIsModalOpen(true)}
                             >
-                                Schedule a Visit
-                            </Button>
+                                SCHEDULE A VISIT
+                            </button>
+                        </div>
+
+                        <div
+                            className="cta-availability"
+                            style={{
+                                opacity: isVisible ? 0.6 : 0,
+                                transition: "opacity 1s cubic-bezier(0.23,1,0.32,1) 0.55s",
+                            }}
+                        >
+                            <span className="cta-availability-dot" aria-hidden="true" />
+                            Accepting applications
                         </div>
                     </div>
-                </Container>
 
-            {/* Background decoration */}
-            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white rounded-full blur-3xl opacity-30" />
-            </div>
+                    {/* Right — Meta block */}
+                    <div
+                        className="cta-meta"
+                        style={{
+                            textAlign: "right",
+                            ...reveal("0.5s"),
+                        }}
+                    >
+                        <div className="cta-dots" aria-hidden="true">
+                            <div className="cta-dot" />
+                            <div className="cta-dot" />
+                            <div className="cta-dot" />
+                        </div>
+                        <span className="cta-mono-label" style={{ marginBottom: 0 }}>
+                            Viramah // Est. 2024
+                        </span>
+                    </div>
+                </div>
             </section>
 
-            {/* Schedule Visit Modal */}
-            <ScheduleVisitModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            <ScheduleVisitModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+            />
         </>
     );
 }

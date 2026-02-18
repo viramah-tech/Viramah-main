@@ -1,0 +1,265 @@
+/* -------------------------------------------------- */
+/* CTA / Closing Section                              */
+/* -------------------------------------------------- */
+
+.cta-section-wrapper {
+  padding: 0;
+  display: block;
+  background-color: var(--luxury-green);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Main card — full width, no tilt */
+.cta-pulp-card {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  background: var(--luxury-green);
+  padding: 7rem 8vw;
+  border-radius: 0;
+  border: none;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: end;
+
+  box-shadow:
+    inset 2px 2px 5px rgba(0, 0, 0, 0.05),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+}
+
+.cta-pulp-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.08;
+  pointer-events: none;
+  border-radius: 4px;
+}
+
+/* Fiber accent line */
+.cta-fiber-line {
+  position: absolute;
+  right: -5%;
+  top: 10%;
+  width: 50%;
+  height: 80%;
+  pointer-events: none;
+  opacity: 0.12;
+  border-left: 1px solid var(--cream-warm);
+  transform: rotate(5deg);
+}
+
+/* Decorative dot cluster */
+.cta-dots {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.cta-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--champagne-gold);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+/* Mono label */
+.cta-mono-label {
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--champagne-gold);
+  display: block;
+  margin-bottom: 1.25rem;
+}
+
+/* Headline */
+.cta-headline {
+    color: antiquewhite;
+    font-family: var(--font-display), "DM Serif Display", serif;
+    font-size: clamp(3rem, 7vw, 5rem);
+    font-weight: 700;
+    line-height: 0.95;
+    color: var(--cream-warm);
+    letter-spacing: -0.04em;
+    margin-bottom: 1.75rem;
+}
+
+/* Description */
+.cta-description {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: rgba(251, 247, 240, 0.75);
+  max-width: 380px;
+  margin-bottom: 2.5rem;
+}
+
+/* Stamped primary button */
+.cta-stamped-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.1rem 2.25rem;
+  background: var(--cream-warm);
+  color: var(--luxury-green);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.cta-stamped-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  background: var(--champagne-gold);
+  color: var(--luxury-green);
+}
+
+.cta-stamped-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+/* Secondary ghost button */
+.cta-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.1rem 2.25rem;
+  background: transparent;
+  color: var(--cream-warm);
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  border: 1px solid rgba(251, 247, 240, 0.45);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  font-family: inherit;
+}
+
+.cta-ghost-btn:hover {
+  background: rgba(251, 247, 240, 0.1);
+  border-color: var(--cream-warm);
+  color: var(--cream-warm);
+}
+
+/* Availability badge */
+.cta-availability {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cream-warm);
+  margin-top: 1.5rem;
+}
+
+.cta-availability-dot {
+  width: 6px;
+  height: 6px;
+  background: #6db779;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: ctaPulse 2s ease-in-out infinite;
+}
+
+@keyframes ctaPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.4); }
+}
+
+/* Button group wrapper */
+.cta-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* ---------------------------------- */
+/* Responsive — Tablet (≤ 900px)      */
+/* ---------------------------------- */
+
+@media (max-width: 900px) {
+  .cta-pulp-card {
+    grid-template-columns: 1fr;
+    padding: 3.5rem 2rem;
+    gap: 2rem;
+  }
+
+  .cta-headline {
+    font-size: clamp(2.5rem, 10vw, 3.5rem);
+  }
+
+  .cta-fiber-line {
+    display: none;
+  }
+
+  .cta-meta {
+    text-align: left !important;
+  }
+
+  .cta-dots {
+    justify-content: flex-start;
+  }
+}
+
+/* ---------------------------------- */
+/* Responsive — Mobile (≤ 640px)      */
+/* ---------------------------------- */
+
+@media (max-width: 640px) {
+  .cta-section-wrapper {
+    padding: 2.5rem 1rem;
+  }
+
+  .cta-pulp-card {
+    padding: 2.5rem 1.25rem;
+  }
+
+  .cta-headline {
+    font-size: clamp(2.2rem, 11vw, 2.8rem);
+    margin-bottom: 1.25rem;
+  }
+
+  .cta-description {
+    font-size: 0.97rem;
+    margin-bottom: 2rem;
+    max-width: 100%;
+  }
+
+  .cta-btn-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cta-stamped-btn,
+  .cta-ghost-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ---------------------------------- */
+/* Parallax tilt — disable on touch   */
+/* ---------------------------------- */
+
+/* Tilt is fully removed — no hover rule needed */

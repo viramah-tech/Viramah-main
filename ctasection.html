@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --pulp-bg: #e8e4de;
+            --pulp-fiber: #d1ccc3;
+            --ink-black: #1a1a1a;
+            --accent-clay: #b85c38;
+            --shadow-soft: rgba(0, 0, 0, 0.05);
+            --pulp-texture: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3BaseFilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/baseFilter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--pulp-bg);
+            font-family: 'Instrument Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* The Grain Overlay */
+        .pulp-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.18;
+            background-image: var(--pulp-texture);
+            mix-blend-mode: multiply;
+        }
+
+        .cta-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            position: relative;
+        }
+
+        /* Main Pressed Section */
+        .pulp-card {
+            position: relative;
+            width: 100%;
+            max-width: 1100px;
+            background: var(--pulp-bg);
+            padding: 6rem 4rem;
+            border-radius: 4px;
+
+            /* Debossed effect */
+            box-shadow:
+                inset 2px 2px 5px rgba(0, 0, 0, 0.05),
+                inset -2px -2px 5px rgba(255, 255, 255, 0.8),
+                0.5px 0.5px 0px rgba(0, 0, 0, 0.1);
+
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: end;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .pulp-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: var(--pulp-texture);
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        /* Typography */
+        .mono-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent-clay);
+            margin-bottom: 1.5rem;
+            display: block;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .headline {
+            font-size: clamp(3rem, 8vw, 5.5rem);
+            font-weight: 700;
+            line-height: 0.95;
+            color: var(--ink-black);
+            letter-spacing: -0.04em;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #4a4a4a;
+            max-width: 380px;
+            margin-bottom: 3rem;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        /* The Button - Inset Stamped Style */
+        .stamped-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 1.25rem 2.5rem;
+            background: var(--ink-black);
+            color: var(--pulp-bg);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.05em;
+            border-radius: 2px;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border: none;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .stamped-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            background: var(--accent-clay);
+        }
+
+        .stamped-button:active {
+            transform: translateY(1px);
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Fiber Accents */
+        .fiber-graphic {
+            position: absolute;
+            right: -5%;
+            top: 10%;
+            width: 50%;
+            height: 80%;
+            pointer-events: none;
+            opacity: 0.08;
+            border-left: 1px solid var(--ink-black);
+            transform: rotate(5deg);
+        }
+
+        .decorative-dots {
+            position: absolute;
+            bottom: 4rem;
+            right: 4rem;
+            display: flex;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-clay);
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 900px) {
+            .pulp-card {
+                grid-template-columns: 1fr;
+                padding: 4rem 2rem;
+                gap: 2rem;
+            }
+
+            .headline {
+                font-size: 3.5rem;
+            }
+
+            .fiber-graphic {
+                display: none;
+            }
+        }
+
+        /* Animation Classes */
+        .reveal {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            transition: all 1s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="pulp-overlay"></div>
+
+    <section class="cta-container">
+        <div class="pulp-card" id="mainCard">
+            <div class="fiber-graphic"></div>
+
+            <div class="cta-content">
+                <span class="mono-label" style="transition-delay: 0.1s;">Release // 2024.08</span>
+                <h1 class="headline" style="transition-delay: 0.2s;">
+                    Tactile <br>Logic.
+                </h1>
+                <p class="description" style="transition-delay: 0.3s;">
+                    We weave high-fidelity digital experiences into the raw texture of physical materiality. Join the
+                    grain.
+                </p>
+                <a href="#" class="stamped-button reveal" style="transition-delay: 0.4s; opacity: 0;">
+                    INITIALIZE SYSTEM
+                </a>
+            </div>
+
+            <div class="cta-meta" style="text-align: right;">
+                <div class="decorative-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <span class="mono-label" style="transition-delay: 0.5s; margin-bottom: 0;">
+                    40.7128° N, 74.0060° W
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('.mono-label, .headline, .description, .stamped-button');
+
+            // Trigger reveals with a slight stagger
+            setTimeout(() => {
+                elements.forEach((el, index) => {
+                    setTimeout(() => {
+                        el.classList.add('reveal');
+                    }, index * 100);
+                });
+            }, 300);
+
+            // Subtle parallax/tilt effect on mouse move
+            const card = document.getElementById('mainCard');
+            document.addEventListener('mousemove', (e) => {
+                const xAxis = (window.innerWidth / 2 - e.pageX) / 50;
+                const yAxis = (window.innerHeight / 2 - e.pageY) / 50;
+                card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+            });
+
+            // Reset transform when mouse leaves
+            document.addEventListener('mouseleave', () => {
+                card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+            });
+        });
+    </script>
+</body>
+
+</html>

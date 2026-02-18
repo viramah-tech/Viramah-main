@@ -4,6 +4,7 @@
 @import "./life-at-viramah-section.css";
 @import "./categories-section.css";
 @import "./amenities-section.css";
+@import "./cta-section.css";
 
 @theme {
   --font-display: var(--font-display), "DM Serif Display", serif;

@@ -10,7 +10,7 @@ interface AmenityItem {
   title: string;
   icon: string;
   alt: string;
-  measurement: string;
+
 }
 
 const AMENITY_ITEMS: AmenityItem[] = [
@@ -19,84 +19,72 @@ const AMENITY_ITEMS: AmenityItem[] = [
     title: "High Speed WiFi",
     icon: "/amenities/wifi.png",
     alt: "High Speed WiFi — Fast connectivity for all your needs",
-    measurement: "SPEED: 100 MBPS",
   },
   {
     id: "power",
     title: "Power Backup",
     icon: "/amenities/power backup.png",
     alt: "Power Backup — 24x7 uninterrupted power supply",
-    measurement: "UPTIME: 99.9%",
   },
   {
     id: "library",
     title: "Library",
     icon: "/amenities/library.png",
     alt: "Library — Quiet space for focused work and study",
-    measurement: "VOL: 500+ BOOKS",
   },
   {
     id: "gym",
     title: "Gym",
     icon: "/amenities/gym.png",
     alt: "Gym — Fitness facilities for your wellness",
-    measurement: "AREA: 1,200 SQ FT",
   },
   {
     id: "common",
     title: "Common Areas",
     icon: "/amenities/common area.png",
     alt: "Common Areas — Spacious areas for relaxation",
-    measurement: "CAP: 50+ SEATS",
   },
   {
     id: "frontdesk",
     title: "Front Desk",
     icon: "/amenities/front desk.png",
     alt: "Front Desk — 24x7 assistance and support",
-    measurement: "AVAIL: 24/7",
   },
   {
     id: "lockers",
     title: "Secure Lockers",
     icon: "/amenities/secure locker.png",
     alt: "Secure Lockers — Safe storage for your belongings",
-    measurement: "GRADE: A+ SEC",
   },
   {
     id: "coworking",
     title: "Co-Working Space",
     icon: "/amenities/coworking space.png",
     alt: "Co-working Space — Professional workstations",
-    measurement: "DESKS: 30+",
   },
   {
     id: "water",
     title: "Water Dispensers",
     icon: "/amenities/water dispensers.png",
     alt: "Water Dispensers — Clean drinking water 24x7",
-    measurement: "TEMP: HOT / COLD",
   },
   {
     id: "cafe",
     title: "Café",
     icon: "/amenities/cafe.png",
     alt: "Café — Convenient dining and refreshments",
-    measurement: "MENU: 40+ ITEMS",
   },
   {
     id: "ac",
     title: "AC Units",
     icon: "/amenities/ac.png",
     alt: "AC Units — Climate controlled comfort",
-    measurement: "TEMP: 18–26°C",
   },
   {
     id: "gaming",
     title: "Gaming Room",
     icon: "/amenities/gaming room .png",
     alt: "Gaming Room — Entertainment and recreation space",
-    measurement: "ZONE: PS5 + PC",
   },
 ];
 
@@ -247,7 +235,7 @@ export function AmenitiesSection({ className, id }: AmenitiesSectionProps) {
               <div className="amen-data">
                 <div className="amen-label">{item.title}</div>
                 <div className="amen-measurement">
-                  {item.measurement}
+                  
                 </div>
               </div>
             </motion.div>
