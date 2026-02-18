@@ -5,6 +5,7 @@
 @import "./categories-section.css";
 @import "./amenities-section.css";
 @import "./cta-section.css";
+@import "./footer-section.css";
 
 @theme {
   --font-display: var(--font-display), "DM Serif Display", serif;

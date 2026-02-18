@@ -120,22 +120,14 @@ export function LifeAtViramahSection() {
                     variants={headerVariants}
                 >
                     <div className="lav-header-left">
-                        <span className="lav-header-label">
-                            CURATED_SPACES / VOL. 01
-                        </span>
+
                         <h2 className="lav-header-title">
                             Life at
                             <br />
                             Viramah
                         </h2>
                     </div>
-                    <div className="lav-header-meta">
-                        LOCATION: HYDERABAD, INDIA
-                        <br />
-                        CONCEPT: MINDFUL_LIVING
-                        <br />
-                        REF: VRM-2024
-                    </div>
+
                 </motion.header>
 
                 {/* ── Tectonic Grid ── */}

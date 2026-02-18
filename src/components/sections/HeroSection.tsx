@@ -309,10 +309,16 @@ export function HeroSection() {
                 transition={{ duration: 0.8, delay: 1.2 }}
             >
                 <div className="hero-blurb">
+                    <br />
+                    <br />
                     <h3>The Promise</h3>
                     <p>
                         Premium community living spaces designed for connection,
                         growth, and the comfort of a second home.
+                        <br />
+                        <br />
+                        <br />
+                        <br />
                     </p>
                 </div>
                 <div className="hero-blurb">
@@ -320,6 +326,10 @@ export function HeroSection() {
                     <p>
                         A seamless blend of private retreats and shared moments,
                         bound by thoughtful design and warm hospitality.
+                        <br />
+                        <br />
+                        <br />
+                        <br />
                     </p>
                 </div>
             </motion.div>

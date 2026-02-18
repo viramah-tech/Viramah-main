@@ -1,0 +1,304 @@
+/* -------------------------------------------------- */
+/* Footer — Woven Light                               */
+/* -------------------------------------------------- */
+
+.woven-footer {
+  position: relative;
+  background: var(--sand-light);
+  color: var(--charcoal);
+  font-family: var(--font-body), "Inter", sans-serif;
+  padding: 7rem 8vw 4rem 8vw;
+  overflow: hidden;
+  border-top: 1px solid rgba(46, 42, 38, 0.08);
+}
+
+/* Woven grid texture overlay */
+.woven-footer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.25;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, rgba(46, 42, 38, 0.06) 1px, transparent 1px),
+    linear-gradient(0deg,  rgba(46, 42, 38, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+  filter: url(#rough-fiber-footer);
+}
+
+/* ---- Animated thread accents ---- */
+.footer-thread-h {
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--terracotta-raw), transparent);
+  width: 100%;
+  left: 0;
+  z-index: 2;
+  opacity: 0.2;
+  pointer-events: none;
+  animation: footerWeaveH 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.footer-thread-v {
+  position: absolute;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--terracotta-raw), transparent);
+  height: 100%;
+  top: 0;
+  right: 15%;
+  z-index: 2;
+  opacity: 0.12;
+  pointer-events: none;
+  animation: footerWeaveV 14s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes footerWeaveH {
+  0%, 100% { transform: translateY(0px)   scaleX(0.8); opacity: 0; }
+  50%       { transform: translateY(400px) scaleX(1.2); opacity: 0.3; }
+}
+
+@keyframes footerWeaveV {
+  0%, 100% { transform: translateX(0px)    scaleY(0.8); opacity: 0; }
+  50%       { transform: translateX(-200px) scaleY(1.2); opacity: 0.2; }
+}
+
+/* ---- Main content grid ---- */
+.footer-grid {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 80px;
+}
+
+/* Brand column */
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.footer-logo {
+  font-family: var(--font-display), "DM Serif Display", serif;
+  font-weight: 700;
+  font-size: 2.5rem;
+  letter-spacing: -0.04em;
+  color: var(--charcoal);
+  line-height: 1;
+}
+
+.footer-mission {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: rgba(46, 42, 38, 0.55);
+  max-width: 380px;
+}
+
+.footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: rgba(46, 42, 38, 0.5);
+}
+
+.footer-contact a {
+  color: rgba(46, 42, 38, 0.5);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-contact a:hover {
+  color: var(--terracotta-raw);
+}
+
+/* Nav columns */
+.footer-nav-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.footer-nav-label {
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--terracotta-raw);
+  display: block;
+}
+
+.footer-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.footer-nav-list a {
+  text-decoration: none;
+  color: rgba(46, 42, 38, 0.7);
+  font-size: 0.97rem;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+}
+
+/* Underline reveal on hover */
+.footer-nav-list a::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--terracotta-raw);
+  transition: width 0.4s ease;
+}
+
+.footer-nav-list a:hover {
+  color: var(--charcoal);
+  transform: translateX(8px);
+}
+
+.footer-nav-list a:hover::after {
+  width: 100%;
+}
+
+/* ---- Bottom bar ---- */
+.footer-bottom {
+  margin-top: 80px;
+  padding-top: 32px;
+  border-top: 1px solid rgba(46, 42, 38, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.footer-meta {
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  color: rgba(46, 42, 38, 0.4);
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.footer-clock {
+  color: var(--terracotta-raw);
+}
+
+/* Social icon cluster */
+.footer-socials {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.footer-social-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(46, 42, 38, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  color: rgba(46, 42, 38, 0.55);
+  text-decoration: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.footer-social-btn:hover {
+  background: var(--terracotta-raw);
+  border-color: var(--terracotta-raw);
+  color: var(--cream-warm);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(192, 122, 90, 0.2);
+}
+
+/* ---- Scroll reveal ---- */
+.footer-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.85s cubic-bezier(0.23, 1, 0.32, 1),
+              transform 0.85s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.footer-reveal.footer-reveal-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------------------------------------- */
+/* Responsive — Tablet (≤ 900px)            */
+/* ---------------------------------------- */
+
+@media (max-width: 900px) {
+  .woven-footer {
+    padding: 5rem 6vw 3rem 6vw;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
+
+  .footer-mission {
+    max-width: 100%;
+  }
+
+  .footer-thread-v {
+    display: none;
+  }
+}
+
+/* ---------------------------------------- */
+/* Responsive — Mobile (≤ 640px)            */
+/* ---------------------------------------- */
+
+@media (max-width: 640px) {
+  .woven-footer {
+    padding: 4rem 5vw 2.5rem 5vw;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .footer-brand {
+    grid-column: auto;
+  }
+
+  .footer-logo {
+    font-size: 2rem;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 56px;
+    gap: 20px;
+  }
+
+  .footer-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
