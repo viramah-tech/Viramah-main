@@ -1,25 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Search, MapPin, Home, Calendar, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchSegment {
     id: string;
     label: string;
-    systemCode: string;
     icon: React.ElementType;
     placeholder: string;
-    value: string;
     unit?: string;
 }
 
 const SEGMENTS: SearchSegment[] = [
-    { id: "location", label: "LOCATION", systemCode: "SYS.GEO_LOC", icon: MapPin, placeholder: "City, College, or Area", value: "" },
-    { id: "room", label: "ROOM TYPE", systemCode: "SYS.TYPE_SELECT", icon: Home, placeholder: "1 Seater", value: "", unit: "" },
-    { id: "duration", label: "DURATION", systemCode: "SYS.TIME_SPAN", icon: Calendar, placeholder: "Academic Year", value: "" },
-    { id: "budget", label: "BUDGET", systemCode: "SYS.VAL_RANGE", icon: Wallet, placeholder: "Essential", value: "" },
+    { id: "location", label: "LOCATION", icon: MapPin, placeholder: "City, College, or Area" },
+    { id: "room", label: "ROOM TYPE", icon: Home, placeholder: "1 Seater, 2 Seater…" },
+    { id: "duration", label: "DURATION", icon: Calendar, placeholder: "Academic Year" },
+    { id: "budget", label: "BUDGET", icon: Wallet, placeholder: "₹10k – ₹30k / mo" },
 ];
 
 export function SearchBar() {
@@ -27,7 +25,15 @@ export function SearchBar() {
     const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
 
     return (
-        <div className="w-full max-w-[1000px] h-auto md:h-[90px] rounded-2xl flex flex-col md:flex-row items-center p-2 gap-1 relative z-20 border border-sand-dark/60 bg-white/40 backdrop-blur-sm shadow-[0_4px_20px_rgba(142,77,62,0.06)]">
+        <div
+            className="w-full max-w-[1020px] h-auto md:h-[88px] flex flex-col md:flex-row items-stretch p-2 gap-1 relative z-20"
+            style={{
+                background: "rgba(15, 31, 24, 0.85)",
+                border: "1px solid rgba(197,160,89,0.2)",
+                backdropFilter: "blur(16px)",
+                boxShadow: "0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(197,160,89,0.06)",
+            }}
+        >
             {SEGMENTS.map((segment, index) => {
                 const isActive = activeSegment === segment.id;
                 const isHovered = hoveredSegment === segment.id;
@@ -41,79 +47,67 @@ export function SearchBar() {
                         onFocus={() => setActiveSegment(segment.id)}
                         onBlur={() => setActiveSegment(null)}
                         onClick={() => setActiveSegment(segment.id)}
-                        className={cn(
-                            "relative w-full md:w-auto h-[70px] md:h-full flex flex-col justify-center px-4 md:px-6 rounded-xl cursor-text transition-colors duration-300 border border-transparent",
-                            isActive ? "bg-white/60 border-sand-dark shadow-[inset_0_0_15px_rgba(0,0,0,0.04)]" : "hover:bg-white/30"
-                        )}
                         style={{
-                            // flex: isActive ? 1.8 : isHovered ? 1.4 : 1, // Keep this for desktop only if possible, or handle with media queries/conditional logic. 
-                            // Simplified for now to let framer motion handle layout changes or simple flex grow.
-                            // For mobile we want full width, for desktop we want proportional.
-                            // We can use a custom class or inline style with media query hook if strictly needed,
-                            // but flex-grow usually works well.
-                            flexGrow: isActive ? 2 : isHovered ? 1.5 : 1,
+                            flexGrow: isActive ? 2 : isHovered ? 1.4 : 1,
+                            background: isActive
+                                ? "rgba(197,160,89,0.07)"
+                                : isHovered
+                                    ? "rgba(197,160,89,0.04)"
+                                    : "transparent",
+                            borderRight: index < SEGMENTS.length - 1
+                                ? "1px solid rgba(197,160,89,0.12)"
+                                : "none",
                         }}
-                        transition={{
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 30
-                        }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        className={cn(
+                            "relative w-full md:w-auto h-[68px] md:h-full flex flex-col justify-center px-5 cursor-text transition-colors duration-300",
+                        )}
                     >
-
-                        {/* Pneumatic Rib Divider - Desktop Only */}
+                        {/* Mobile top divider */}
                         {index > 0 && (
                             <div
-                                className="hidden md:block absolute left-0 top-[15%] h-[70%] w-[3px] opacity-50"
-                                style={{
-                                    background: "repeating-linear-gradient(to bottom, var(--sand-dark), var(--sand-dark) 2px, transparent 2px, transparent 4px)"
-                                }}
+                                className="md:hidden absolute top-0 left-4 right-4 h-px"
+                                style={{ background: "rgba(197,160,89,0.15)" }}
                             />
                         )}
 
-                        {/* Mobile Divider */}
-                        {index > 0 && (
-                            <div
-                                className="md:hidden absolute top-0 left-[5%] right-[5%] h-[1px] w-[90%] opacity-30"
-                                style={{
-                                    background: "repeating-linear-gradient(to right, var(--sand-dark), var(--sand-dark) 2px, transparent 2px, transparent 4px)"
-                                }}
+                        {/* Label row */}
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                            <segment.icon
+                                className="w-3 h-3 transition-colors duration-300"
+                                style={{ color: isActive ? "var(--gold)" : "rgba(197,160,89,0.35)" }}
                             />
-                        )}
-
-                        {/* Label */}
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className={cn(
-                                "font-mono text-[10px] font-bold tracking-widest uppercase transition-colors duration-300",
-                                isActive ? "text-terracotta-raw" : "text-charcoal/60"
-                            )}>
+                            <span
+                                className="font-mono text-[9px] font-bold tracking-[0.22em] uppercase transition-colors duration-300"
+                                style={{ color: isActive ? "var(--gold)" : "rgba(243,237,226,0.4)" }}
+                            >
                                 {segment.label}
                             </span>
                         </div>
 
-                        {/* Input Area */}
-                        <div className="flex items-center gap-2">
-                            <segment.icon className={cn(
-                                "w-4 h-4 transition-colors duration-300",
-                                isActive ? "text-terracotta-raw" : "text-charcoal/40"
-                            )} />
-                            <input
-                                type="text"
-                                placeholder={segment.placeholder}
-                                className="w-full bg-transparent border-none outline-none font-body text-sm text-charcoal placeholder:text-charcoal/40"
-                            />
-                            {segment.unit && (
-                                <span className="font-mono text-xs text-charcoal/40">{segment.unit}</span>
-                            )}
-                        </div>
+                        {/* Input */}
+                        <input
+                            type="text"
+                            placeholder={segment.placeholder}
+                            className="w-full bg-transparent border-none outline-none font-body text-sm"
+                            style={{
+                                color: "var(--cream-warm)",
+                            }}
+                            onFocus={() => setActiveSegment(segment.id)}
+                            onBlur={() => setActiveSegment(null)}
+                        />
 
-                        {/* Animated Meter Line */}
-                        <div className="absolute bottom-0 left-4 right-4 h-[2px] bg-sand-dark/50 overflow-hidden rounded-full">
+                        {/* Active gold underline */}
+                        <div
+                            className="absolute bottom-2 left-5 right-5 h-px overflow-hidden"
+                            style={{ background: "rgba(197,160,89,0.12)" }}
+                        >
                             <motion.div
-                                className="h-full bg-terracotta-raw"
+                                className="h-full"
+                                style={{ background: "var(--gold)" }}
                                 initial={{ scaleX: 0 }}
                                 animate={{ scaleX: isActive ? 1 : 0 }}
-                                transition={{ duration: 0.5, ease: [0.25, 1.5, 0.5, 1] }}
-                                style={{ transformOrigin: "left" }}
+                                transition={{ duration: 0.4, ease: [0.25, 1.5, 0.5, 1] }}
                             />
                         </div>
                     </motion.div>
@@ -122,18 +116,24 @@ export function SearchBar() {
 
             {/* Search Button */}
             <motion.button
-                whileHover={{ scale: 0.98 }}
-                whileTap={{ scale: 0.95, rotate: 2 }}
-                className="w-full md:w-[74px] h-[60px] md:h-full bg-terracotta-raw rounded-xl flex items-center justify-center text-white shrink-0 hover:bg-terracotta-raw/90 transition-colors duration-300 shadow-lg shadow-terracotta-raw/20 relative overflow-hidden"
+                whileHover={{ scale: 0.97 }}
+                whileTap={{ scale: 0.94 }}
+                className="w-full md:w-[72px] h-[60px] md:h-auto flex items-center justify-center shrink-0 gap-2 relative overflow-hidden font-mono font-bold text-xs tracking-widest"
+                style={{
+                    background: "var(--gold)",
+                    color: "var(--luxury-green)",
+                }}
             >
-                <Search className="w-6 h-6 relative z-10" />
-                <span className="md:hidden ml-2 font-mono font-bold">SEARCH</span>
-                {/* Click flash effect */}
+                <Search className="w-5 h-5 relative z-10" strokeWidth={2.5} />
+                <span className="md:hidden relative z-10">SEARCH</span>
+
+                {/* Shimmer on hover */}
                 <motion.div
-                    className="absolute inset-0 bg-white/10"
-                    initial={{ y: "100%" }}
-                    whileTap={{ y: 0 }}
-                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0"
+                    style={{ background: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%)" }}
+                    initial={{ x: "-100%" }}
+                    whileHover={{ x: "100%" }}
+                    transition={{ duration: 0.5 }}
                 />
             </motion.button>
         </div>

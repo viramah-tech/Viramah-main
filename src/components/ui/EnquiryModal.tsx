@@ -167,24 +167,31 @@ function SubmitButton({ loading }: { loading: boolean }) {
 // ── Main Component ───────────────────────────────────────────
 export function EnquiryModal() {
     const [isOpen, setIsOpen] = useState(false);
+    const [hasSubmittedBefore, setHasSubmittedBefore] = useState(false);
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [submitted, setSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const firstInputRef = useRef<HTMLInputElement>(null);
 
+    // Helper — only returning users can manually close
+    const closeModal = () => {
+        if (hasSubmittedBefore) setIsOpen(false);
+    };
+
     // Mandatory Lead Capture Logic
     useEffect(() => {
         const SUBMITTED_KEY = "viramah_enquiry_data_submitted";
-        const hasSubmitted = localStorage.getItem(SUBMITTED_KEY);
+        const alreadySubmitted = !!localStorage.getItem(SUBMITTED_KEY);
+        setHasSubmittedBefore(alreadySubmitted);
 
-        // If they've already given us their data, never bother them again.
-        if (hasSubmitted) {
+        // If they've already given us their data, don't force-open on load.
+        if (alreadySubmitted) {
             setIsOpen(false);
             return;
         }
 
-        // If they haven't submitted, force it open immediately.
+        // First-timer: force open immediately.
         setIsOpen(true);
     }, []);
 
@@ -199,15 +206,19 @@ export function EnquiryModal() {
         }
     }, [isOpen]);
 
-    // Disable manual dismissal
+    // Global open trigger + Escape key (only dismissible for returning users)
     useEffect(() => {
-        // Listen for global open trigger (though it should already be open or submitted)
         const onOpenEvent = () => setIsOpen(true);
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && hasSubmittedBefore) setIsOpen(false);
+        };
         window.addEventListener("viramah:open-enquiry", onOpenEvent);
+        window.addEventListener("keydown", onKeyDown);
         return () => {
             window.removeEventListener("viramah:open-enquiry", onOpenEvent);
+            window.removeEventListener("keydown", onKeyDown);
         };
-    }, []);
+    }, [hasSubmittedBefore]);
 
     const handleChange = (field: keyof FormState, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -315,7 +326,7 @@ export function EnquiryModal() {
             <AnimatePresence>
                 {isOpen && (
                     <>
-                        {/* Backdrop */}
+                        {/* Backdrop — clickable only for returning users */}
                         <motion.div
                             key="enquiry-backdrop"
                             variants={backdropVariants}
@@ -327,7 +338,9 @@ export function EnquiryModal() {
                                 background: "rgba(10, 20, 15, 0.85)",
                                 backdropFilter: "blur(12px)",
                                 WebkitBackdropFilter: "blur(12px)",
+                                cursor: hasSubmittedBefore ? "pointer" : "default",
                             }}
+                            onClick={closeModal}
                             aria-hidden="true"
                         />
 
@@ -421,6 +434,36 @@ export function EnquiryModal() {
                                                 Please introduce yourself to view the Viramah experience.
                                             </p>
                                         </div>
+
+                                        {/* Close button — only for returning users */}
+                                        {hasSubmittedBefore && (
+                                            <motion.button
+                                                onClick={closeModal}
+                                                whileHover={{ scale: 1.1, rotate: 90 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                transition={{ duration: 0.2 }}
+                                                aria-label="Close enquiry form"
+                                                style={{
+                                                    background: "transparent",
+                                                    border: "1px solid rgba(107,85,38,0.3)",
+                                                    borderRadius: "50%",
+                                                    width: 36,
+                                                    height: 36,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    cursor: "pointer",
+                                                    color: "#6b5526",
+                                                    flexShrink: 0,
+                                                    marginLeft: 16,
+                                                }}
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                                </svg>
+                                            </motion.button>
+                                        )}
                                     </div>
 
                                     {/* Decorative divider */}

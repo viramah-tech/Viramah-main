@@ -1,67 +1,195 @@
+"use client";
+
 import { Container } from "@/components/layout/Container";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { SearchBar } from "@/components/search/SearchBar";
 import { RoomCard } from "@/components/ui/RoomCard";
+import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+
+const ROOMS = [
+    {
+        title: "The Solo",
+        type: "1 Seater · Private",
+        price: "₹25,000",
+        tag: "Most Popular",
+        amenities: ["AC", "Attached Bath", "Study Desk", "WiFi"],
+    },
+    {
+        title: "The Duo",
+        type: "2 Seater · Shared",
+        price: "₹18,000",
+        tag: "Best Value",
+        amenities: ["AC", "Common Bath", "Study Desk", "WiFi"],
+    },
+    {
+        title: "The Tribe",
+        type: "3 Seater · Shared",
+        price: "₹15,000",
+        tag: "Community Pick",
+        amenities: ["Fan", "Common Bath", "Study Desk", "WiFi"],
+    },
+    {
+        title: "The Solo Plus",
+        type: "1 Seater · Premium",
+        price: "₹28,000",
+        tag: "Premium",
+        amenities: ["AC", "Attached Bath", "Balcony", "WiFi"],
+    },
+    {
+        title: "The Duo Deluxe",
+        type: "2 Seater · Premium",
+        price: "₹22,000",
+        tag: "New",
+        amenities: ["AC", "Attached Bath", "Study Desk", "WiFi"],
+    },
+    {
+        title: "The Studio",
+        type: "1 Seater · Studio",
+        price: "₹32,000",
+        tag: "Flagship",
+        amenities: ["AC", "Kitchenette", "Balcony", "WiFi"],
+    },
+];
 
 export default function RoomsPage() {
     return (
-        <main className="min-h-screen flex flex-col bg-sand-light">
+        <main className="min-h-screen flex flex-col" style={{ background: "var(--luxury-green)" }}>
             <Navigation />
 
-            {/* Header */}
-            <section className="pt-32 pb-12 bg-white">
+            {/* Hero Header */}
+            <section className="pt-36 pb-16 relative overflow-hidden">
+                {/* Subtle background texture */}
+                <div
+                    className="absolute inset-0 opacity-5"
+                    style={{
+                        backgroundImage: `radial-gradient(circle at 20% 50%, var(--gold) 0%, transparent 50%),
+                                          radial-gradient(circle at 80% 20%, var(--gold-antique) 0%, transparent 40%)`,
+                    }}
+                />
                 <Container>
-                    <span className="font-mono text-xs uppercase tracking-[0.2em] text-terracotta-raw">
-                        Availability
-                    </span>
-                    <h1 className="font-display text-5xl md:text-6xl mt-4">GET YOUR SPACE</h1>
+                    <div className="relative z-10">
+                        <span
+                            className="font-mono text-xs uppercase tracking-[0.25em] block mb-4"
+                            style={{ color: "var(--gold)" }}
+                        >
+                            Krishna Valley, Vrindavan
+                        </span>
+                        <h1
+                            className="font-display text-6xl md:text-8xl uppercase leading-[0.88] tracking-[-2px] mb-6"
+                            style={{ color: "var(--cream-warm)" }}
+                        >
+                            Find Your
+                            <br />
+                            <span style={{ color: "var(--gold)" }}>Space</span>
+                        </h1>
+                        <p
+                            className="font-body text-base md:text-lg max-w-md mt-6 leading-relaxed"
+                            style={{ color: "var(--sand-light)", opacity: 0.6 }}
+                        >
+                            Thoughtfully designed rooms for focused individuals. Every space is curated for deep work, rest, and community.
+                        </p>
+
+                        {/* Stats row */}
+                        <div className="flex gap-10 mt-10">
+                            {[
+                                { label: "Room Types", value: "6+" },
+                                { label: "Residents", value: "120+" },
+                                { label: "Sq. Ft. (avg)", value: "220" },
+                            ].map((stat) => (
+                                <div key={stat.label}>
+                                    <div
+                                        className="font-display text-3xl"
+                                        style={{ color: "var(--gold)" }}
+                                    >
+                                        {stat.value}
+                                    </div>
+                                    <div
+                                        className="font-mono text-[0.65rem] uppercase tracking-widest mt-0.5"
+                                        style={{ color: "var(--sand-light)", opacity: 0.5 }}
+                                    >
+                                        {stat.label}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </Container>
             </section>
 
-            {/* Discovery Search Section */}
-            <section className="relative z-20 -mt-10 pb-20">
+            {/* Search Bar */}
+            <section className="relative z-20 pb-12">
                 <Container>
                     <SearchBar />
                 </Container>
             </section>
 
+            {/* Divider */}
+            <div className="w-full" style={{ height: "1px", background: "linear-gradient(to right, transparent, var(--gold-antique), transparent)", opacity: 0.3 }} />
 
             {/* Results Grid */}
-            <section className="py-0">
+            <section className="py-16">
                 <Container>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <RoomCard
-                            title="The Solo"
-                            type="1 SEATER"
-                            price="₹25,000"
-                            image="/placeholder-1.jpg"
+                    {/* Section label */}
+                    <div className="flex items-center justify-between mb-10">
+                        <span
+                            className="font-mono text-[0.7rem] uppercase tracking-[0.25em]"
+                            style={{ color: "var(--gold)", opacity: 0.7 }}
+                        >
+                            {ROOMS.length} spaces available
+                        </span>
+                        <div
+                            className="h-px flex-1 mx-6"
+                            style={{ background: "var(--gold)", opacity: 0.15 }}
                         />
-                        <RoomCard
-                            title="The Duo"
-                            type="2 SEATER"
-                            price="₹18,000"
-                            image="/placeholder-2.jpg"
-                        />
-                        <RoomCard
-                            title="The Tribe"
-                            type="3 SEATER"
-                            price="₹15,000"
-                            image="/placeholder-3.jpg"
-                        />
-                        {/* Duplicates for demo */}
-                        <RoomCard
-                            title="The Solo Plus"
-                            type="1 SEATER"
-                            price="₹28,000"
-                            image="/placeholder-4.jpg"
-                        />
-                        <RoomCard
-                            title="The Duo Deluxe"
-                            type="2 SEATER"
-                            price="₹22,000"
-                            image="/placeholder-5.jpg"
-                        />
+                        <span
+                            className="font-mono text-[0.7rem] uppercase tracking-[0.25em]"
+                            style={{ color: "var(--sand-light)", opacity: 0.4 }}
+                        >
+                            Sorted by price
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {ROOMS.map((room) => (
+                            <RoomCard
+                                key={room.title}
+                                title={room.title}
+                                type={room.type}
+                                price={room.price}
+                                tag={room.tag}
+                                amenities={room.amenities}
+                                image=""
+                            />
+                        ))}
+                    </div>
+                </Container>
+            </section>
+
+            {/* Bottom CTA band */}
+            <section
+                className="py-16 mt-8"
+                style={{
+                    background: "linear-gradient(to right, var(--gold-antique), var(--gold))",
+                }}
+            >
+                <Container>
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div>
+                            <h2
+                                className="font-display text-3xl md:text-4xl"
+                                style={{ color: "var(--luxury-green)" }}
+                            >
+                                Not sure which room fits?
+                            </h2>
+                            <p
+                                className="font-mono text-sm mt-1"
+                                style={{ color: "var(--luxury-green)", opacity: 0.7 }}
+                            >
+                                Schedule a free walkthrough — see it before you sign.
+                            </p>
+                        </div>
+                        <EnquireNowButton variant="gold" label="Book a Visit" />
                     </div>
                 </Container>
             </section>

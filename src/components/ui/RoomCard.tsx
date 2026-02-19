@@ -1,20 +1,27 @@
 "use client";
 
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { ArrowRight, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 
 interface RoomCardProps {
     title: string;
     type: string;
-    image: string;
+    image?: string;
     price: string;
+    tag?: string;
+    amenities?: string[];
     className?: string;
-    href?: string;
 }
 
-export function RoomCard({ title, type, price, className, href = "/signup" }: RoomCardProps) {
+export function RoomCard({
+    title,
+    type,
+    price,
+    tag,
+    amenities = [],
+    className,
+}: RoomCardProps) {
     const x = useMotionValue(0);
     const y = useMotionValue(0);
 
@@ -24,7 +31,6 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
     const rotateX = useTransform(mouseY, [-0.5, 0.5], ["2deg", "-2deg"]);
     const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-2deg", "2deg"]);
 
-    // For room rotation on hover
     const roomRotateX = useTransform(mouseY, [-0.5, 0.5], [5, -5]);
     const roomRotateZ = useTransform(mouseX, [-0.5, 0.5], [-10, 10]);
 
@@ -32,10 +38,8 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
         const rect = event.currentTarget.getBoundingClientRect();
         const width = rect.width;
         const height = rect.height;
-        const mouseXFromCenter = event.clientX - rect.left - width / 2;
-        const mouseYFromCenter = event.clientY - rect.top - height / 2;
-        x.set(mouseXFromCenter / width);
-        y.set(mouseYFromCenter / height);
+        x.set((event.clientX - rect.left - width / 2) / width);
+        y.set((event.clientY - rect.top - height / 2) / height);
     }
 
     function handleMouseLeave() {
@@ -45,31 +49,40 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
 
     return (
         <motion.div
-            style={{
-                rotateX,
-                rotateY,
-                transformStyle: "preserve-3d",
-            }}
+            style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             className={cn(
-                "group relative w-full h-[500px] md:h-[640px] bg-cream-warm rounded-[4px] p-6 md:p-[60px]",
-                "shadow-[-20px_-20px_60px_var(--pulp-highlight),20px_20px_60px_var(--pulp-shadow),inset_1px_1px_2px_var(--pulp-highlight),inset_-1px_-1px_2px_var(--pulp-shadow)]",
+                "group relative w-full bg-cream-warm rounded-[4px] p-6 md:p-[48px]",
+                "shadow-[-20px_-20px_60px_rgba(255,255,255,0.7),20px_20px_60px_rgba(0,0,0,0.35),inset_1px_1px_2px_rgba(255,255,255,0.8),inset_-1px_-1px_2px_rgba(0,0,0,0.15)]",
                 "hover:z-10 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-crosshair",
                 className
             )}
         >
-            {/* Content Container with 3D Depth */}
+            {/* Tag badge */}
+            {tag && (
+                <div
+                    className="absolute top-5 right-5 z-20 px-3 py-1 font-mono text-[0.58rem] uppercase tracking-[0.2em] font-bold"
+                    style={{
+                        background: "var(--luxury-green)",
+                        color: "var(--gold)",
+                    }}
+                >
+                    {tag}
+                </div>
+            )}
+
+            {/* Content with 3D depth */}
             <div
-                className="relative w-full h-full flex flex-col justify-between"
+                className="relative w-full h-full flex flex-col justify-between gap-6"
                 style={{ transform: "translateZ(20px)" }}
             >
-                {/* Header */}
+                {/* ── Header ── */}
                 <div className="z-10">
-                    <span className="font-mono text-[0.75rem] text-green-sage tracking-[2px] uppercase block mb-2">
+                    <span className="font-mono text-[0.7rem] text-green-sage tracking-[2px] uppercase block mb-2">
                         {type}
                     </span>
-                    <h3 className="font-display text-[2.5rem] md:text-[3rem] text-charcoal leading-[0.9] uppercase tracking-[-2px]">
+                    <h3 className="font-display text-[2.4rem] md:text-[2.8rem] text-charcoal leading-[0.9] uppercase tracking-[-2px]">
                         {title.split(" ").map((word, i) => (
                             <span key={i}>
                                 {word}
@@ -79,9 +92,9 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
                     </h3>
                 </div>
 
-                {/* 3D Isometric Room Viewport */}
+                {/* ── 3D Isometric Room Viewport ── */}
                 <div
-                    className="absolute top-1/2 left-1/2 w-[320px] h-[320px] -translate-x-1/2 -translate-y-[40%] scale-75 md:scale-100 origin-center"
+                    className="absolute top-1/2 left-1/2 w-[300px] h-[300px] -translate-x-1/2 -translate-y-[38%] scale-75 md:scale-90 origin-center"
                     style={{ perspective: "1200px" }}
                 >
                     <motion.div
@@ -94,86 +107,91 @@ export function RoomCard({ title, type, price, className, href = "/signup" }: Ro
                     >
                         {/* Floor */}
                         <div
-                            className="absolute w-[240px] h-[240px] bottom-0 right-0 bg-cream-warm border border-black/5"
+                            className="absolute w-[220px] h-[220px] bottom-0 right-0 bg-cream-warm border border-black/5"
                             style={{
                                 boxShadow: "inset 10px 10px 30px var(--pulp-shadow), inset -2px -2px 10px var(--pulp-highlight)",
                             }}
                         />
-
                         {/* Wall Left */}
                         <div
-                            className="absolute w-[240px] h-[140px] right-0"
+                            className="absolute w-[220px] h-[130px] right-0"
                             style={{
                                 background: "linear-gradient(to bottom, var(--cream-warm), var(--pulp-shadow))",
                                 transformOrigin: "bottom",
                                 transform: "rotateX(-90deg)",
-                                bottom: "240px",
+                                bottom: "220px",
                                 border: "1px solid rgba(0,0,0,0.05)",
                             }}
                         />
-
                         {/* Wall Right */}
                         <div
-                            className="absolute w-[140px] h-[240px] bottom-0"
+                            className="absolute w-[130px] h-[220px] bottom-0"
                             style={{
                                 background: "linear-gradient(to right, var(--pulp-shadow), var(--cream-warm))",
                                 transformOrigin: "right",
                                 transform: "rotateY(90deg)",
-                                right: "240px",
+                                right: "220px",
                                 border: "1px solid rgba(0,0,0,0.05)",
                             }}
                         />
-
-                        {/* Plinth/Base Object */}
+                        {/* Plinth */}
                         <div
-                            className="absolute w-[60px] h-[60px] bg-cream-warm"
+                            className="absolute w-[55px] h-[55px] bg-cream-warm"
                             style={{
-                                bottom: "60px",
-                                right: "60px",
+                                bottom: "55px",
+                                right: "55px",
                                 transform: "translateZ(2px)",
-                                boxShadow: "10px 10px 20px rgba(0,0,0,0.1), -2px -2px 5px var(--pulp-highlight)",
+                                boxShadow: "8px 8px 18px rgba(0,0,0,0.1), -2px -2px 5px var(--pulp-highlight)",
                             }}
                         />
-
-                        {/* Floating Cube with Animation */}
+                        {/* Floating Cube */}
                         <motion.div
-                            className="absolute w-[40px] h-[40px] bg-green-sage"
+                            className="absolute w-[36px] h-[36px]"
                             style={{
-                                bottom: "70px",
-                                right: "70px",
+                                bottom: "64px",
+                                right: "64px",
+                                background: "var(--luxury-green)",
                             }}
-                            animate={{
-                                z: [80, 100, 80],
-                            }}
-                            transition={{
-                                duration: 4,
-                                ease: "easeInOut",
-                                repeat: Infinity,
-                            }}
+                            animate={{ z: [70, 90, 70] }}
+                            transition={{ duration: 4, ease: "easeInOut", repeat: Infinity }}
                         />
                     </motion.div>
                 </div>
 
-                {/* Footer */}
+                {/* ── Amenities chips ── */}
+                {amenities.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 z-10 mt-auto pt-2">
+                        {amenities.map((a) => (
+                            <span
+                                key={a}
+                                className="font-mono text-[0.58rem] uppercase tracking-wider px-2 py-1 border border-charcoal/15 text-charcoal/50"
+                            >
+                                {a}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
+                {/* Spacer to push footer down */}
+                <div className="flex-1" />
+
+                {/* ── Footer ── */}
                 <div className="flex justify-between items-end z-10">
                     <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-charcoal/60">
-                            <span className="font-mono text-[0.7rem] leading-relaxed">
-
-                                <span className="text-charcoal">KRISHNA VALLEY, VRINDAVAN</span>
+                        <span className="font-mono text-[0.62rem] text-charcoal/40 uppercase tracking-widest">
+                            Krishna Valley, Vrindavan
+                        </span>
+                        <div>
+                            <span className="font-mono text-[0.6rem] text-charcoal/40">Starting from</span>
+                            <br />
+                            <span className="font-display text-[1.4rem] text-charcoal leading-tight">
+                                {price}
+                                <span className="font-mono text-[0.6rem] text-charcoal/40 ml-1">/mo</span>
                             </span>
                         </div>
-                        <span className="font-mono text-[1rem] text-charcoal/60">
-                            PRICES<br />
-                            <span className="text-charcoal">{price}/MO</span>
-                        </span>
                     </div>
 
-                    <Link href={href}>
-                        <button className="bg-charcoal text-cream-warm px-4 py-2 font-mono text-[0.7rem] font-bold tracking-[1px] hover:bg-green-sage hover:-translate-y-0.5 transition-all duration-300">
-                            BOOK NOW
-                        </button>
-                    </Link>
+                    <EnquireNowButton variant="dark" label="Book Now" />
                 </div>
             </div>
         </motion.div>
