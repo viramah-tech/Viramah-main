@@ -120,7 +120,7 @@ export function Navigation() {
                         JOIN NOW
                     </Link>
                     */}
-                    <EnquireNowButton variant="gold" label="Book a Room" rounded={true} />
+                    <EnquireNowButton variant="gold" label="join us" rounded={true} />
                 </div>
                 {/* Mobile hamburger */}
                 <div className="lg:hidden relative">

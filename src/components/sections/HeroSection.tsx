@@ -323,8 +323,8 @@ export function HeroSection() {
                     initial="hidden"
                     animate="visible"
                 >
-                    <span>विरामाह — The Art of REST</span>
-                    <span>Community Living, Reimagined</span>
+                    <span>विरामाह — live life better </span>
+
                     <span>© 2025 Viramah</span>
                 </motion.div>
 
@@ -345,7 +345,7 @@ export function HeroSection() {
                     style={{
                         borderLeft: "3px solid #D8B56A",
                         paddingLeft: "1.5rem",
-                        marginTop: "2.5rem",
+                        marginTop: ".5rem",
                         maxWidth: "600px",
                     }}
                 >
@@ -362,10 +362,7 @@ export function HeroSection() {
                         AAP BAS APNA DHYAN RAKHO, <br />BAKI SAB HAM SAMBHAL LENEGE.
                     </span>
 
-                    <div style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
-                        <EnquireNowButton variant="dark" label="Book a Room" />
-                        <EnquireNowButton variant="outline" label="Apply Now" />
-                    </div>
+
                 </motion.div>
             </header>
 
@@ -429,39 +426,8 @@ export function HeroSection() {
                     ))}
                 </div>
             </motion.div>
+            <br />
 
-            {/* ── Footer Blurbs ─────────────────────────────── */}
-            <motion.div
-                className="hero-blurbs"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.2 }}
-            >
-                <div className="hero-blurb">
-                    <br />
-                    <br />
-                    <h3>The Promise</h3>
-                    <p>
-                        Premium community living spaces designed for connection,
-                        growth, and the comfort of a second home.
-                        <br />
-                        <br />
-                        <br />
-                        <br />
-                    </p>
-                </div>
-                <div className="hero-blurb">
-                    <h3>The Experience</h3>
-                    <p>
-                        A seamless blend of private retreats and shared moments,
-                        bound by thoughtful design and warm hospitality.
-                        <br />
-                        <br />
-                        <br />
-                        <br />
-                    </p>
-                </div>
-            </motion.div>
         </div>
     );
 }

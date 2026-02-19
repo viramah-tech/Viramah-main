@@ -34,7 +34,7 @@ export function ClosingSection() {
         <>
             <section ref={sectionRef} className="cta-section-wrapper">
                 <div className="cta-pulp-card">
-                    <div className="cta-fiber-line" aria-hidden="true" />
+
 
                     {/* Left — Primary content */}
                     <div className="cta-content">

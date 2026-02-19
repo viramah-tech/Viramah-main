@@ -110,7 +110,16 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+### Deployment
+
+Viramah is optimized for **Vercel**.
+
+1.  Push your code to GitHub.
+2.  Connect your repository to Vercel.
+3.  Add the environment variables from `.env.example`.
+4.  Deploy!
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fviramah-tech%2FViramah-main)
 
 ### Available Scripts
 

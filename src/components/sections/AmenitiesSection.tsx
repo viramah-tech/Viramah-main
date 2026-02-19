@@ -213,11 +213,11 @@ export function AmenitiesSection({ className, id }: AmenitiesSectionProps) {
               whileInView="visible"
               viewport={{ once: true, margin: "-50px" }}
             >
-              {/* Corner brackets */}
+              {/* Corner brackets
               <div className="amen-corner tl" aria-hidden="true" />
               <div className="amen-corner tr" aria-hidden="true" />
               <div className="amen-corner bl" aria-hidden="true" />
-              <div className="amen-corner br" aria-hidden="true" />
+              <div className="amen-corner br" aria-hidden="true" /> */}
 
               {/* Icon */}
               <div className="amen-icon-wrap">
@@ -235,7 +235,7 @@ export function AmenitiesSection({ className, id }: AmenitiesSectionProps) {
               <div className="amen-data">
                 <div className="amen-label">{item.title}</div>
                 <div className="amen-measurement">
-                  
+
                 </div>
               </div>
             </motion.div>

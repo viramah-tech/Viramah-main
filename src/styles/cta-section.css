@@ -25,9 +25,7 @@
   gap: 4rem;
   align-items: end;
 
-  box-shadow:
-    inset 2px 2px 5px rgba(0, 0, 0, 0.05),
-    inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+
 }
 
 .cta-pulp-card::before {
@@ -82,14 +80,14 @@
 
 /* Headline */
 .cta-headline {
-    color: antiquewhite;
-    font-family: var(--font-display), "DM Serif Display", serif;
-    font-size: clamp(3rem, 7vw, 5rem);
-    font-weight: 700;
-    line-height: 0.95;
-    color: var(--cream-warm);
-    letter-spacing: -0.04em;
-    margin-bottom: 1.75rem;
+  color: antiquewhite;
+  font-family: var(--font-display), "DM Serif Display", serif;
+  font-size: clamp(3rem, 7vw, 5rem);
+  font-weight: 700;
+  line-height: 0.95;
+  color: var(--cream-warm);
+  letter-spacing: -0.04em;
+  margin-bottom: 1.75rem;
 }
 
 /* Description */
@@ -182,8 +180,17 @@
 }
 
 @keyframes ctaPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(1.4); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(1.4);
+  }
 }
 
 /* Button group wrapper */

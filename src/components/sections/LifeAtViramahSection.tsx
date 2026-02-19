@@ -27,7 +27,7 @@ const GALLERY_ITEMS: GalleryItem[] = [
         src: "/life at viramah images/swiming pool.jpg",
         alt: "Swimming pool and wellness deck",
         label: "WELLNESS_CORE",
-        title: "Fitness & Zen",
+        title: "Swimming Pool",
         stats: ["YOGA SESSIONS", "POOL RECOVERY"],
         span: 4,
     },
@@ -35,9 +35,17 @@ const GALLERY_ITEMS: GalleryItem[] = [
         src: "/life at viramah images/gaming zone.jpg",
         alt: "Gaming and skills lab",
         label: "CREATIVE_LAB",
-        title: "Workshops & Play",
+        title: "Gaming Zone",
         stats: ["SKILL SESSIONS", "TOURNAMENTS", "LIVE"],
-        span: 12,
+        span: 4,
+    },
+    {
+        src: "/life at viramah images/gym.jpg",
+        alt: "Fully equipped gym and fitness studio",
+        label: "FITNESS_STUDIO",
+        title: "Fitness & Zen",
+        stats: ["STRENGTH & CARDIO", "YOGA SPACE", "ZEN ZONE"],
+        span: 8,
     },
 ];
 
@@ -136,7 +144,7 @@ export function LifeAtViramahSection() {
                 <div className="lav-grid" role="group" aria-label="Life at Viramah gallery">
                     {GALLERY_ITEMS.map((item, i) => (
                         <motion.article
-                            key={item.label}
+                            key={`${item.label}-${i}`}
                             className={`lav-slate lav-span-${item.span}`}
                             custom={i}
                             initial="hidden"

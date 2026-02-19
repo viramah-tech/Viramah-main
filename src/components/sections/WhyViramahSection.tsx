@@ -116,7 +116,7 @@ export function WhyViramahSection() {
                 <div className="wv-header">
 
                     <h2 className="wv-title">
-                        Why Students Choose<br />
+                        Why Choose<br />
                         <span className="wv-title-gold">Viramah?</span>
                     </h2>
                     <p className="wv-subtitle">
@@ -154,12 +154,12 @@ export function WhyViramahSection() {
 
                 {/* ── Bottom CTA strip ── */}
                 <div className="wv-cta" style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", justifyContent: "center" }}>
-                    <EnquireNowButton variant="gold" label="Book a Room" />
-                    <EnquireNowButton variant="outline" label="Schedule a Visit" />
+                    {/* <EnquireNowButton variant="gold" label="Book a Room" />
+                    <EnquireNowButton variant="outline" label="Schedule a Visit" /> */}
                 </div>
             </div>
 
-            {/* ── Section Divider ── */}
+            {/* ── Section Divider ── 
             <div className="wv-divider" aria-hidden="true">
                 <svg
                     viewBox="0 0 1200 56"
@@ -167,10 +167,10 @@ export function WhyViramahSection() {
                     xmlns="http://www.w3.org/2000/svg"
                     className="wv-divider-svg"
                 >
-                    {/* Full-width hairline */}
+                    Full-width hairline  
                     <line x1="0" y1="28" x2="1200" y2="28" stroke="rgba(216,181,106,0.3)" strokeWidth="1.5" />
 
-                    {/* Left zigzag segment */}
+                     Left zigzag segment 
                     <polyline
                         points="0,28 80,10 160,28 240,10 320,28 400,10 460,28"
                         fill="none"
@@ -179,7 +179,7 @@ export function WhyViramahSection() {
                         strokeLinejoin="miter"
                     />
 
-                    {/* Central diamond ornament */}
+                     Central diamond ornament 
                     <polygon
                         points="600,10 618,28 600,46 582,28"
                         fill="none"
@@ -188,7 +188,7 @@ export function WhyViramahSection() {
                     />
                     <circle cx="600" cy="28" r="4" fill="#D8B56A" />
 
-                    {/* Right zigzag segment */}
+                     Right zigzag segment 
                     <polyline
                         points="740,28 800,10 880,28 960,10 1040,28 1120,10 1200,28"
                         fill="none"
@@ -199,7 +199,7 @@ export function WhyViramahSection() {
 
 
                 </svg>
-            </div>
+            </div> */}
         </section>
     );
 }

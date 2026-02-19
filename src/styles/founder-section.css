@@ -22,13 +22,115 @@
 .fs-inner {
     position: relative;
     z-index: 2;
-    max-width: 900px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 0 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 3rem;
+}
+
+/* Two-column layout */
+.fs-layout {
+    flex-direction: row;
+    align-items: center;
+    gap: 5rem;
+    text-align: left;
+}
+
+.fs-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+/* Image side */
+.fs-image-wrap {
+    flex: 0 0 380px;
+    position: relative;
+    border: 1px solid rgba(216, 181, 106, 0.3);
+}
+
+.fs-image-inner {
+    position: relative;
+    width: 100%;
+    height: 480px;
+    overflow: hidden;
+}
+
+.fs-image {
+    transition: transform 0.6s ease;
+}
+
+.fs-image-wrap:hover .fs-image {
+    transform: scale(1.04);
+}
+
+.fs-image-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom,
+            transparent 50%,
+            rgba(15, 32, 24, 0.55) 100%);
+    pointer-events: none;
+}
+
+/* Corner rivet dots */
+.fs-rivet {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #e2c07d, #b5934a, #6b5526);
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    z-index: 5;
+}
+
+.fs-rivet-tl {
+    top: -4px;
+    left: -4px;
+}
+
+.fs-rivet-tr {
+    top: -4px;
+    right: -4px;
+}
+
+.fs-rivet-bl {
+    bottom: -4px;
+    left: -4px;
+}
+
+.fs-rivet-br {
+    bottom: -4px;
+    right: -4px;
+}
+
+/* Label tag below image */
+.fs-image-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(15, 32, 24, 0.9);
+    border-top: 1px solid rgba(216, 181, 106, 0.25);
+    font-family: var(--font-mono, monospace);
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(216, 181, 106, 0.7);
+}
+
+.fs-image-tag-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #D8B56A;
+    box-shadow: 0 0 6px #D8B56A;
+    flex-shrink: 0;
 }
 
 /* Quote Icon */
@@ -110,12 +212,31 @@
 }
 
 /* RESPONSIVE */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .fs-section {
         padding: 7rem 0;
     }
 
     .fs-quote-text {
         font-size: 1.6rem;
+    }
+
+    .fs-layout {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .fs-content {
+        align-items: center;
+    }
+
+    .fs-image-wrap {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 480px;
+    }
+
+    .fs-image-inner {
+        height: 320px;
     }
 }

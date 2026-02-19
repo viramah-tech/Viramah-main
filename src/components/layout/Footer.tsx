@@ -65,7 +65,7 @@ export function Footer() {
 
                     {/* Brand column */}
                     <div className="footer-brand footer-reveal">
-                        <div className="footer-logo">Viramah.</div>
+                        <div className="footer-logo">Viramah stay.</div>
                         <p className="footer-mission">
                             Premium student living reimagined — where comfort, community,
                             and craft come together. Every space designed with intention.
@@ -83,8 +83,8 @@ export function Footer() {
                             <li><Link href="/rooms">Living Options</Link></li>
                             <li><Link href="/community">Community</Link></li>
                             <li><Link href="/about">About Us</Link></li>
-                            <li><Link href="/visit">Book a Visit</Link></li>
-                            <li><Link href="/signup">Apply Now</Link></li>
+                            <li><Link href="#">Book a Visit</Link></li>
+                            <li><Link href="#">Apply Now</Link></li>
                         </ul>
                     </div>
 
@@ -92,10 +92,10 @@ export function Footer() {
                     <div className="footer-nav-col footer-reveal" style={{ transitionDelay: "0.2s" }}>
                         <span className="footer-nav-label">Legal</span>
                         <ul className="footer-nav-list">
-                            <li><Link href="/privacy">Privacy Policy</Link></li>
-                            <li><Link href="/terms">Terms of Service</Link></li>
-                            <li><Link href="/support">Support</Link></li>
-                            <li><Link href="/login">Login / Register</Link></li>
+                            <li><Link href="#">Privacy Policy</Link></li>
+                            <li><Link href="#">Terms of Service</Link></li>
+                            <li><Link href="#">Support</Link></li>
+                            <li><Link href="#">Login / Register</Link></li>
                         </ul>
                     </div>
                 </div>
