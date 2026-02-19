@@ -234,9 +234,6 @@ export function AmenitiesSection({ className, id }: AmenitiesSectionProps) {
               {/* Data overlay */}
               <div className="amen-data">
                 <div className="amen-label">{item.title}</div>
-                <div className="amen-measurement">
-
-                </div>
               </div>
             </motion.div>
           ))}

@@ -152,8 +152,8 @@
 /* ── 7. Icon Image ─────────────────────────── */
 .amen-icon-img {
     z-index: 2;
-    width: 280px;
-    height: 280px;
+    width: clamp(140px, 15vw, 200px);
+    height: clamp(140px, 15vw, 200px);
     object-fit: contain;
     filter: drop-shadow(0 0 10px var(--amen-accent-glow));
     transition: transform 0.4s ease, filter 0.4s ease;
@@ -161,14 +161,16 @@
 
 /* ── 8. Data Label ─────────────────────────── */
 .amen-data {
-    margin-top: 1.2rem;
+    margin-top: 1.5rem;
     text-align: center;
+    position: relative;
+    z-index: 10;
 }
 
 .amen-label {
     font-family: var(--font-body);
     font-weight: 800;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--amen-muted);
