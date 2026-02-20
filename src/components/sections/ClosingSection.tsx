@@ -39,7 +39,7 @@ export function ClosingSection() {
                     {/* Left — Primary content */}
                     <div className="cta-content">
                         <span className="cta-mono-label" style={reveal("0.1s")}>
-                            Admissions // 2025.AUG
+                            Admissions // 2026.AUG
                         </span>
 
                         <h2
@@ -99,7 +99,7 @@ export function ClosingSection() {
                             <div className="cta-dot" />
                         </div>
                         <span className="cta-mono-label" style={{ marginBottom: 0 }}>
-                            Viramah // Est. 2024
+                            Viramah // Est. 2026
                         </span>
                     </div>
                 </div>

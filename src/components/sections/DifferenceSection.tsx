@@ -160,7 +160,7 @@ export function DifferenceSection() {
                     <div className="diff-header-meta">
                         [ THE_VIRAMAH_DIFFERENCE ]
                         <br />
-                        EST. SINCE_2024
+                        EST. 2026
                     </div>
                 </motion.header>
 

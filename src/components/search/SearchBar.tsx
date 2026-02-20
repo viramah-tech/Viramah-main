@@ -16,8 +16,8 @@ interface SearchSegment {
 const SEGMENTS: SearchSegment[] = [
     { id: "location", label: "LOCATION", icon: MapPin, placeholder: "City, College, or Area" },
     { id: "room", label: "SPACE TYPE", icon: Home, placeholder: "1 Seater, 2 Seater…" },
-    { id: "duration", label: "DURATION", icon: Calendar, placeholder: "Academic Year" },
-    { id: "budget", label: "BUDGET", icon: Wallet, placeholder: "₹10k – ₹30k / mo" },
+    // { id: "duration", label: "DURATION", icon: Calendar, placeholder: "Academic Year" },
+    // { id: "budget", label: "BUDGET", icon: Wallet, placeholder: "₹10k – ₹30k / mo" },
 ];
 
 export function SearchBar() {
