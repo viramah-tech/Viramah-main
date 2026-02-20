@@ -71,7 +71,7 @@ export function Footer() {
                             and craft come together. Every space designed with intention.
                         </p>
                         <div className="footer-contact">
-                            <span><a href="mailto:info@viramah.com">team@viramah.com</a></span>
+                            <span><a href="mailto:team@viramah.com">team@viramah.com</a></span>
                             <span><a href="tel:+918679001661">+91 8679001661</a></span>
                         </div>
                     </div>
