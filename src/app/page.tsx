@@ -15,6 +15,21 @@ import { ClosingSection } from "@/components/sections/ClosingSection";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { WhyViramahSection } from "@/components/sections/WhyViramahSection";
 import { FAQSection } from "@/components/sections/FAQSection";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Viramah | Next Generation Student Living in India",
+  description: "Experience premium student living at Viramah. Modern hostel with high-speed WiFi, gaming zone, and nutritious food. The ultimate PG alternative for Gen Z and working professionals.",
+  keywords: [
+    "best hostel for students in India",
+    "hostel that feels like home",
+    "modern youth hostel India",
+    "hostel with gaming zone",
+    "premium yet affordable hostel",
+    "safe and respectful hostel",
+    "next generation hostel India"
+  ]
+};
 
 export default function Home() {
   return (

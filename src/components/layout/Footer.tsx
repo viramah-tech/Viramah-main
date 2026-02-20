@@ -106,7 +106,8 @@ export function Footer() {
                             <li><Link href="#">Privacy Policy</Link></li>
                             <li><Link href="#">Terms of Service</Link></li>
                             <li><Link href="#">Support</Link></li>
-                            <li><Link href="#">Login / Register</Link></li>
+                            <li><Link href="/login">Login / Register</Link></li>
+                            <li><Link href="/site-map">Sitemap</Link></li>
                         </ul>
                     </div>
                 </div>
