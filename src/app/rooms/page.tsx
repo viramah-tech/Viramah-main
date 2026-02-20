@@ -9,46 +9,53 @@ import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 
 const ROOMS = [
     {
-        title: "The Solo",
-        type: "1 Seater · Private",
-        price: "₹25,000",
-        tag: "Most Popular",
-        amenities: ["AC", "Attached Bath", "Study Desk", "WiFi"],
+        title: "Studio 2-Seater (AC)",
+        type: "Studio · 2 Seater · AC",
+        price: "₹14,999",
+        tag: "Luxury",
+        amenities: ["AC", "High-Speed WiFi", "Study Desk", "Housekeeping"],
     },
     {
-        title: "The Duo",
-        type: "2 Seater · Shared",
-        price: "₹18,000",
-        tag: "Best Value",
-        amenities: ["AC", "Common Bath", "Study Desk", "WiFi"],
-    },
-    {
-        title: "The Tribe",
-        type: "3 Seater · Shared",
-        price: "₹15,000",
-        tag: "Community Pick",
-        amenities: ["Fan", "Common Bath", "Study Desk", "WiFi"],
-    },
-    {
-        title: "The Solo Plus",
-        type: "1 Seater · Premium",
-        price: "₹28,000",
+        title: "Studio 1-Seater (AC)",
+        type: "Studio · 1 Seater · AC",
+        price: "₹17,749",
         tag: "Premium",
-        amenities: ["AC", "Attached Bath", "Balcony", "WiFi"],
+        amenities: ["AC", "High-Speed WiFi", "Study Desk", "Housekeeping"],
     },
     {
-        title: "The Duo Deluxe",
-        type: "2 Seater · Premium",
-        price: "₹22,000",
-        tag: "New",
-        amenities: ["AC", "Attached Bath", "Study Desk", "WiFi"],
+        title: "Studio 2-Seater (NAC)",
+        type: "Studio · 2 Seater · Non-AC",
+        price: "₹12,499",
+        tag: "Best Value",
+        amenities: ["High-Speed WiFi", "Study Desk", "Essential Living"],
     },
     {
-        title: "The Studio",
-        type: "1 Seater · Studio",
-        price: "₹32,000",
-        tag: "Flagship",
-        amenities: ["AC", "Kitchenette", "Balcony", "WiFi"],
+        title: "Studio 1-Seater (NAC)",
+        type: "Studio · 1 Seater · Non-AC",
+        price: "₹14,999",
+        tag: "Comfort",
+        amenities: ["High-Speed WiFi", "Study Desk", "Essential Living"],
+    },
+    {
+        title: "1BHK 2-Seater (NAC)",
+        type: "1BHK · 2 Seater · Shared",
+        price: "₹16,399",
+        tag: "Exclusive",
+        amenities: ["Spacious Living", "High-Speed WiFi", "Study Desk", "Kitchen"],
+    },
+    {
+        title: "1BHK 3-Seater (NAC)",
+        type: "1BHK · 3 Seater · Shared",
+        price: "₹11,499",
+        tag: "Updated",
+        amenities: ["Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen"],
+    },
+    {
+        title: "1BHK 4-Seater (NAC)",
+        type: "1BHK · 4 Seater · Shared",
+        price: "₹9,999",
+        tag: "Budget Friendly",
+        amenities: ["Shared Space", "High-Speed WiFi", "Study Desk", "Economy"],
     },
 ];
 
@@ -87,15 +94,15 @@ export default function RoomsPage() {
                             className="font-body text-base md:text-lg max-w-md mt-6 leading-relaxed"
                             style={{ color: "var(--sand-light)", opacity: 0.6 }}
                         >
-                            Thoughtfully designed rooms for focused individuals. Every space is curated for deep work, rest, and community.
+                            Thoughtfully designed spaces for focused individuals. Every layout is curated for deep work, rest, and community.
                         </p>
 
                         {/* Stats row */}
                         <div className="flex gap-10 mt-10">
                             {[
-                                { label: "Room Types", value: "6+" },
-                                { label: "Residents", value: "120+" },
-                                { label: "Sq. Ft. (avg)", value: "220" },
+                                { label: "Studio & 1BHK Types", value: "7" },
+                                { label: "Residents", value: "200+" },
+                                { label: "Sq. Ft. (avg)", value: "240" },
                             ].map((stat) => (
                                 <div key={stat.label}>
                                     <div
@@ -180,7 +187,7 @@ export default function RoomsPage() {
                                 className="font-display text-3xl md:text-4xl"
                                 style={{ color: "var(--luxury-green)" }}
                             >
-                                Not sure which room fits?
+                                Not sure which space fits?
                             </h2>
                             <p
                                 className="font-mono text-sm mt-1"

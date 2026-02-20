@@ -40,29 +40,29 @@ export default function Home() {
               </div>
               <Link href="/rooms" className="hidden md:block">
                 <button className="border-b border-charcoal pb-1 uppercase tracking-widest font-mono text-xs hover:text-terracotta-raw hover:border-terracotta-raw transition-colors">
-                  View All Rooms
+                  View All Spaces
                 </button>
               </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
               <RoomCard
-                title="The Solo"
-                type="1 SEATER"
-                price="₹25,000"
+                title="Studio 1-Seater"
+                type="1 SEATER · STUDIO"
+                price="₹17,749"
                 image="/placeholder-1.jpg"
               />
               <RoomCard
-                title="The Duo"
-                type="2 SEATER"
-                price="₹18,000"
+                title="Studio 2-Seater"
+                type="2 SEATER · STUDIO"
+                price="₹14,999"
                 image="/placeholder-2.jpg"
                 className="md:translate-y-20" // Stagger effect
               />
               <RoomCard
-                title="The Tribe"
-                type="3 SEATER"
-                price="₹15,000"
+                title="1BHK 4-Seater"
+                type="4 SEATER · 1BHK"
+                price="₹9,090"
                 image="/placeholder-3.jpg"
               />
             </div>

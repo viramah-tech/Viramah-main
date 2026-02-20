@@ -13,7 +13,7 @@ interface NavLink {
 }
 
 const NAV_LINKS: NavLink[] = [
-    { label: "Rooms", labelAlt: "Spaces", href: "/rooms" },
+    { label: "Spaces", labelAlt: "Studios", href: "/rooms" },
     { label: "Community", labelAlt: "Connect", href: "/community" },
     { label: "About", labelAlt: "Story", href: "/about" },
     { label: "Events", labelAlt: "Gather", href: "/events" },
@@ -216,7 +216,7 @@ function MobileMenuButtonAndPanel({ navLinks }: { navLinks: NavLink[] }) {
                             transition={{ delay: 0.4 }}
                             className="p-1"
                         >
-                            <EnquireNowButton variant="gold" label="Book a Room" rounded={true} className="w-full" />
+                            <EnquireNowButton variant="gold" label="Book a Space" rounded={true} className="w-full" />
                         </motion.div>
                     </motion.div>
                 )}

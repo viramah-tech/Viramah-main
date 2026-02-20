@@ -29,7 +29,7 @@ export function WhatIsViramah() {
                             </p>
                         </div>
                         <div className="wv-intro-ctas">
-                            <EnquireNowButton variant="dark" label="Book a Room" />
+                            <EnquireNowButton variant="dark" label="Book a Space" />
                             <EnquireNowButton variant="outline" label="Schedule a Visit" />
                         </div>
                     </div>

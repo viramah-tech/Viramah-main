@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, Shield, Home } from "lucide-react";
+import { ArrowLeft, Check, Shield, Home, Phone, Settings } from "lucide-react";
 import { useState } from "react";
 
 interface Detail {
@@ -45,7 +45,7 @@ const SUMMARY_ITEMS: {
             ],
         },
         {
-            icon: () => <span style={{ fontSize: "1.1rem" }}>📞</span>,
+            icon: Phone,
             iconBg: "rgba(216,181,106,0.12)",
             iconColor: GOLD,
             title: "Emergency Contact",
@@ -68,7 +68,7 @@ const SUMMARY_ITEMS: {
             ],
         },
         {
-            icon: () => <span style={{ fontSize: "1.1rem" }}>⚙️</span>,
+            icon: Settings,
             iconBg: "rgba(31,58,45,0.06)",
             iconColor: GREEN,
             title: "Preferences Set",

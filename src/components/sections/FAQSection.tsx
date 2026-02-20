@@ -15,7 +15,7 @@ const FAQS = [
         a: "Yes! We take food seriously. At Viramah, you get healthy, home-style meals with a local touch. No boring hostel food here — only fresh, nutritious, and delicious flavors that make you feel at home."
     },
     {
-        q: "Are there separate rooms for boys and girls?",
+        q: "Are there separate areas for boys and girls?",
         a: "Yes, we have strictly separate floors/wings and dedicated security protocols for both male and female residents to ensure maximum comfort, privacy, and safety for everyone."
     },
     {
@@ -24,7 +24,7 @@ const FAQS = [
     },
     {
         q: "What is the booking process?",
-        a: "Booking is simple: Select your preferred room type, schedule a visit or take a virtual tour, submit your basic documents, and pay the security deposit to lock your space. Our team will guide you every step of the way."
+        a: "Booking is simple: Select your preferred living type, schedule a visit or take a virtual tour, submit your basic documents, and pay the security deposit to lock your space. Our team will guide you every step of the way."
     }
 ];
 
@@ -40,7 +40,7 @@ export function FAQSection() {
                         <h2 className="faq-title">Frequently Asked Questions</h2>
                         <p className="faq-subtitle">Everything you need to know about living the Viramah life.</p>
                         <div className="faq-header-ctas" style={{ display: "flex", gap: "1rem", marginTop: "2.5rem", flexWrap: "wrap" }}>
-                            <EnquireNowButton variant="gold" label="Book a Room" />
+                            <EnquireNowButton variant="gold" label="Book a Space" />
                             <EnquireNowButton variant="outline" label="Schedule a Visit" />
                         </div>
                     </div>

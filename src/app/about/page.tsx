@@ -18,37 +18,37 @@ const VALUES = [
 
 const FEATURES = [
     {
-        icon: "🌿",
-        title: "Premium Furnished Rooms",
+        icon: "",
+        title: "Premium Furnished Spaces",
         tagline: "Spaces that feel like home — but better.",
-        desc: "Stylish, thoughtfully designed rooms where modern comfort meets calm energy. From plush furniture to cozy lighting, every detail is crafted to help you live, study, and sleep better.",
+        desc: "Stylish, thoughtfully designed spaces where modern comfort meets calm energy. From plush furniture to cozy lighting, every detail is crafted to help you live, study, and sleep better.",
     },
     {
-        icon: "⚡",
+        icon: "",
         title: "High-Speed WiFi",
         tagline: "Because your life shouldn't lag.",
         desc: "Binge, build, or brainstorm — stay connected with seamless high-speed internet that keeps up with your lifestyle.",
     },
     {
-        icon: "🛡",
+        icon: "",
         title: "Safe & Secure Living",
         tagline: "Your safety is our priority. Always.",
         desc: "Round-the-clock security, CCTV monitoring, and smart access — so you can focus on you, stress-free.",
     },
     {
-        icon: "🤝",
+        icon: "",
         title: "Community Vibes",
         tagline: "Meet people who get you.",
         desc: "Connect with driven students, creators, and professionals. Collaborate, chill, and grow — all under one roof.",
     },
     {
-        icon: "🧺",
+        icon: "",
         title: "Housekeeping & Maintenance",
         tagline: "You live your best life — we handle the rest.",
-        desc: "Fresh rooms, clean spaces, zero worries. Daily housekeeping and quick maintenance keep your space spotless and hassle-free.",
+        desc: "Fresh living areas, clean spaces, zero worries. Daily housekeeping and quick maintenance keep your space spotless and hassle-free.",
     },
     {
-        icon: "🎉",
+        icon: "",
         title: "Events & Experiences",
         tagline: "More than just a stay — it's a lifestyle.",
         desc: "From weekend movie nights to skill-building sessions and mini fests — every week is a new opportunity to vibe, learn, and belong.",
@@ -57,7 +57,7 @@ const FEATURES = [
 
 const TIMELINE = [
     { year: "2022", event: "The idea is born — two students frustrated with the state of PG housing." },
-    { year: "2023", event: "First property acquired. 12 rooms. 12 students. One shared vision." },
+    { year: "2023", event: "First property acquired. 12 spaces. 12 residents. One shared vision." },
     { year: "2024", event: "Viramah officially launches. 500+ residents across 3 properties." },
     { year: "2025", event: "Expanding to 5 cities. Building the largest student living community in India." },
 ];
@@ -101,7 +101,7 @@ export default function AboutPage() {
                         We're building something different. Spaces that honour the student journey.
                     </p>
                     <div className="ab-hero-stats">
-                        {[["500+", "Residents"], ["3", "Properties"], ["6", "Cities by 2025"], ["4.9★", "Avg. Rating"]].map(([num, label]) => (
+                        {[["500+", "Residents"], ["3", "Properties"], ["6", "Cities by 2025"], ["4.9", "Avg. Rating"]].map(([num, label]) => (
                             <div key={label} className="ab-stat">
                                 <span className="ab-stat-num">{num}</span>
                                 <span className="ab-stat-label">{label}</span>
@@ -201,7 +201,7 @@ export default function AboutPage() {
                     </div>
                     {/* Closing brand line */}
                     <div className="ab-features-closer">
-                        <span className="ab-features-closer-star">💫</span>
+                        <span className="ab-features-closer-star"></span>
                         <p className="ab-features-closer-title">Viramah Stay — Where Comfort Meets Community.</p>
                         <p className="ab-features-closer-sub">Live. Learn. Connect. Repeat.</p>
                     </div>

@@ -15,7 +15,7 @@ const USPS = [
                 <path d="M2 12l10 5 10-5" />
             </svg>
         ),
-        title: "Premium Furnished Rooms",
+        title: "Premium Furnished Spaces",
         desc: "Thoughtfully designed interiors that feel modern, clean, and peaceful — spaces that feel like home, but better.",
     },
     {
@@ -62,7 +62,7 @@ const USPS = [
             </svg>
         ),
         title: "Housekeeping & Maintenance",
-        desc: "You live your best life — we handle the rest. Fresh rooms, clean spaces, zero worries. Daily housekeeping included.",
+        desc: "You live your best life — we handle the rest. Fresh living, clean spaces, zero worries. Daily housekeeping included.",
     },
     {
         num: "06",

@@ -15,7 +15,7 @@ const AUDIENCES = [
         title: "The Scholar",
         description:
             "Preparing for exams, placements, or your first startup? Viramah gives you silent study zones, high-speed Wi-Fi, and a community that pushes you to be your best.",
-        perks: ["Dedicated study rooms", "24/7 Wi-Fi", "Exam-prep mindset"],
+        perks: ["Dedicated study spaces", "24/7 Wi-Fi", "Exam-prep mindset"],
     },
     {
         icon: (
@@ -30,7 +30,7 @@ const AUDIENCES = [
         title: "The Achiever",
         description:
             "New to the city, building your career? Skip the chaos of house-hunting. Move into a fully serviced home with like-minded professionals and focus on what matters.",
-        perks: ["Premium furnished rooms", "Daily housekeeping", "Professional community"],
+        perks: ["Premium furnished spaces", "Daily housekeeping", "Professional community"],
     },
     {
         icon: (

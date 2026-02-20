@@ -6,12 +6,12 @@ import "@/styles/testimonials-section.css";
 
 const TESTIMONIALS = [
     {
-        quote: "I didn't just find a room — I found friends, focus, and a purpose here. The environment truly changed my daily productivity.",
+        quote: "I didn't just find a place — I found friends, focus, and a purpose here. The environment truly changed my daily productivity.",
         author: "Sneha Kapoor",
         role: "Student Resident, DU"
     },
     {
-        quote: "Viramah is the first place that actually feels like home. The attention to detail in the rooms and the kindness of the staff is unmatched.",
+        quote: "Viramah is the first place that actually feels like home. The attention to detail in the spaces and the kindness of the staff is unmatched.",
         author: "Arjun Mehta",
         role: "Medical Resident"
     },
@@ -46,7 +46,7 @@ export function TestimonialsSection() {
                 </div>
 
                 <div className="tm-ctas" style={{ display: "flex", gap: "1.5rem", justifyContent: "center", marginTop: "5rem" }}>
-                    <EnquireNowButton variant="gold" label="Book a Room" />
+                    <EnquireNowButton variant="gold" label="Book a Space" />
                     <EnquireNowButton variant="outline" label="Schedule a Visit" />
                 </div>
             </Container>

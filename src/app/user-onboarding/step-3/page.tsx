@@ -331,7 +331,7 @@ function RoomDetailModal({ room, onClose, onSelect, isSelected }: {
                             boxShadow: room.available ? "0 4px 16px rgba(31,58,45,0.2)" : "none",
                         }}
                     >
-                        {isSelected ? "✓ Room Selected" : room.available ? "Select This Room" : "Room Occupied"}
+                        {isSelected ? "Room Selected" : room.available ? "Select This Room" : "Room Occupied"}
                     </button>
                 </div>
             </motion.div>

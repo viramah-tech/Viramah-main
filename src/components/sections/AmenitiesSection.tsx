@@ -82,9 +82,9 @@ const AMENITY_ITEMS: AmenityItem[] = [
   },
   {
     id: "gaming",
-    title: "Gaming Room",
+    title: "Gaming Arena",
     icon: "/amenities/gaming room .png",
-    alt: "Gaming Room — Entertainment and recreation space",
+    alt: "Gaming Arena — Entertainment and recreation space",
   },
 ];
 

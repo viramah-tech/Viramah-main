@@ -8,32 +8,32 @@ import "@/styles/community-page.css";
 
 const PERKS = [
     {
-        icon: "🍽️",
+        icon: "",
         title: "Weekly Community Dinners",
         desc: "Every Sunday, the whole house sits down together. Good food, real conversations, new friendships.",
     },
     {
-        icon: "🧠",
+        icon: "",
         title: "Peer Mentorship",
         desc: "Connect with seniors, alumni, and industry professionals who've walked your path.",
     },
     {
-        icon: "💻",
+        icon: "",
         title: "Shared Workspaces",
         desc: "24/7 access to quiet study rooms, collaboration zones, and high-speed internet.",
     },
     {
-        icon: "🎭",
+        icon: "",
         title: "Cultural Nights",
         desc: "Music, art, film screenings, and open mics — because life is more than academics.",
     },
     {
-        icon: "🏋️",
+        icon: "",
         title: "Fitness & Wellness",
         desc: "Gym, yoga sessions, and wellness workshops to keep your body and mind in balance.",
     },
     {
-        icon: "🌐",
+        icon: "",
         title: "Alumni Network",
         desc: "Once a Viramah resident, always part of the family. Our alumni network spans 20+ cities.",
     },

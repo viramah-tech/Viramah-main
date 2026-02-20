@@ -559,7 +559,7 @@ export default function MaintenancePage() {
                                                             transition: "all 0.2s ease",
                                                         }}
                                                     >
-                                                        {p === "high" ? "🔴 High" : "🟢 Normal"}
+                                                        {p === "high" ? "High" : "Normal"}
                                                     </button>
                                                 ))}
                                             </div>

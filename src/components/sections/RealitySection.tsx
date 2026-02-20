@@ -29,7 +29,7 @@ export function RealitySection() {
                             Student living shouldn't be a compromise.
                         </h2>
                         <p className="text-lg opacity-70 max-w-lg">
-                            Cramped rooms, poor hygiene, and zero community. The standard for student housing has been too low for too long. We're here to change that.
+                            Cramped living, poor hygiene, and zero community. The standard for student housing has been too low for too long. We're here to change that.
                         </p>
                         <div className="pt-4">
                             <Link href="/about">

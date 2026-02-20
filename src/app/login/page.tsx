@@ -151,7 +151,7 @@ export default function LoginPage() {
                     {[
                         { value: "500+", label: "Residents" },
                         { value: "12+", label: "Amenities" },
-                        { value: "4.9★", label: "Rating" },
+                        { value: "4.9", label: "Rating" },
                     ].map((stat) => (
                         <div key={stat.label}>
                             <div

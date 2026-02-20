@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { FormInput } from "./FormInput";
 import { Button } from "./Button";
+import { X, Check } from "lucide-react";
 
 interface ScheduleVisitModalProps {
   isOpen: boolean;
@@ -69,7 +70,7 @@ export function ScheduleVisitModal({ isOpen, onClose }: ScheduleVisitModalProps)
                   onClick={onClose}
                   className="text-white hover:bg-white/20 p-2 rounded-full transition"
                 >
-                  ✕
+                  <X size={20} />
                 </button>
               </div>
 
@@ -82,7 +83,7 @@ export function ScheduleVisitModal({ isOpen, onClose }: ScheduleVisitModalProps)
                     className="flex flex-col items-center justify-center py-12 gap-4"
                   >
                     <div className="w-16 h-16 bg-green-sage rounded-full flex items-center justify-center">
-                      <span className="text-3xl text-white">✓</span>
+                      <Check size={32} className="text-white" />
                     </div>
                     <h3 className="font-display text-xl text-charcoal">Visit Scheduled!</h3>
                     <p className="text-center text-charcoal/70 text-sm">
