@@ -22,7 +22,7 @@
   pointer-events: none;
   background-image:
     linear-gradient(90deg, rgba(46, 42, 38, 0.06) 1px, transparent 1px),
-    linear-gradient(0deg,  rgba(46, 42, 38, 0.06) 1px, transparent 1px);
+    linear-gradient(0deg, rgba(46, 42, 38, 0.06) 1px, transparent 1px);
   background-size: 24px 24px;
   filter: url(#rough-fiber-footer);
 }
@@ -54,13 +54,31 @@
 }
 
 @keyframes footerWeaveH {
-  0%, 100% { transform: translateY(0px)   scaleX(0.8); opacity: 0; }
-  50%       { transform: translateY(400px) scaleX(1.2); opacity: 0.3; }
+
+  0%,
+  100% {
+    transform: translateY(0px) scaleX(0.8);
+    opacity: 0;
+  }
+
+  50% {
+    transform: translateY(400px) scaleX(1.2);
+    opacity: 0.3;
+  }
 }
 
 @keyframes footerWeaveV {
-  0%, 100% { transform: translateX(0px)    scaleY(0.8); opacity: 0; }
-  50%       { transform: translateX(-200px) scaleY(1.2); opacity: 0.2; }
+
+  0%,
+  100% {
+    transform: translateX(0px) scaleY(0.8);
+    opacity: 0;
+  }
+
+  50% {
+    transform: translateX(-200px) scaleY(1.2);
+    opacity: 0.2;
+  }
 }
 
 /* ---- Main content grid ---- */
@@ -98,18 +116,33 @@
 .footer-contact {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
   font-size: 0.88rem;
   color: rgba(46, 42, 38, 0.5);
 }
 
+.footer-contact span {
+  transition: all 0.3s ease;
+}
+
+.footer-contact span:hover {
+  color: var(--terracotta-raw);
+}
+
 .footer-contact a {
-  color: rgba(46, 42, 38, 0.5);
+  color: inherit;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
-.footer-contact a:hover {
+.footer-contact svg {
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.footer-contact span:hover svg {
+  opacity: 1;
+  transform: scale(1.1);
   color: var(--terracotta-raw);
 }
 
@@ -233,7 +266,7 @@
   opacity: 0;
   transform: translateY(28px);
   transition: opacity 0.85s cubic-bezier(0.23, 1, 0.32, 1),
-              transform 0.85s cubic-bezier(0.23, 1, 0.32, 1);
+    transform 0.85s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .footer-reveal.footer-reveal-active {
