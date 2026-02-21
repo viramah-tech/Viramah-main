@@ -96,7 +96,7 @@ const FieldInput = forwardRef<HTMLInputElement, FieldInputProps>(
                 borderBottom: focused
                     ? "1.5px solid #b5934a"
                     : "1px solid rgba(45,43,40,0.2)",
-                padding: "10px 0",
+                padding: "6px 0",
                 paddingLeft: focused ? 8 : 0,
                 fontFamily: "var(--font-body, sans-serif)",
                 fontSize: "1rem",
@@ -129,7 +129,7 @@ function SubmitButton({ loading }: { loading: boolean }) {
                 background: loading ? "#2d2b28" : hovered ? "#2d2b28" : "#1F3A2D",
                 color: "#D8B56A",
                 border: "none",
-                padding: "16px 36px",
+                padding: "12px 28px",
                 fontFamily: "var(--font-mono, monospace)",
                 fontWeight: 700,
                 textTransform: "uppercase",
@@ -359,7 +359,7 @@ export function EnquiryModal() {
                                 animate="visible"
                                 exit="exit"
                                 style={{
-                                    width: "min(560px, 100%)",
+                                    width: "min(480px, 100%)",
                                     maxHeight: "90vh",
                                     background: "#e8e2d6",
                                     boxShadow: "0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(181,147,74,0.15)",
@@ -396,23 +396,12 @@ export function EnquiryModal() {
                                 ))}
 
                                 {/* Panel Content */}
-                                <div className="relative z-10 flex flex-col h-full p-8 md:p-12">
+                                <div className="relative z-10 flex flex-col p-6 md:p-8">
 
                                     {/* Header row */}
-                                    <div className="flex justify-between items-start mb-10">
+                                    <div className="flex justify-between items-start mb-4">
                                         <div>
-                                            <p
-                                                style={{
-                                                    fontFamily: "var(--font-mono, monospace)",
-                                                    fontSize: "0.65rem",
-                                                    textTransform: "uppercase",
-                                                    letterSpacing: "0.35em",
-                                                    color: "#6b5526",
-                                                    marginBottom: 8,
-                                                }}
-                                            >
-                                                Identity Verification
-                                            </p>
+
                                             <h2
                                                 style={{
                                                     fontFamily: "var(--font-display, serif)",
@@ -422,17 +411,9 @@ export function EnquiryModal() {
                                                     fontWeight: 400,
                                                 }}
                                             >
-                                                UNLOCKED ACCESS
+                                                Welcome to Viramah
                                             </h2>
-                                            <p style={{
-                                                fontFamily: "var(--font-body, sans-serif)",
-                                                fontSize: "0.75rem",
-                                                color: "#2d2b28",
-                                                opacity: 0.7,
-                                                marginTop: "1rem"
-                                            }}>
-                                                Please introduce yourself to view the Viramah experience.
-                                            </p>
+
                                         </div>
 
                                         {/* Close button — only for returning users */}
@@ -465,15 +446,6 @@ export function EnquiryModal() {
                                             </motion.button>
                                         )}
                                     </div>
-
-                                    {/* Decorative divider */}
-                                    <div
-                                        style={{
-                                            height: 1,
-                                            background: "linear-gradient(90deg, transparent, rgba(181,147,74,0.4), transparent)",
-                                            marginBottom: 36,
-                                        }}
-                                    />
 
                                     {/* ── Success / Form ─────────────────────── */}
                                     <AnimatePresence mode="wait">
@@ -535,10 +507,10 @@ export function EnquiryModal() {
                                                 initial="hidden"
                                                 animate="visible"
                                                 onSubmit={handleSubmit}
-                                                className="flex-1 flex flex-col gap-7"
+                                                className="flex flex-col gap-4"
                                             >
                                                 {/* Full Name */}
-                                                <motion.div variants={itemVariants} className="flex flex-col gap-2">
+                                                <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
                                                     <FieldLabel htmlFor="enquiry-fullname">Full Name</FieldLabel>
                                                     <FieldInput
                                                         ref={firstInputRef}
@@ -555,8 +527,8 @@ export function EnquiryModal() {
                                                 </motion.div>
 
                                                 {/* Mobile + Email */}
-                                                <motion.div variants={itemVariants} className="grid grid-cols-2 gap-5">
-                                                    <div className="flex flex-col gap-2">
+                                                <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+                                                    <div className="flex flex-col gap-1.5">
                                                         <FieldLabel htmlFor="enquiry-mobile">Mobile No.</FieldLabel>
                                                         <FieldInput
                                                             id="enquiry-mobile"
@@ -570,7 +542,7 @@ export function EnquiryModal() {
                                                             required
                                                         />
                                                     </div>
-                                                    <div className="flex flex-col gap-2">
+                                                    <div className="flex flex-col gap-1.5">
                                                         <FieldLabel htmlFor="enquiry-email">Email Address</FieldLabel>
                                                         <FieldInput
                                                             id="enquiry-email"
@@ -587,8 +559,8 @@ export function EnquiryModal() {
                                                 </motion.div>
 
                                                 {/* City + State + Country */}
-                                                <motion.div variants={itemVariants} className="grid grid-cols-3 gap-4">
-                                                    <div className="flex flex-col gap-2">
+                                                <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3">
+                                                    <div className="flex flex-col gap-1.5">
                                                         <FieldLabel htmlFor="enquiry-city">City</FieldLabel>
                                                         <FieldInput
                                                             id="enquiry-city"
@@ -602,7 +574,7 @@ export function EnquiryModal() {
                                                             required
                                                         />
                                                     </div>
-                                                    <div className="flex flex-col gap-2">
+                                                    <div className="flex flex-col gap-1.5">
                                                         <FieldLabel htmlFor="enquiry-state">State</FieldLabel>
                                                         <FieldInput
                                                             id="enquiry-state"
@@ -616,7 +588,7 @@ export function EnquiryModal() {
                                                             required
                                                         />
                                                     </div>
-                                                    <div className="flex flex-col gap-2">
+                                                    <div className="flex flex-col gap-1.5">
                                                         <FieldLabel htmlFor="enquiry-country">Country</FieldLabel>
                                                         <FieldInput
                                                             id="enquiry-country"
@@ -632,47 +604,19 @@ export function EnquiryModal() {
                                                     </div>
                                                 </motion.div>
 
-                                                {/* Spacer */}
-                                                <div className="flex-1" />
 
                                                 {/* Bottom divider */}
                                                 <div
                                                     style={{
                                                         height: 1,
+                                                        margin: "8px 0",
                                                         background: "linear-gradient(90deg, transparent, rgba(181,147,74,0.3), transparent)",
                                                     }}
                                                 />
 
                                                 {/* Submit row */}
                                                 <motion.div variants={itemVariants} className="flex justify-between items-center">
-                                                    {/* Decorative stamp */}
-                                                    <div
-                                                        aria-hidden="true"
-                                                        style={{
-                                                            width: 60,
-                                                            height: 60,
-                                                            border: "2px double rgba(181,147,74,0.4)",
-                                                            borderRadius: "50%",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                            transform: "rotate(-15deg)",
-                                                            opacity: 0.6,
-                                                        }}
-                                                    >
-                                                        <span
-                                                            style={{
-                                                                fontFamily: "var(--font-mono, monospace)",
-                                                                fontSize: "0.55rem",
-                                                                color: "#b5934a",
-                                                                textAlign: "center",
-                                                                lineHeight: 1.3,
-                                                                letterSpacing: "0.05em",
-                                                            }}
-                                                        >
-                                                            ESTD.<br />2024<br />VIRAMAH
-                                                        </span>
-                                                    </div>
+
 
                                                     <SubmitButton loading={isSubmitting} />
                                                 </motion.div>

@@ -20,7 +20,8 @@ Before starting the process in the AWS Console, ensure the following are ready:
 2. Search for **AWS Amplify** and navigate to the service.
 3. Click **"Create new app"** (or "Get Started" under Amplify Hosting).
 4. Select **GitHub** as the source provider and authorize AWS to access your account.
-5. Choose the `Viramah-main` repository and the `main` branch.
+5. Choose the `Viramah-main` repository and the `main` 
+branch.
 
 ### Step 2: Configure Build Settings
 1. **App Name**: Set to `Viramah-Production`.
@@ -53,6 +54,8 @@ To replace the temporary URL with your own domain name:
    * If using **Route 53**: Click "Setup DNS" and AWS will handle the records.
    * If using **External DNS**: AWS will provide **CNAME** and **TXT** records. Copy these into your domain provider's DNS management panel.
 6. **SSL Certificate**: AWS will automatically issue and renew a free managed SSL certificate.
+
+> **💡 FREE TIER TIP**: To stay 100% free, **avoid using AWS Route 53** as your DNS provider (it costs $0.50/month). Instead, keep your domain at your current registrar (GoDaddy/Namecheap) or use a free service like Cloudflare and copy the CNAME/TXT records manually.
 
 ---
 
