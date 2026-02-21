@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, forwardRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ── Types ────────────────────────────────────────────────────
@@ -20,6 +21,57 @@ const INITIAL_FORM: FormState = {
     city: "",
     state: "",
     country: "",
+};
+
+// ── Location Data ──────────────────────────────────────────
+const LOCATION_DATA: Record<string, Record<string, string[]>> = {
+    "India": {
+        "Uttar Pradesh": ["Vrindavan", "Mathura", "Agra", "Noida", "Lucknow", "Kanpur", "Ghaziabad", "Varanasi", "Prayagraj", "Meerut", "Aligarh", "Bareilly", "Moradabad", "Saharanpur", "Gorakhpur", "Jhansi", "Muzaffarnagar", "Firozabad", "Loni", "Maunath Bhanjan", "Hapur", "Amroha", "Hardoi", "Sambhal", "Modinagar", "Unnao", "Jaunpur", "Bulandshahr", "Khurs", "Gonda", "Mainpuri", "Mirzapur", "Etah", "Sultanpur", "Lakhimpur", "Badaun", "Azamgarh", "Sitapur", "Bahraich", "Fatehpur", "Rampur"],
+        "Delhi": ["New Delhi", "NCR", "North Delhi", "South Delhi", "West Delhi", "East Delhi", "Rohini", "Dwarka", "Janakpuri", "Saket", "Vasant Kunj", "Connaught Place", "Okhla", "Lajpat Nagar", "Karol Bagh", "Pitampura", "Chanakyapuri", "Hauz Khas", "Delhi Cantt", "Civil Lines"],
+        "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Thane", "Nashik", "Aurangabad", "Solapur", "Amravati", "Navi Mumbai", "Kolhapur", "Akola", "Jalgaon", "Latur", "Dhule", "Ahmednagar", "Chandrapur", "Parbhani", "Malegaon", "Nanded", "Ichalkaranji", "Jalna", "Bhusawal", "Ratnagiri", "Sangli", "Satara", "Wardha", "Yavatmal", "Beed", "Gondia"],
+        "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore", "Belgaum", "Davanagere", "Bellary", "Gulbarga", "Shimoga", "Tumkur", "Bijapur", "Raichur", "Bidar", "Hospet", "Hassan", "Udupi", "Karwar", "Chikmagalur", "Mandya", "Bagalkot", "Gadag", "Gokak", "Kolar"],
+        "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Nadiad", "Gandhidham", "Anand", "Morbi", "Mahesana", "Surendranagar", "Bharuch", "Navsari", "Vapi", "Valsad", "Porbandar", "Godhra", "Patan", "Kalol", "Botad", "Jetpur"],
+        "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Tiruppur", "Erode", "Vellore", "Thoothukkudi", "Nagercoil", "Thanjavur", "Kancheepuram", "Dindigul", "Hosur", "Sivakasi", "Cuddalore", "Kumbakonam", "Karaikudi", "Neyveli", "Nagapattinam", "Pudukkottai"],
+        "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri", "Maheshtala", "Rajpur Sonarpur", "Gopalpur", "Bhatpara", "Panihati", "Kamarhati", "Bardhaman", "Kulti", "Bally", "Barasat", "Haldia", "Malda", "Kharagpur", "Habra", "Berhampore", "Shantipur", "Dankuni"],
+        "Rajasthan": ["Jaipur", "Jodhpur", "Kota", "Bikaner", "Ajmer", "Udaipur", "Bhilwara", "Alwar", "Bharatpur", "Sikar", "Pali", "Sri Ganganagar", "Churu", "Jhunjhunu", "Barmer", "Jaisalmer", "Mount Abu", "Chittorgarh", "Tonk", "Kishangarh", "Beawar", "Hanumangarh", "Dholpur"],
+        "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Ramagundam", "Khammam", "Mahbubnagar", "Nalgonda", "Adilabad", "Suryapet", "Siddipet", "Miryalaguda", "Jagtial", "Mancherial", "Kothagudem"],
+        "Madhya Pradesh": ["Indore", "Bhopal", "Jabalpur", "Gwalior", "Ujjain", "Sagar", "Dewas", "Satna", "Ratlam", "Rewa", "Murwara", "Singrauli", "Burhanpur", "Khandwa", "Morena", "Bhind", "Chhindwara", "Guna", "Shivpuri", "Vidisha", "Damoh", "Mandsaur", "Khargone"],
+        "Haryana": ["Gurugram", "Faridabad", "Panipat", "Ambala", "Hisar", "Karnal", "Sonipat", "Rohtak", "Panchkula", "Yamunanagar", "Sirsa", "Rewari", "Bhiwani", "Bahadurgarh", "Jind", "Thanesar", "Palwal", "Kaithal", "Hansi", "Fatehabad"],
+        "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Mohali", "Bathinda", "Hoshiarpur", "Pathankot", "Moga", "Abohar", "Malerkotla", "Khanna", "Phagwara", "Muktsar", "Barnala", "Rajpura", "Firozpur", "Kapurthala", "Sangrur"],
+        "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia", "Darbhanga", "Bihar Sharif", "Arrah", "Begusarai", "Katihar", "Munger", "Chhapra", "Danapur", "Saharsa", "Hajipur", "Sasaram", "Dehri", "Siwan", "Bettiah", "Motihari"],
+        "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Rajahmundry", "Tirupati", "Kakinada", "Anantapur", "Kadapa", "Vizianagaram", "Eluru", "Ongole", "Nandyal", "Machilipatnam", "Adoni", "Tenali", "Chittoor", "Hindupur", "Proddatur"],
+        "Kerala": ["Kochi", "Thiruvananthapuram", "Kozhikode", "Thrissur", "Kollam", "Alappuzha", "Palakkad", "Kannur", "Kottayam", "Malappuram", "Kasaragod", "Manjeri", "Thalassery", "Ponnani", "Vatakara", "Kanhangad", "Payyanur"],
+        "Assam": ["Guwahati", "Dibrugarh", "Silchar", "Jorhat", "Nagaon", "Tinsukia", "Tezpur", "Bongaigaon", "Dhubri", "Diphu", "North Lakhimpur", "Karimganj"],
+        "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Berhampur", "Sambalpur", "Puri", "Balasore", "Bhadrak", "Baripada", "Jharsuguda", "Bawanipatna", "Keonjhar", "Paradip"],
+        "Chhattisgarh": ["Raipur", "Bhilai", "Bilaspur", "Korba", "Rajnandgaon", "Jagdalpur", "Ambikapur", "Dhamtari", "Raigarh", "Mahasamund", "Durg"],
+        "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro Steel City", "Deoghar", "Phusro", "Hazaribagh", "Giridih", "Ramgarh", "Medininagar", "Sahibganj", "Chaibasa"],
+        "Uttarakhand": ["Dehradun", "Haridwar", "Haldwani", "Roorkee", "Kashipur", "Rudrapur", "Rishikesh", "Pithoragarh", "Kichha", "Kotdwar"],
+        "Himachal Pradesh": ["Shimla", "Dharamshala", "Solan", "Mandi", "Palampur", "Kullu", "Baddi", "Una", "Chamba", "Hamirpur"],
+        "Goa": ["Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda", "Bicholim", "Curchorem", "Quepem", "Canacona"],
+        "Jammu & Kashmir": ["Srinagar", "Jammu", "Anantnag", "Baramulla", "Udhampur", "Sopore", "Kathua", "Poonch", "Rajouri"],
+    },
+    "United States": {
+        "California": ["Los Angeles", "San Francisco", "San Diego", "San Jose", "Sacramento", "Fresno", "Oakland", "Long Beach", "Irvine", "Santa Ana", "Anaheim", "Riverside", "Stockton"],
+        "New York": ["New York City", "Buffalo", "Rochester", "Yonkers", "Syracuse", "Albany", "New Rochelle", "Mount Vernon", "Schenectady", "Utica"],
+        "Texas": ["Houston", "Austin", "Dallas", "San Antonio", "Fort Worth", "El Paso", "Arlington", "Corpus Christi", "Plano", "Laredo", "Lubbock", "Garland", "Irving"],
+        "Florida": ["Miami", "Orlando", "Tampa", "Jacksonville", "Tallahassee", "St. Petersburg", "Hialeah", "Port St. Lucie", "Fort Lauderdale", "Cape Coral", "Pembroke Pines"],
+    },
+    "United Kingdom": {
+        "England": ["London", "Manchester", "Birmingham", "Liverpool", "Leeds", "Sheffield", "Bristol", "Leicester", "Coventry", "Nottingham", "Newcastle", "Southampton", "Reading"],
+        "Scotland": ["Edinburgh", "Glasgow", "Aberdeen", "Dundee", "Inverness", "Perth", "Stirling"],
+        "Wales": ["Cardiff", "Swansea", "Newport", "Wrexham", "Bangor", "St Davids"],
+    },
+    "United Arab Emirates": {
+        "Dubai": ["Dubai City", "Jebel Ali", "Hatta", "Al Awir"],
+        "Abu Dhabi": ["Abu Dhabi City", "Al Ain", "Al Ruwais", "Zayed City"],
+        "Sharjah": ["Sharjah City", "Khor Fakkan", "Kalba", "Dibba Al-Hisn"],
+        "Ajman": ["Ajman City"],
+        "Ras Al Khaimah": ["Ras Al Khaimah City"],
+        "Fujairah": ["Fujairah City"],
+    },
+    "Other": {
+        "International": ["Other City"],
+    }
 };
 
 // ── Animation Variants ───────────────────────────────────────
@@ -60,6 +112,167 @@ const itemVariants = {
         transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] },
     },
 };
+
+// ── FancySelect ──────────────────────────────────────────────
+interface FancySelectProps {
+    id: string;
+    label: string;
+    value: string;
+    options: string[];
+    placeholder: string;
+    onChange: (val: string) => void;
+    onFocus: () => void;
+    onBlur: () => void;
+    focused: boolean;
+    disabled?: boolean;
+}
+
+function FancySelect({ id, label, value, options, placeholder, onChange, onFocus, onBlur, focused, disabled }: FancySelectProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+    useEffect(() => {
+        const updateCoords = () => {
+            if (containerRef.current) {
+                const rect = containerRef.current.getBoundingClientRect();
+                setCoords({
+                    top: rect.bottom + 4,
+                    left: rect.left,
+                    width: rect.width
+                });
+            }
+        };
+
+        if (isOpen) {
+            updateCoords();
+            window.addEventListener('resize', updateCoords);
+            window.addEventListener('scroll', updateCoords, true);
+        }
+        return () => {
+            window.removeEventListener('resize', updateCoords);
+            window.removeEventListener('scroll', updateCoords, true);
+        };
+    }, [isOpen]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                // Check if the click was on the portal'd menu
+                const menu = document.getElementById(`${id}-menu`);
+                if (menu && menu.contains(event.target as Node)) return;
+
+                setIsOpen(false);
+                onBlur();
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [onBlur, id]);
+
+    const dropdownMenu = (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.ul
+                    id={`${id}-menu`}
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                    style={{
+                        position: "fixed",
+                        top: coords.top,
+                        left: coords.left,
+                        width: coords.width,
+                        zIndex: 9999,
+                        background: "#1F3A2D",
+                        maxHeight: "280px",
+                        overflowY: "auto",
+                        borderRadius: "4px",
+                        boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+                        border: "1px solid rgba(216,181,106,0.2)",
+                        marginTop: "0",
+                        padding: "6px"
+                    }}
+                >
+                    {options.map((opt) => (
+                        <motion.li
+                            key={opt}
+                            whileHover={{ background: "rgba(216,181,106,0.15)", color: "#D8B56A" }}
+                            onClick={() => {
+                                onChange(opt);
+                                setIsOpen(false);
+                                onBlur();
+                            }}
+                            style={{
+                                padding: "12px 14px",
+                                fontSize: "0.85rem",
+                                fontFamily: "var(--font-mono, monospace)",
+                                color: "#F6F4EF",
+                                cursor: "pointer",
+                                borderRadius: "2px",
+                                transition: "all 0.2s ease",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between"
+                            }}
+                        >
+                            {opt}
+                            {value === opt && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            )}
+                        </motion.li>
+                    ))}
+                </motion.ul>
+            )}
+        </AnimatePresence>
+    );
+
+    return (
+        <div className="flex flex-col gap-1.5 relative" ref={containerRef}>
+            <FieldLabel htmlFor={id}>{label}</FieldLabel>
+            <div
+                id={id}
+                onClick={() => !disabled && setIsOpen(!isOpen)}
+                onFocus={onFocus}
+                tabIndex={disabled ? -1 : 0}
+                style={{
+                    background: "transparent",
+                    borderBottom: focused || isOpen
+                        ? "1.5px solid #b5934a"
+                        : "1px solid rgba(45,43,40,0.2)",
+                    padding: "6px 0",
+                    fontFamily: "var(--font-body, sans-serif)",
+                    fontSize: "0.95rem",
+                    color: value ? "#2d2b28" : "rgba(45,43,40,0.4)",
+                    cursor: disabled ? "not-allowed" : "pointer",
+                    outline: "none",
+                    transition: "all 0.3s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    opacity: disabled ? 0.5 : 1,
+                    minHeight: "38px"
+                }}
+            >
+                <span className="flex-1 truncate">{value || placeholder}</span>
+                <motion.svg
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ color: "#b5934a", marginLeft: 8 }}
+                >
+                    <polyline points="6 9 12 15 18 9" />
+                </motion.svg>
+            </div>
+
+            {typeof document !== 'undefined' && createPortal(dropdownMenu, document.body)}
+        </div>
+    );
+}
 
 // ── FieldLabel ───────────────────────────────────────────────
 function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
@@ -150,6 +363,8 @@ function SubmitButton({ loading }: { loading: boolean }) {
                 opacity: loading ? 0.8 : 1,
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center", // Added for better alignment
+                width: "100%", // Make button full-width
                 gap: "10px"
             }}
         >
@@ -204,7 +419,21 @@ export function EnquiryModal() {
     }, []);
 
     const handleChange = (field: keyof FormState, value: string) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        setForm((prev) => {
+            const next = { ...prev, [field]: value };
+
+            // If country changes, reset state and city
+            if (field === "country") {
+                next.state = "";
+                next.city = "";
+            }
+            // If state changes, reset city
+            if (field === "state") {
+                next.city = "";
+            }
+
+            return next;
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -388,7 +617,7 @@ export function EnquiryModal() {
                                             <h2
                                                 style={{
                                                     fontFamily: "var(--font-display, serif)",
-                                                    fontSize: "clamp(1.8rem, 4vw, 2.4rem)",
+                                                    fontSize: "clamp(1.5rem, 6vw, 2.4rem)",
                                                     color: "#2d2b28",
                                                     lineHeight: 1.1,
                                                     fontWeight: 400,
@@ -498,7 +727,7 @@ export function EnquiryModal() {
                                                         ref={firstInputRef}
                                                         id="enquiry-fullname"
                                                         type="text"
-                                                        placeholder="e.g. Arjun Mehta"
+                                                        placeholder="NAME"
                                                         value={form.fullName}
                                                         onChange={(e) => handleChange("fullName", e.target.value)}
                                                         focused={focusedField === "fullName"}
@@ -509,13 +738,13 @@ export function EnquiryModal() {
                                                 </motion.div>
 
                                                 {/* Mobile + Email */}
-                                                <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+                                                <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     <div className="flex flex-col gap-1.5">
                                                         <FieldLabel htmlFor="enquiry-mobile">Mobile No.</FieldLabel>
                                                         <FieldInput
                                                             id="enquiry-mobile"
                                                             type="tel"
-                                                            placeholder="+91 ··· ··· ····"
+                                                            placeholder="MOBILE NO."
                                                             value={form.mobile}
                                                             onChange={(e) => handleChange("mobile", e.target.value)}
                                                             focused={focusedField === "mobile"}
@@ -529,7 +758,7 @@ export function EnquiryModal() {
                                                         <FieldInput
                                                             id="enquiry-email"
                                                             type="email"
-                                                            placeholder="hello@domain.com"
+                                                            placeholder="EMAIL ADDRESS"
                                                             value={form.email}
                                                             onChange={(e) => handleChange("email", e.target.value)}
                                                             focused={focusedField === "email"}
@@ -540,50 +769,45 @@ export function EnquiryModal() {
                                                     </div>
                                                 </motion.div>
 
-                                                {/* City + State + Country */}
-                                                <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3">
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <FieldLabel htmlFor="enquiry-city">City</FieldLabel>
-                                                        <FieldInput
-                                                            id="enquiry-city"
-                                                            type="text"
-                                                            placeholder="Mumbai"
-                                                            value={form.city}
-                                                            onChange={(e) => handleChange("city", e.target.value)}
-                                                            focused={focusedField === "city"}
-                                                            onFocus={() => setFocusedField("city")}
-                                                            onBlur={() => setFocusedField(null)}
-                                                            required
-                                                        />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <FieldLabel htmlFor="enquiry-state">State</FieldLabel>
-                                                        <FieldInput
-                                                            id="enquiry-state"
-                                                            type="text"
-                                                            placeholder="Maharashtra"
-                                                            value={form.state}
-                                                            onChange={(e) => handleChange("state", e.target.value)}
-                                                            focused={focusedField === "state"}
-                                                            onFocus={() => setFocusedField("state")}
-                                                            onBlur={() => setFocusedField(null)}
-                                                            required
-                                                        />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <FieldLabel htmlFor="enquiry-country">Country</FieldLabel>
-                                                        <FieldInput
-                                                            id="enquiry-country"
-                                                            type="text"
-                                                            placeholder="India"
-                                                            value={form.country}
-                                                            onChange={(e) => handleChange("country", e.target.value)}
-                                                            focused={focusedField === "country"}
-                                                            onFocus={() => setFocusedField("country")}
-                                                            onBlur={() => setFocusedField(null)}
-                                                            required
-                                                        />
-                                                    </div>
+                                                {/* Country + State + City */}
+                                                <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                    <FancySelect
+                                                        id="enquiry-country"
+                                                        label="Country"
+                                                        value={form.country}
+                                                        options={Object.keys(LOCATION_DATA).sort((a, b) => a.localeCompare(b))}
+                                                        placeholder="Select"
+                                                        onChange={(val) => handleChange("country", val)}
+                                                        onFocus={() => setFocusedField("country")}
+                                                        onBlur={() => setFocusedField(null)}
+                                                        focused={focusedField === "country"}
+                                                    />
+
+                                                    <FancySelect
+                                                        id="enquiry-state"
+                                                        label="State"
+                                                        value={form.state}
+                                                        options={form.country ? Object.keys(LOCATION_DATA[form.country] || {}).sort((a, b) => a.localeCompare(b)) : []}
+                                                        placeholder="Select"
+                                                        onChange={(val) => handleChange("state", val)}
+                                                        onFocus={() => setFocusedField("state")}
+                                                        onBlur={() => setFocusedField(null)}
+                                                        focused={focusedField === "state"}
+                                                        disabled={!form.country}
+                                                    />
+
+                                                    <FancySelect
+                                                        id="enquiry-city"
+                                                        label="City"
+                                                        value={form.city}
+                                                        options={form.country && form.state ? ([...(LOCATION_DATA[form.country]?.[form.state] || [])].sort((a, b) => a.localeCompare(b))) : []}
+                                                        placeholder="Select"
+                                                        onChange={(val) => handleChange("city", val)}
+                                                        onFocus={() => setFocusedField("city")}
+                                                        onBlur={() => setFocusedField(null)}
+                                                        focused={focusedField === "city"}
+                                                        disabled={!form.state}
+                                                    />
                                                 </motion.div>
 
 
