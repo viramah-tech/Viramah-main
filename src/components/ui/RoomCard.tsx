@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
@@ -22,6 +23,7 @@ export function RoomCard({
     amenities = [],
     className,
 }: RoomCardProps) {
+    const [isExpanded, setIsExpanded] = useState(false);
     const x = useMotionValue(0);
     const y = useMotionValue(0);
 
@@ -53,7 +55,7 @@ export function RoomCard({
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             className={cn(
-                "group relative w-full bg-cream-warm rounded-[4px] p-6 md:p-[48px]",
+                "group relative w-full bg-cream-warm rounded-[4px] p-6 md:p-[48px] min-h-[540px] md:min-h-[600px]",
                 "shadow-[-20px_-20px_60px_rgba(255,255,255,0.7),20px_20px_60px_rgba(0,0,0,0.35),inset_1px_1px_2px_rgba(255,255,255,0.8),inset_-1px_-1px_2px_rgba(0,0,0,0.15)]",
                 "hover:z-10 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-crosshair",
                 className
@@ -94,7 +96,7 @@ export function RoomCard({
 
                 {/* ── 3D Isometric Room Viewport ── */}
                 <div
-                    className="absolute top-1/2 left-1/2 w-[300px] h-[300px] -translate-x-1/2 -translate-y-[38%] scale-75 md:scale-90 origin-center"
+                    className="absolute top-1/2 left-1/2 w-[300px] h-[300px] -translate-x-1/2 -translate-y-[42%] scale-[0.85] md:scale-100 origin-center"
                     style={{ perspective: "1200px" }}
                 >
                     <motion.div
@@ -158,17 +160,43 @@ export function RoomCard({
                     </motion.div>
                 </div>
 
-                {/* ── Amenities chips ── */}
+                {/* ── Amenities Toggle ── */}
                 {amenities.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 z-10 mt-auto pt-2">
-                        {amenities.map((a) => (
-                            <span
-                                key={a}
-                                className="font-mono text-[0.58rem] uppercase tracking-wider px-2 py-1 border border-charcoal/15 text-charcoal/50"
+                    <div className="z-20 mt-auto pt-2">
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-[0.15em] text-charcoal/60 hover:text-charcoal transition-colors group/btn"
+                        >
+                            Amenities
+                            <motion.span
+                                animate={{ rotate: isExpanded ? 90 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="text-[0.8rem] leading-none"
                             >
-                                {a}
-                            </span>
-                        ))}
+                                {">"}
+                            </motion.span>
+                        </button>
+
+                        <motion.div
+                            initial={false}
+                            animate={{
+                                height: isExpanded ? "auto" : 0,
+                                opacity: isExpanded ? 1 : 0,
+                                marginTop: isExpanded ? 16 : 0,
+                            }}
+                            className="overflow-hidden"
+                        >
+                            <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+                                {amenities.map((a) => (
+                                    <div key={a} className="flex items-center gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-luxury-green/30" />
+                                        <span className="font-mono text-[0.58rem] uppercase tracking-wider text-charcoal/50">
+                                            {a}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
                     </div>
                 )}
 

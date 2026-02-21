@@ -66,6 +66,7 @@ export function DifferenceSection() {
     // ── Pointer handler (mouse + touch unified) ──
     const handlePointerMove = useCallback(
         (e: React.PointerEvent<HTMLDivElement>, index: number) => {
+            if (document.body.style.overflow === "hidden") return;
             const card = cardRefs.current[index];
             if (!card) return;
 
@@ -154,17 +155,12 @@ export function DifferenceSection() {
                     variants={headerVariants}
                 >
                     <h2 className="diff-header-quote">
-                        &ldquo;We build spaces that rest the chaos of the city,
-                        giving you the room to build yourself&rdquo;
+                        BUILDING COMMUNITY <br /> NOT ROOMS
                     </h2>
-                    <div className="diff-header-meta">
-                        [ THE_VIRAMAH_DIFFERENCE ]
-                        <br />
-                        EST. 2026
-                    </div>
+
                 </motion.header>
 
-                <p className="diff-promise">The Viramah Promise</p>
+
 
                 {/* ── Comparison Grid ── */}
                 <div className="diff-grid">
@@ -198,10 +194,10 @@ export function DifferenceSection() {
                                 {/* Labels */}
                                 <div className="diff-labels">
                                     <span className="diff-label-tag">
-                                        BEFORE
+                                        TRADITIONAL HOSTEL
                                     </span>
                                     <span className="diff-label-tag">
-                                        AFTER_VIRAMAH
+                                        VIRAMAH
                                     </span>
                                 </div>
 

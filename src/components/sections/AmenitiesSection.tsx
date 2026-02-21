@@ -132,7 +132,7 @@ export function AmenitiesSection({ className, id }: AmenitiesSectionProps) {
   // ── Mouse Parallax on Grid (desktop only) ───────────────
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
-      if (!canHover || !gridRef.current) return;
+      if (!canHover || !gridRef.current || document.body.style.overflow === "hidden") return;
 
       const cells = gridRef.current.querySelectorAll<HTMLElement>(".amen-cell");
       const mx = e.clientX;

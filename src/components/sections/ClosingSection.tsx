@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ScheduleVisitModal } from "@/components/ui/ScheduleVisitModal";
+import { EnquireNowButton } from "../ui/EnquireNowButton";
 
 export function ClosingSection() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,38 +51,19 @@ export function ClosingSection() {
                                 transition: "opacity 1s cubic-bezier(0.23,1,0.32,1) 0.2s, transform 1s cubic-bezier(0.23,1,0.32,1) 0.2s",
                                 fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
                                 lineHeight: "1.1",
-                                marginBottom: "1.5rem"
+                                marginBottom: "1.5rem",
+                                letterSpacing: "0.01em"
                             }}
                         >
                             Everyone deserves <br />to live <span style={{ fontStyle: "italic", color: "#D8B56A" }}>better</span>.
                         </h2>
 
                         <p className="cta-description" style={reveal("0.3s")}>
-                            We didn't find the perfect space for us, so we created it for you.
-                            Join the community building the future of student life. Admissions for 2025 are now open.
+
                         </p>
 
                         <div className="cta-btn-group" style={reveal("0.4s")}>
-                            <Link href="/signup" className="cta-stamped-btn">
-                                APPLY NOW
-                            </Link>
-                            <button
-                                className="cta-ghost-btn"
-                                onClick={() => setIsModalOpen(true)}
-                            >
-                                SCHEDULE A VISIT
-                            </button>
-                        </div>
-
-                        <div
-                            className="cta-availability"
-                            style={{
-                                opacity: isVisible ? 0.6 : 0,
-                                transition: "opacity 1s cubic-bezier(0.23,1,0.32,1) 0.55s",
-                            }}
-                        >
-                            <span className="cta-availability-dot" aria-hidden="true" />
-                            Accepting applications
+                            <EnquireNowButton label="schedule a visit" />
                         </div>
                     </div>
 
@@ -98,9 +80,7 @@ export function ClosingSection() {
                             <div className="cta-dot" />
                             <div className="cta-dot" />
                         </div>
-                        <span className="cta-mono-label" style={{ marginBottom: 0 }}>
-                            Viramah // Est. 2026
-                        </span>
+
                     </div>
                 </div>
             </section>

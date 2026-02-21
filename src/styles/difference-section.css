@@ -17,9 +17,9 @@
 /* ── 1. Section Layout ─────────────────────── */
 .diff-section {
     position: relative;
-    background: linear-gradient(160deg, #162b1e 0%, #0f2018 55%, #1a3328 100%);
+    background: linear-gradient(160deg, #162b1e 100%, #0f2018 55%, #1a3328 0%);
     color: var(--diff-text);
-    padding: 7rem 2rem 6rem;
+    padding: 0 2rem 6rem;
     overflow: hidden;
 }
 
@@ -50,6 +50,8 @@
     border-bottom: 1px solid var(--diff-border);
     padding-bottom: 2rem;
     gap: 2rem;
+    align-items: center;
+    justify-content: center;
 }
 
 .diff-header-quote {
@@ -59,7 +61,7 @@
     line-height: 1.15;
     color: var(--diff-text);
     max-width: 700px;
-    font-style: italic;
+    text-align: center;
 }
 
 .diff-header-meta {
@@ -102,6 +104,7 @@
     cursor: col-resize;
     transition: transform 0.6s var(--diff-easing),
         box-shadow 0.6s var(--diff-easing);
+    will-change: transform;
 }
 
 .diff-image-container {
@@ -126,6 +129,7 @@
     overflow: hidden;
     clip-path: inset(0 50% 0 0);
     z-index: 2;
+    will-change: clip-path;
 }
 
 .diff-image-before-img {
@@ -145,6 +149,7 @@
     box-shadow: 0 0 25px var(--diff-glow),
         0 0 60px rgba(216, 181, 106, 0.15);
     pointer-events: none;
+    will-change: left;
 }
 
 .diff-fissure::before {

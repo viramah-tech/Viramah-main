@@ -21,6 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://viramah.com"),
   title: "Viramah | Premium Student Living & Experience-Focused Hostels in India",
   description: "Dignified student housing reimagined. Experience intentional living with premium amenities, community focus, and comfort that feels like home. The best premium hostel for students in India.",
   keywords: [
@@ -83,6 +84,42 @@ export default function RootLayout({
       <body
         className={`${dmSerif.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "LocalBusiness",
+              "name": "Viramah",
+              "image": "https://viramah.com/logo.png",
+              "@id": "",
+              "url": "https://viramah.com",
+              "telephone": "",
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Krishna Valley",
+                "addressLocality": "Vrindavan",
+                "postalCode": "281121",
+                "addressCountry": "IN"
+              },
+              "description": "Premium student living reimagined. Experience intentional living with premium amenities, community focus, and comfort that feels like home.",
+              "openingHoursSpecification": {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": [
+                  "Monday",
+                  "Tuesday",
+                  "Wednesday",
+                  "Thursday",
+                  "Friday",
+                  "Saturday",
+                  "Sunday"
+                ],
+                "opens": "00:00",
+                "closes": "23:59"
+              }
+            })
+          }}
+        />
         <EnquiryProvider>
           {children}
           <EnquiryModal />

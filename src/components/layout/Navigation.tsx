@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, memo, useRef } from "react";
@@ -72,7 +73,14 @@ export function Navigation() {
                 {/* Brand */}
                 <Link href="/" className="group flex items-center gap-2 md:gap-3 shrink-0">
                     <div className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.68,-0.6,0.32,1.6)] group-hover:scale-110">
-                        <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
+                        <NextImage
+                            src="/logo.png"
+                            alt="Viramah Logo"
+                            width={40}
+                            height={40}
+                            priority
+                            className="w-full h-full object-contain"
+                        />
                     </div>
                 </Link>
 

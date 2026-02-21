@@ -6,9 +6,9 @@
 /* ── Section ─────────────────────────────────── */
 .wv-section {
     position: relative;
-    background: linear-gradient(160deg, #1a3328 0%, #0f2018 55%, #162b1e 100%);
+    background: linear-gradient(160deg, #162b1e 100%, #0f2018 55%, #1a3328 0%);
     color: #F6F4EF;
-    padding: 7rem 0 5rem;
+    padding: 7rem 0 0;
     overflow: hidden;
 }
 

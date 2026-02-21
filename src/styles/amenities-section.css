@@ -91,6 +91,7 @@
     cursor: pointer;
     transition: all 0.6s var(--amen-easing);
     overflow: hidden;
+    will-change: transform;
 }
 
 /* Lathe texture overlay */
@@ -147,6 +148,7 @@
     align-items: center;
     justify-content: center;
     transition: transform 0.6s var(--amen-easing);
+    will-change: transform;
 }
 
 /* ── 7. Icon Image ─────────────────────────── */

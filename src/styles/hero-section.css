@@ -44,6 +44,34 @@
     letter-spacing: 0.1em;
     color: var(--ink-primary);
     margin-bottom: 2rem;
+    perspective: 1000px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.hero-title-char {
+    position: relative;
+    background: linear-gradient(120deg,
+            var(--ink-primary) 0%,
+            var(--ink-primary) 45%,
+            #D8B56A 50%,
+            var(--ink-primary) 55%,
+            var(--ink-primary) 100%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textShimmer 8s infinite linear;
+}
+
+@keyframes textShimmer {
+    0% {
+        background-position: 150% 0;
+    }
+
+    100% {
+        background-position: -150% 0;
+    }
 }
 
 .hero-meta {
@@ -149,6 +177,7 @@
     width: max-content;
     animation: heroMarquee var(--loop-speed) linear infinite;
     padding-left: 20px;
+    will-change: transform;
 }
 
 @keyframes heroMarquee {
@@ -179,12 +208,14 @@
         box-shadow 0.8s var(--accent-curve);
     cursor: grab;
     flex-shrink: 0;
+    will-change: transform;
 }
 
 .hero-tile-img {
     object-fit: cover;
     filter: saturate(0.9) contrast(1.05);
     transition: transform 1.2s var(--accent-curve);
+    will-change: transform;
 }
 
 /* ── Tile Overlay ──────────────────────────── */

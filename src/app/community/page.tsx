@@ -96,7 +96,7 @@ export default function CommunityPage() {
                         creative souls, and future leaders — all under one roof.
                     </p>
                     <div className="cm-hero-tags">
-                        {["Ambitious", "Creative", "Curious", "Driven", "Diverse", "Kind"].map(tag => (
+                        {["Ambitious", "Creative", "Curious", "Driven", "Diverse"].map(tag => (
                             <span key={tag} className="cm-tag">{tag}</span>
                         ))}
                     </div>
@@ -133,8 +133,8 @@ export default function CommunityPage() {
                             </div>
                             <div className="cm-visual-divider" />
                             <div className="cm-visual-stat">
-                                <span className="cm-big-num">12+</span>
-                                <span className="cm-big-label">Events per Month</span>
+                                <span className="cm-big-num">Multiple</span>
+                                <span className="cm-big-label">events throughout the year</span>
                             </div>
                         </div>
                     </div>

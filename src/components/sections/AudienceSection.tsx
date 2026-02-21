@@ -138,7 +138,8 @@ export function AudienceSection() {
                         marginInline: "auto",
                         lineHeight: 1.7,
                     }}>
-                        Whether you're here to study, hustle, or connect — Viramah is built around you.
+                        We didn't find the perfect space for us, so we created it for you.
+
                     </p>
                 </motion.div>
 

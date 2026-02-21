@@ -132,6 +132,12 @@ export function HeroSection() {
 
         // ── RAF tick ──────────────────────────────────────────
         const tick = () => {
+            // Optimization: Pause processing if a modal is open (overflow hidden)
+            if (document.body.style.overflow === "hidden") {
+                rafId = requestAnimationFrame(tick);
+                return;
+            }
+
             if (!isDragging) {
                 // Decay drag momentum, blend toward base auto-scroll
                 velocity += ((-BASE_VEL) - velocity) * (1 - DECAY);
@@ -219,6 +225,9 @@ export function HeroSection() {
 
     // ── Particle System ─────────────────────────────────────
     const createParticle = useCallback(() => {
+        // Optimization: Don't spawn particles if modal is open
+        if (document.body.style.overflow === "hidden") return;
+
         const particle = document.createElement("div");
         particle.className = "hero-particle";
 
@@ -279,7 +288,7 @@ export function HeroSection() {
     // ── Mouse Parallax on Stage (desktop only) ──────────────
     const handleStageMouseMove = useCallback(
         (e: React.MouseEvent<HTMLDivElement>) => {
-            if (!canHover || !stageRef.current) return;
+            if (!canHover || !stageRef.current || document.body.style.overflow === "hidden") return;
 
             const x = (e.clientX / window.innerWidth - 0.5) * 8;
             const y = (e.clientY / window.innerHeight - 0.5) * 4;
@@ -325,7 +334,7 @@ export function HeroSection() {
                 >
                     <span>विरामाह — live life better </span>
 
-                    <span>© 2025 Viramah</span>
+
                 </motion.div>
 
                 <motion.h1
@@ -334,7 +343,32 @@ export function HeroSection() {
                     initial="hidden"
                     animate="visible"
                 >
-                    viramah
+                    {"viramah".split("").map((char, i) => (
+                        <motion.span
+                            key={i}
+                            variants={{
+                                hidden: { opacity: 0, y: 100, rotateX: -90 },
+                                visible: {
+                                    opacity: 1,
+                                    y: 0,
+                                    rotateX: 0,
+                                    transition: {
+                                        duration: 1,
+                                        ease: [0.23, 1, 0.32, 1],
+                                        delay: i * 0.08,
+                                    },
+                                },
+                            }}
+                            whileHover={{
+                                y: -10,
+                                color: "#D8B56A",
+                                transition: { duration: 0.2 },
+                            }}
+                            className="inline-block cursor-default select-none hero-title-char"
+                        >
+                            {char}
+                        </motion.span>
+                    ))}
                 </motion.h1>
 
                 <motion.div

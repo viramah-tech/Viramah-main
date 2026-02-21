@@ -727,7 +727,7 @@ export function EnquiryModal() {
                                                         ref={firstInputRef}
                                                         id="enquiry-fullname"
                                                         type="text"
-                                                        placeholder="NAME"
+                                                        placeholder="Name"
                                                         value={form.fullName}
                                                         onChange={(e) => handleChange("fullName", e.target.value)}
                                                         focused={focusedField === "fullName"}
@@ -740,11 +740,11 @@ export function EnquiryModal() {
                                                 {/* Mobile + Email */}
                                                 <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     <div className="flex flex-col gap-1.5">
-                                                        <FieldLabel htmlFor="enquiry-mobile">Mobile No.</FieldLabel>
+                                                        <FieldLabel htmlFor="enquiry-mobile">Mobile No</FieldLabel>
                                                         <FieldInput
                                                             id="enquiry-mobile"
                                                             type="tel"
-                                                            placeholder="MOBILE NO."
+                                                            placeholder="Mobile No"
                                                             value={form.mobile}
                                                             onChange={(e) => handleChange("mobile", e.target.value)}
                                                             focused={focusedField === "mobile"}
@@ -758,7 +758,7 @@ export function EnquiryModal() {
                                                         <FieldInput
                                                             id="enquiry-email"
                                                             type="email"
-                                                            placeholder="EMAIL ADDRESS"
+                                                            placeholder="Email"
                                                             value={form.email}
                                                             onChange={(e) => handleChange("email", e.target.value)}
                                                             focused={focusedField === "email"}

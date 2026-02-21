@@ -9,51 +9,51 @@ import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 
 const ROOMS = [
     {
-        title: "Studio 2-Seater (AC)",
-        type: "Studio · 2 Seater · AC",
-        price: "₹14,999",
-        tag: "Luxury",
-        amenities: ["AC", "High-Speed WiFi", "Study Desk", "Housekeeping"],
-    },
-    {
-        title: "Studio 1-Seater (AC)",
+        title: "VIRAMAH STUDIO",
         type: "Studio · 1 Seater · AC",
         price: "₹17,749",
         tag: "Premium",
         amenities: ["AC", "High-Speed WiFi", "Study Desk", "Housekeeping"],
     },
     {
-        title: "Studio 2-Seater (NAC)",
-        type: "Studio · 2 Seater · Non-AC",
-        price: "₹12,499",
-        tag: "Best Value",
-        amenities: ["High-Speed WiFi", "Study Desk", "Essential Living"],
+        title: "VIRAMAH AXIS",
+        type: "Studio · 2 Seater · AC",
+        price: "₹14,999",
+        tag: "Luxury",
+        amenities: ["AC", "High-Speed WiFi", "Study Desk", "Housekeeping"],
     },
     {
-        title: "Studio 1-Seater (NAC)",
+        title: "VIRAMAH STUDIO",
         type: "Studio · 1 Seater · Non-AC",
         price: "₹14,999",
         tag: "Comfort",
         amenities: ["High-Speed WiFi", "Study Desk", "Essential Living"],
     },
     {
-        title: "1BHK 2-Seater (NAC)",
+        title: "VIRAMAH AXIS",
+        type: "Studio · 2 Seater · Non-AC",
+        price: "₹12,499",
+        tag: "Best Value",
+        amenities: ["High-Speed WiFi", "Study Desk", "Essential Living"],
+    },
+    {
+        title: "VIRAMAH AXIS+",
         type: "1BHK · 2 Seater · Shared",
         price: "₹16,399",
         tag: "Exclusive",
         amenities: ["Spacious Living", "High-Speed WiFi", "Study Desk", "Kitchen"],
     },
     {
-        title: "1BHK 3-Seater (NAC)",
+        title: "VIRAMAH COLLECTIVE+",
         type: "1BHK · 3 Seater · Shared",
         price: "₹11,499",
         tag: "Updated",
         amenities: ["Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen"],
     },
     {
-        title: "1BHK 4-Seater (NAC)",
+        title: "VIRAMAH NEXUS+",
         type: "1BHK · 4 Seater · Shared",
-        price: "₹9,999",
+        price: "₹9,090",
         tag: "Budget Friendly",
         amenities: ["Shared Space", "High-Speed WiFi", "Study Desk", "Economy"],
     },
@@ -160,7 +160,7 @@ export default function RoomsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {ROOMS.map((room) => (
                             <RoomCard
-                                key={room.title}
+                                key={`${room.title}-${room.type}`}
                                 title={room.title}
                                 type={room.type}
                                 price={room.price}

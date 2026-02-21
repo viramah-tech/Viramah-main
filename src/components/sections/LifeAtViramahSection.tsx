@@ -87,7 +87,7 @@ export function LifeAtViramahSection() {
     // ── 3D Tilt Effect (desktop only) ──
     const handlePointerMove = useCallback(
         (e: React.PointerEvent<HTMLElement>, index: number) => {
-            if (!canHover) return;
+            if (!canHover || document.body.style.overflow === "hidden") return;
 
             const el = cardRefs.current[index];
             if (!el) return;

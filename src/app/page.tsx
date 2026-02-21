@@ -4,21 +4,25 @@ import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/layout/Container";
 import { RoomCard } from "@/components/ui/RoomCard";
 // import { RealitySection } from "@/components/sections/RealitySection";
-import { AmenitiesSection } from "@/components/sections/AmenitiesSection";
 import { DifferenceSection } from "@/components/sections/DifferenceSection";
-import { CategoriesSection } from "@/components/sections/CategoriesSection";
-import { LifeAtViramahSection } from "@/components/sections/LifeAtViramahSection";
-import { CommunitySection } from "@/components/sections/CommunitySection";
-import { FounderSection } from "@/components/sections/FounderSection";
-import { AudienceSection } from "@/components/sections/AudienceSection";
-import { ClosingSection } from "@/components/sections/ClosingSection";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { WhyViramahSection } from "@/components/sections/WhyViramahSection";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { Metadata } from "next";
+import dynamic from "next/dynamic";
+
+// Dynamic imports for below-the-fold sections
+const CategoriesSection = dynamic(() => import("@/components/sections/CategoriesSection").then((mod) => mod.CategoriesSection), { ssr: true });
+const AmenitiesSection = dynamic(() => import("@/components/sections/AmenitiesSection").then((mod) => mod.AmenitiesSection), { ssr: true });
+const LifeAtViramahSection = dynamic(() => import("@/components/sections/LifeAtViramahSection").then((mod) => mod.LifeAtViramahSection), { ssr: true });
+const CommunitySection = dynamic(() => import("@/components/sections/CommunitySection").then((mod) => mod.CommunitySection), { ssr: true });
+const FounderSection = dynamic(() => import("@/components/sections/FounderSection").then((mod) => mod.FounderSection), { ssr: true });
+const AudienceSection = dynamic(() => import("@/components/sections/AudienceSection").then((mod) => mod.AudienceSection), { ssr: true });
+const ClosingSection = dynamic(() => import("@/components/sections/ClosingSection").then((mod) => mod.ClosingSection), { ssr: true });
+
 
 export const metadata: Metadata = {
-  title: "Viramah | Next Generation Student Living in India",
+  title: "Viramah stay",
   description: "Experience premium student living at Viramah. Modern hostel with high-speed WiFi, gaming zone, and nutritious food. The ultimate PG alternative for Gen Z and working professionals.",
   keywords: [
     "best hostel for students in India",
@@ -62,24 +66,26 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
               <RoomCard
-                title="Studio 1-Seater"
-                type="1 SEATER · STUDIO"
-                price="₹17,749"
-                image="/placeholder-1.jpg"
-              />
-              <RoomCard
-                title="Studio 2-Seater"
-                type="2 SEATER · STUDIO"
-                price="₹14,999"
-                image="/placeholder-2.jpg"
-                className="md:translate-y-20" // Stagger effect
-              />
-              <RoomCard
-                title="1BHK 4-Seater"
+                title="VIRAMAH NEXUS+"
                 type="4 SEATER · 1BHK"
                 price="₹9,090"
                 image="/placeholder-3.jpg"
               />
+              <RoomCard
+                title="VIRAMAH STUDIO"
+                type="1 SEATER · STUDIO"
+                price="₹17,749"
+                image="/placeholder-1.jpg"
+                className="md:translate-y-20"
+              />
+              <RoomCard
+                title="VIRAMAH AXIS"
+                type="2 SEATER · STUDIO"
+                price="₹14,999"
+                image="/placeholder-2.jpg"
+
+              />
+
             </div>
           </div>
         </Container>
