@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import EnquiryReceiptEmail from "@/emails/EnquiryReceiptEmail";
-import { readFileSync } from "fs";
-import path from "path";
+
+// NOTE: No 'fs' or 'path' imports — readFileSync fails in AWS Lambda.
+// We fetch the brochure PDF via HTTP from the public URL instead.
 
 // ── Resend client — lazy init inside handler so missing key ────
 // ── doesn't crash the module at compile time ───────────────────
@@ -86,13 +87,16 @@ export async function POST(req: NextRequest) {
             hour12: true,
         });
 
-        // ── 3. Google Sheets — fire-and-forget ───────────────────
+        // ── 3. Google Sheets (via Apps Script webhook) ────────────
+        // IMPORTANT: Google Apps Script redirects POST requests (302),
+        // which causes Node fetch to downgrade to GET — so doPost() never
+        // fires. Fix: encode all data as query params too, so doGet() can
+        // read them as a fallback. The Apps Script handles both cases.
         const sheetsUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
         let sheetsOk = false;
 
         if (sheetsUrl) {
             try {
-                // Run without awaiting — we'll track via Promise.allSettled below
                 const sheetsPayload = {
                     fullName,
                     email,
@@ -105,33 +109,75 @@ export async function POST(req: NextRequest) {
                     ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "",
                 };
 
-                const sheetsRes = await fetch(sheetsUrl, {
+                // Append as query params so they survive the POST→GET redirect
+                const queryString = new URLSearchParams(
+                    Object.entries(sheetsPayload).map(([k, v]) => [k, String(v)])
+                ).toString();
+                const urlWithParams = `${sheetsUrl}?${queryString}`;
+
+                const sheetsRes = await fetch(urlWithParams, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(sheetsPayload),
-                    signal: AbortSignal.timeout(8000), // 8s timeout
+                    redirect: "follow",
+                    signal: AbortSignal.timeout(10000),
                 });
 
-                sheetsOk = sheetsRes.ok;
-                if (!sheetsRes.ok) {
-                    console.warn("[Sheets] Response not OK:", await sheetsRes.text());
+                const sheetsText = await sheetsRes.text();
+                console.log(`[Sheets] HTTP ${sheetsRes.status} →`, sheetsText.slice(0, 120));
+
+                // ── Duplicate check ───────────────────────────────────
+                try {
+                    const sheetsJson = JSON.parse(sheetsText) as Record<string, unknown>;
+
+                    if (sheetsJson.duplicate === true) {
+                        // Email already in the sheet — tell the user, skip email send
+                        console.log(`[Sheets] Duplicate enquiry detected for: ${email}`);
+                        return NextResponse.json(
+                            {
+                                success: false,
+                                duplicate: true,
+                                error: "You have already enquired. Please check your inbox for the confirmation email we sent earlier.",
+                            },
+                            { status: 409 }
+                        );
+                    }
+
+                    sheetsOk = sheetsJson.success === true;
+                } catch {
+                    // Response wasn't JSON (unlikely) — treat as ok if HTTP 200
+                    sheetsOk = sheetsRes.ok;
+                }
+
+                if (!sheetsOk) {
+                    console.warn("[Sheets] Sheets reported failure:", sheetsText);
                 }
             } catch (sheetsError) {
-                // Log but don't fail — email is the primary user-facing action
                 console.error("[Sheets] Failed to save lead:", sheetsError);
             }
         } else {
-            console.warn("[Sheets] GOOGLE_SHEET_WEBHOOK_URL is not configured.");
+            console.warn("[Sheets] GOOGLE_SHEET_WEBHOOK_URL is not set in environment variables.");
         }
 
-        // ── 4. Try to load brochure PDF ───────────────────────────
+
+        // ── 4. Try to fetch brochure PDF via HTTP ─────────────────
+        // Using fetch (not readFileSync) so it works in serverless
+        // environments like AWS Lambda / Amplify (read-only filesystem).
         let brochureBuffer: Buffer | undefined;
-        const brochurePath = path.join(process.cwd(), "public", "Viramah-Brochure-2026.pdf");
+        const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://viramahstay.com").replace(/\/$/, "");
+        const brochureUrl = `${appUrl}/Viramah-Brochure-2026.pdf`;
         try {
-            brochureBuffer = readFileSync(brochurePath);
-        } catch {
-            // PDF not yet placed — send email without attachment
-            console.warn("[Email] Brochure PDF not found at:", brochurePath);
+            const pdfRes = await fetch(brochureUrl, {
+                signal: AbortSignal.timeout(5000),
+            });
+            if (pdfRes.ok) {
+                brochureBuffer = Buffer.from(await pdfRes.arrayBuffer());
+                console.log(`[Email] Brochure fetched OK (${brochureBuffer.length} bytes)`);
+            } else {
+                console.warn(`[Email] Brochure not available (${pdfRes.status}) — sending without attachment`);
+            }
+        } catch (pdfErr) {
+            console.warn("[Email] Could not fetch brochure PDF:", pdfErr);
         }
 
         // ── 5. Render email HTML ──────────────────────────────────

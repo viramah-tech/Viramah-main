@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  output: "standalone",
+  // NOTE: Do NOT set output:'standalone' — breaks AWS Amplify SSR compute
 
   /* Image Optimization for Vercel */
   images: {

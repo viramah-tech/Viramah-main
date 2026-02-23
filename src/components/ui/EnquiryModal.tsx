@@ -383,7 +383,8 @@ function SubmitButton({ loading }: { loading: boolean }) {
 export function EnquiryModal() {
     const [isOpen, setIsOpen] = useState(false);
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
-    const [submitted, setSubmitted] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isDuplicate, setIsDuplicate] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const firstInputRef = useRef<HTMLInputElement>(null);
@@ -449,17 +450,31 @@ export function EnquiryModal() {
 
             const result = await response.json();
 
+            // ── Duplicate email detected (409) ────────────────────
+            if (response.status === 409 && result.duplicate) {
+                setIsSubmitting(false);
+                setIsDuplicate(true);
+                setIsSubmitted(true);
+                setTimeout(() => {
+                    setIsSubmitted(false);
+                    setIsDuplicate(false);
+                    setIsOpen(false);
+                }, 5000);
+                return;
+            }
+
             if (!response.ok || !result.success) {
                 throw new Error(result.error || "Submission failed. Please try again.");
             }
 
             setIsSubmitting(false);
             localStorage.setItem("viramah_enquiry_data_submitted", "true");
-            setSubmitted(true);
+            setIsDuplicate(false);
+            setIsSubmitted(true);
 
             // Give the user more time to read the updated success message
             setTimeout(() => {
-                setSubmitted(false);
+                setIsSubmitted(false);
                 setForm(INITIAL_FORM);
                 setIsOpen(false);
             }, 4000);
@@ -658,8 +673,8 @@ export function EnquiryModal() {
 
                                     {/* ── Success / Form ─────────────────────── */}
                                     <AnimatePresence mode="wait">
-                                        {submitted ? (
-                                            /* Success State */
+                                        {isSubmitted ? (
+                                            /* Success / Duplicate State */
                                             <motion.div
                                                 key="success"
                                                 initial={{ opacity: 0, scale: 0.9 }}
@@ -675,15 +690,24 @@ export function EnquiryModal() {
                                                         width: 72,
                                                         height: 72,
                                                         borderRadius: "50%",
-                                                        background: "#1F3A2D",
+                                                        background: isDuplicate ? "#7C5C1A" : "#1F3A2D",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
                                                     }}
                                                 >
-                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D8B56A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                        <polyline points="20 6 9 17 4 12" />
-                                                    </svg>
+                                                    {isDuplicate ? (
+                                                        /* Inbox / mail icon for duplicate */
+                                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D8B56A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                                                            <polyline points="22,6 12,13 2,6" />
+                                                        </svg>
+                                                    ) : (
+                                                        /* Tick icon for success */
+                                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D8B56A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                            <polyline points="20 6 9 17 4 12" />
+                                                        </svg>
+                                                    )}
                                                 </motion.div>
                                                 <div>
                                                     <h3
@@ -694,7 +718,7 @@ export function EnquiryModal() {
                                                             marginBottom: 8,
                                                         }}
                                                     >
-                                                        Enquiry Sent!
+                                                        {isDuplicate ? "Already Enquired!" : "Enquiry Sent!"}
                                                     </h3>
                                                     <p
                                                         style={{
@@ -705,9 +729,19 @@ export function EnquiryModal() {
                                                             lineHeight: 1.8,
                                                         }}
                                                     >
-                                                        Check your inbox for a confirmation<br />
-                                                        email &amp; the Viramah brochure.<br />
-                                                        Our team will call within 24 hrs.
+                                                        {isDuplicate ? (
+                                                            <>
+                                                                We already have your enquiry on file.<br />
+                                                                Check your inbox for the confirmation<br />
+                                                                email we sent you earlier.
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                Check your inbox for a confirmation<br />
+                                                                email &amp; the Viramah brochure.<br />
+                                                                Our team will call within 24 hrs.
+                                                            </>
+                                                        )}
                                                     </p>
                                                 </div>
                                             </motion.div>
