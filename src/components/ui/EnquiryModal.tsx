@@ -440,39 +440,37 @@ export function EnquiryModal() {
         e.preventDefault();
         setIsSubmitting(true);
 
-        const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycby42eCgxXVf4aeSPiR7caKIxwQhoXlL7x8e5VdWEbphhpfYzo8ObIrcmUqgLl0Sl4Zo/exec";
-
         try {
-            // Perceived performance optimization: 
-            // We start the fetch but don't wait more than 1s for the UI to transition.
-            // Google Apps Script can be slow, but no-cors dispatches immediately.
-            const fetchPromise = fetch(GOOGLE_SHEET_URL, {
+            const response = await fetch("/api/enquiry", {
                 method: "POST",
-                mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(form),
             });
 
-            // If it takes longer than 1.2s, we move to success state anyway 
-            // as the request is likely already in flight.
-            await Promise.race([
-                fetchPromise,
-                new Promise((resolve) => setTimeout(resolve, 1200))
-            ]);
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || "Submission failed. Please try again.");
+            }
 
             setIsSubmitting(false);
             localStorage.setItem("viramah_enquiry_data_submitted", "true");
             setSubmitted(true);
 
+            // Give the user more time to read the updated success message
             setTimeout(() => {
                 setSubmitted(false);
                 setForm(INITIAL_FORM);
                 setIsOpen(false);
-            }, 2500);
+            }, 4000);
+
         } catch (error) {
             console.error("Submission failed:", error);
             setIsSubmitting(false);
-            alert("Something went wrong. Please try again.");
+            alert(
+                (error instanceof Error ? error.message : "Something went wrong.") +
+                "\nOr call us directly: +91 8679001662"
+            );
         }
     };
 
@@ -696,17 +694,20 @@ export function EnquiryModal() {
                                                             marginBottom: 8,
                                                         }}
                                                     >
-                                                        Dispatch Sent!
+                                                        Enquiry Sent!
                                                     </h3>
                                                     <p
                                                         style={{
                                                             fontFamily: "var(--font-mono, monospace)",
-                                                            fontSize: "0.75rem",
+                                                            fontSize: "0.72rem",
                                                             color: "#6b5526",
-                                                            letterSpacing: "0.1em",
+                                                            letterSpacing: "0.08em",
+                                                            lineHeight: 1.8,
                                                         }}
                                                     >
-                                                        Our team will reach out to you shortly.
+                                                        Check your inbox for a confirmation<br />
+                                                        email &amp; the Viramah brochure.<br />
+                                                        Our team will call within 24 hrs.
                                                     </p>
                                                 </div>
                                             </motion.div>

@@ -376,12 +376,9 @@
     .hero-meta {
         flex-direction: column;
         gap: 0.4rem;
-        font-size: 0.6rem;
+        font-size: 0.7rem;
         margin-bottom: 0.8rem;
-    }
-
-    .hero-meta span:last-child {
-        display: none;
+        opacity: 0.8;
     }
 
     .hero-subtitle {
