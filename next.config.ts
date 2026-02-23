@@ -4,6 +4,19 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   // NOTE: Do NOT set output:'standalone' — breaks AWS Amplify SSR compute
 
+  /*
+   * ── Server-side env vars for Amplify Gen 1 ──────────────────────────
+   * Amplify Gen 1 SSR Lambdas don't auto-inject Console env vars at runtime.
+   * Using next.config `env` reads them at BUILD time (when Amplify vars ARE
+   * available) and embeds them into the server bundle — same as NEXT_PUBLIC_*.
+   * These are server-only so they are NOT exposed to the browser.
+   */
+  env: {
+    RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL ?? "",
+    GOOGLE_SHEET_WEBHOOK_URL: process.env.GOOGLE_SHEET_WEBHOOK_URL ?? "",
+  },
+
   /* Image Optimization for Vercel */
   images: {
     formats: ["image/webp", "image/avif"],
