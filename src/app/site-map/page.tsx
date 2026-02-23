@@ -43,7 +43,7 @@ const SITEMAP_SECTIONS = [
         links: [
             { name: "Book a Visit", href: "#" },
             { name: "Enquire Now", href: "#" },
-            { name: "Contact Us", href: "mailto:team@viramah.com" },
+            { name: "Contact Us", href: "mailto:team@viramahstay.com" },
         ],
     },
 ];

@@ -6,14 +6,14 @@
 
   <!-- ═══════════════════════════════════════════════════════════
        Viramah XML Sitemap
-       Domain  : https://viramah.com
+       Domain  : https://viramahstay.com
        Updated : 2026-02-23
        Format  : Sitemaps Protocol 0.9 (Google Search Console accepted)
   ════════════════════════════════════════════════════════════════ -->
 
   <!-- Homepage -->
   <url>
-    <loc>https://viramah.com/</loc>
+    <loc>https://viramahstay.com/</loc>
     <lastmod>2026-02-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
@@ -21,7 +21,7 @@
 
   <!-- Living Options / Rooms -->
   <url>
-    <loc>https://viramah.com/rooms</loc>
+    <loc>https://viramahstay.com/rooms</loc>
     <lastmod>2026-02-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -29,7 +29,7 @@
 
   <!-- Community -->
   <url>
-    <loc>https://viramah.com/community</loc>
+    <loc>https://viramahstay.com/community</loc>
     <lastmod>2026-02-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -37,7 +37,7 @@
 
   <!-- Events -->
   <url>
-    <loc>https://viramah.com/events</loc>
+    <loc>https://viramahstay.com/events</loc>
     <lastmod>2026-02-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -45,7 +45,7 @@
 
   <!-- About Us -->
   <url>
-    <loc>https://viramah.com/about</loc>
+    <loc>https://viramahstay.com/about</loc>
     <lastmod>2026-02-23</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
@@ -53,7 +53,7 @@
 
   <!-- Sitemap (HTML version for users) -->
   <url>
-    <loc>https://viramah.com/site-map</loc>
+    <loc>https://viramahstay.com/site-map</loc>
     <lastmod>2026-02-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>

@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://viramah.com"),
+  metadataBase: new URL("https://viramahstay.com"),
   title: "Viramah | Premium Student Living & Experience-Focused Hostels in India",
   description: "Dignified student housing reimagined. Experience intentional living with premium amenities, community focus, and comfort that feels like home. The best premium hostel for students in India.",
   keywords: [
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Viramah | Premium Student Living reimagined",
     description: "Premium student living reimagined — where comfort, community, and craft come together.",
-    url: "https://viramah.com",
+    url: "https://viramahstay.com",
     siteName: "Viramah",
     images: [
       {
@@ -91,9 +91,9 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "LocalBusiness",
               "name": "Viramah",
-              "image": "https://viramah.com/logo.png",
+              "image": "https://viramahstay.com/logo.png",
               "@id": "",
-              "url": "https://viramah.com",
+              "url": "https://viramahstay.com",
               "telephone": "",
               "address": {
                 "@type": "PostalAddress",

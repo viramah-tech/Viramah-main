@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/api/', '/student/', '/user-onboarding/'],
         },
-        sitemap: 'https://viramah.com/sitemap.xml',
+        sitemap: 'https://viramahstay.com/sitemap.xml',
     }
 }
