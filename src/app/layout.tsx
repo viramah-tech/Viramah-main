@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import "../styles/globals.css";
 import { EnquiryModal } from "@/components/ui/EnquiryModal";
 import { EnquiryProvider } from "@/context/EnquiryContext";
@@ -84,6 +85,20 @@ export default function RootLayout({
       <body
         className={`${dmSerif.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        {/* ── Google Analytics 4 ── */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-XJTTHXGX9Z"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-XJTTHXGX9Z');
+          `}
+        </Script>
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
