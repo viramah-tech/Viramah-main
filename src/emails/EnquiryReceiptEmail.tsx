@@ -121,8 +121,8 @@ export default function EnquiryReceiptEmail({
                         <Text style={greeting}>Dear {firstName},</Text>
                         <Text style={para}>
                             Thank you for reaching out to us. We have received your
-                            enquiry and a member of the Viramah team will contact you
-                            within <strong style={{ color: BRAND_GREEN }}>24 hours</strong>.
+                            enquiry and a member of our team will contact you
+                            <strong style={{ color: BRAND_GREEN }}>SOON</strong>.
                         </Text>
                         <Text style={para}>
                             We have attached our <strong style={{ color: BRAND_GREEN }}>2026 Information Brochure</strong>{" "}
