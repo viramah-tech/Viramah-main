@@ -125,7 +125,7 @@ export default function EnquiryReceiptEmail({
                             <strong style={{ color: BRAND_GREEN }}>SOON</strong>.
                         </Text>
                         <Text style={para}>
-                            We have attached our <strong style={{ color: BRAND_GREEN }}>2026 Information Brochure</strong>{" "}
+                            We have attached our <strong style={{ color: BRAND_GREEN }}>Latest Brochure</strong>{" "}
                             to this email. It covers all our room categories, pricing,
                             amenities, and the community experience in detail.
                         </Text>
