@@ -13,7 +13,7 @@ export function FoodSection() {
                     <div className="food-visual">
                         <div className="food-image-wrap">
                             <Image
-                                src="/amenities/cafe.png"
+                                src="/food section/food img.jpg"
                                 alt="Delicious home-style food at Viramah"
                                 fill
                                 className="food-img"
@@ -43,7 +43,7 @@ export function FoodSection() {
                             </p>
                         </div>
                         <div className="food-ctas">
-                            <EnquireNowButton variant="gold" label="See Full Menu" />
+                            <EnquireNowButton variant="gold" label="Enquire Now" />
                             <EnquireNowButton variant="outline" label="Schedule a Visit" />
                         </div>
                     </div>

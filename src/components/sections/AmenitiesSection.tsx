@@ -64,9 +64,9 @@ const AMENITY_ITEMS: AmenityItem[] = [
   },
   {
     id: "water",
-    title: "Ambulance",
+    title: "24x7 Ambulance",
     icon: "/amenities/AMBULANCE.png",
-    alt: "Ambulance — Emergency medical services on call",
+    alt: "24x7 Ambulance — Emergency medical services on call",
   },
   {
     id: "cafe",
@@ -76,9 +76,9 @@ const AMENITY_ITEMS: AmenityItem[] = [
   },
   {
     id: "surveillance",
-    title: "24x7 Surveillance",
+    title: "Security",
     icon: "/amenities/surveillance.png",
-    alt: "24x7 Surveillance — Round-the-clock CCTV security monitoring",
+    alt: "Security — Round-the-clock CCTV security monitoring",
   },
   {
     id: "gaming",

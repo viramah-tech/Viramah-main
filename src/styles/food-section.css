@@ -1,19 +1,48 @@
+/* =============================================
+   FOOD SECTION — Luxury Bottle Green Theme
+   ============================================= */
+
 .food-section {
     padding: 10rem 0;
-    background-color: #1a3328;
+    background: linear-gradient(150deg, #0e2b1f 0%, #091e15 55%, #060f0b 100%);
     position: relative;
     overflow: hidden;
 }
 
+/* Luxury grain texture */
 .food-section::before {
     content: "";
     position: absolute;
     inset: 0;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-    opacity: 0.04;
+    opacity: 0.05;
     pointer-events: none;
+    z-index: 0;
 }
 
+/* Subtle gold-green radial glow */
+.food-section::after {
+    content: "";
+    position: absolute;
+    top: 40%;
+    right: -10%;
+    width: 65%;
+    aspect-ratio: 1;
+    background: radial-gradient(ellipse at center,
+            rgba(180, 146, 68, 0.06) 0%,
+            rgba(10, 58, 36, 0.04) 45%,
+            transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* All direct children above pseudo-elements */
+.food-section>* {
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Grid ───────────────────────────────────── */
 .food-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -25,88 +54,149 @@
     position: relative;
 }
 
+/* Elegant gold corner brackets */
+.food-visual::before,
+.food-visual::after {
+    content: "";
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.food-visual::before {
+    top: -12px;
+    left: -12px;
+    border-top: 2px solid #c9a84c;
+    border-left: 2px solid #c9a84c;
+}
+
+.food-visual::after {
+    bottom: -12px;
+    right: -12px;
+    border-bottom: 2px solid #c9a84c;
+    border-right: 2px solid #c9a84c;
+}
+
 .food-image-wrap {
     position: relative;
     aspect-ratio: 1;
     overflow: hidden;
-    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(201, 168, 76, 0.18);
+    box-shadow:
+        0 0 0 1px rgba(201, 168, 76, 0.06),
+        0 40px 100px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(201, 168, 76, 0.08);
+}
+
+/* Hover gold border shimmer */
+.food-image-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(201, 168, 76, 0);
+    transition: border-color 0.5s ease;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.food-image-wrap:hover::after {
+    border-color: rgba(201, 168, 76, 0.45);
 }
 
 .food-img {
     object-fit: cover;
-    transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: transform 0.9s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .food-image-wrap:hover .food-img {
-    transform: scale(1.05);
+    transform: scale(1.06);
 }
 
+/* Gold foil badge */
 .food-badge {
     position: absolute;
-    top: 2rem;
-    left: 2rem;
-    background: #D8B56A;
-    padding: 0.6rem 1.2rem;
-    z-index: 2;
+    top: 1.8rem;
+    left: 1.8rem;
+    background: linear-gradient(135deg, #c9a84c 0%, #e8cc7a 50%, #a87c30 100%);
+    padding: 0.55rem 1.4rem;
+    z-index: 4;
+    box-shadow: 0 4px 20px rgba(201, 168, 76, 0.35);
 }
 
 .food-badge span {
     font-family: var(--font-mono, monospace);
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: #1a3328;
+    letter-spacing: 0.25em;
+    color: #0e2b1f;
 }
 
+/* ── Content side ───────────────────────────── */
 .food-content {
     display: flex;
     flex-direction: column;
 }
 
+/* Thin gold rule before eyebrow */
+.food-content::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: linear-gradient(90deg, #c9a84c, transparent);
+    margin-bottom: 1.5rem;
+}
+
 .food-eyebrow {
     font-family: var(--font-mono, monospace);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
-    letter-spacing: 0.4em;
-    color: #D8B56A;
-    margin-bottom: 2rem;
+    letter-spacing: 0.45em;
+    color: #c9a84c;
+    margin-bottom: 1.8rem;
     display: block;
 }
 
 .food-title {
     font-family: var(--font-display, serif);
-    font-size: clamp(2.5rem, 4.5vw, 4rem);
+    font-size: clamp(2.4rem, 4.5vw, 3.8rem);
     line-height: 1.1;
-    color: #F6F4EF;
+    color: #f5f0e8;
     margin-bottom: 2.5rem;
     font-weight: 400;
 }
 
 .food-highlight {
-    color: #D8B56A;
+    color: #c9a84c;
     font-style: italic;
 }
 
 .food-body {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.4rem;
     margin-bottom: 3.5rem;
+    padding-left: 1.2rem;
+    border-left: 1px solid rgba(201, 168, 76, 0.2);
 }
 
 .food-body p {
-    font-size: 1.15rem;
-    color: rgba(246, 244, 239, 0.65);
-    line-height: 1.7;
-    max-width: 500px;
+    font-size: 1.08rem;
+    color: rgba(245, 240, 232, 0.6);
+    line-height: 1.8;
+    max-width: 480px;
 }
 
 .food-ctas {
     display: flex;
     gap: 1.5rem;
+    flex-wrap: wrap;
 }
 
+/* ── Responsive ─────────────────────────────── */
 @media (max-width: 900px) {
     .food-grid {
         grid-template-columns: 1fr;
@@ -119,5 +209,13 @@
 
     .food-visual {
         order: 2;
+    }
+
+    .food-body p {
+        max-width: 100%;
+    }
+
+    .food-body {
+        padding-left: 1rem;
     }
 }

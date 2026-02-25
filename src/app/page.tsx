@@ -16,6 +16,7 @@ const CategoriesSection = dynamic(() => import("@/components/sections/Categories
 const AmenitiesSection = dynamic(() => import("@/components/sections/AmenitiesSection").then((mod) => mod.AmenitiesSection), { ssr: true });
 const LifeAtViramahSection = dynamic(() => import("@/components/sections/LifeAtViramahSection").then((mod) => mod.LifeAtViramahSection), { ssr: true });
 const CommunitySection = dynamic(() => import("@/components/sections/CommunitySection").then((mod) => mod.CommunitySection), { ssr: true });
+const FoodSection = dynamic(() => import("@/components/sections/FoodSection").then((mod) => mod.FoodSection), { ssr: true });
 const FounderSection = dynamic(() => import("@/components/sections/FounderSection").then((mod) => mod.FounderSection), { ssr: true });
 const AudienceSection = dynamic(() => import("@/components/sections/AudienceSection").then((mod) => mod.AudienceSection), { ssr: true });
 const ClosingSection = dynamic(() => import("@/components/sections/ClosingSection").then((mod) => mod.ClosingSection), { ssr: true });
@@ -99,9 +100,10 @@ export default function Home() {
       <AmenitiesSection />
       <LifeAtViramahSection />
       <CommunitySection />
+      <FoodSection />
       <FounderSection />
-      <FAQSection />
       <AudienceSection />
+      <FAQSection />
       <ClosingSection />
 
       <Footer />
