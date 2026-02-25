@@ -46,9 +46,9 @@ const AMENITY_ITEMS: AmenityItem[] = [
   },
   {
     id: "frontdesk",
-    title: "Front Desk",
-    icon: "/amenities/front desk.png",
-    alt: "Front Desk — 24x7 assistance and support",
+    title: "Food",
+    icon: "/amenities/FOOD.png",
+    alt: "Food — Nutritious meals and dining options",
   },
   {
     id: "lockers",
@@ -64,9 +64,9 @@ const AMENITY_ITEMS: AmenityItem[] = [
   },
   {
     id: "water",
-    title: "Water Dispensers",
-    icon: "/amenities/water dispensers.png",
-    alt: "Water Dispensers — Clean drinking water 24x7",
+    title: "Ambulance",
+    icon: "/amenities/AMBULANCE.png",
+    alt: "Ambulance — Emergency medical services on call",
   },
   {
     id: "cafe",
@@ -75,10 +75,10 @@ const AMENITY_ITEMS: AmenityItem[] = [
     alt: "Café — Convenient dining and refreshments",
   },
   {
-    id: "ac",
-    title: "AC Units",
-    icon: "/amenities/ac.png",
-    alt: "AC Units — Climate controlled comfort",
+    id: "surveillance",
+    title: "24x7 Surveillance",
+    icon: "/amenities/surveillance.png",
+    alt: "24x7 Surveillance — Round-the-clock CCTV security monitoring",
   },
   {
     id: "gaming",
