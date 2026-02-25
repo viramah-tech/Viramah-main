@@ -12,6 +12,7 @@ interface FormState {
     city: string;
     state: string;
     country: string;
+    role: "Student" | "Parent" | "";
 }
 
 const INITIAL_FORM: FormState = {
@@ -21,6 +22,7 @@ const INITIAL_FORM: FormState = {
     city: "",
     state: "",
     country: "",
+    role: "",
 };
 
 // ── Location Data ──────────────────────────────────────────
@@ -770,6 +772,39 @@ export function EnquiryModal() {
                                                         onBlur={() => setFocusedField(null)}
                                                         required
                                                     />
+                                                </motion.div>
+
+                                                {/* Role Toggle — Student / Parent */}
+                                                <motion.div variants={itemVariants} className="flex flex-col gap-2">
+                                                    <FieldLabel>I am a</FieldLabel>
+                                                    <div style={{ display: "flex", gap: "10px" }}>
+                                                        {(["Student", "Parent"] as const).map((r) => (
+                                                            <button
+                                                                key={r}
+                                                                type="button"
+                                                                onClick={() => handleChange("role", r)}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    padding: "9px 12px",
+                                                                    fontFamily: "var(--font-mono, monospace)",
+                                                                    fontSize: "0.72rem",
+                                                                    fontWeight: 700,
+                                                                    textTransform: "uppercase",
+                                                                    letterSpacing: "0.18em",
+                                                                    cursor: "pointer",
+                                                                    border: form.role === r
+                                                                        ? "1.5px solid #b5934a"
+                                                                        : "1px solid rgba(45,43,40,0.2)",
+                                                                    background: form.role === r ? "#1F3A2D" : "transparent",
+                                                                    color: form.role === r ? "#D8B56A" : "#6b5526",
+                                                                    borderRadius: 2,
+                                                                    transition: "all 0.25s ease",
+                                                                }}
+                                                            >
+                                                                {r}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </motion.div>
 
                                                 {/* Mobile + Email */}

@@ -60,6 +60,7 @@ function handleRequest(e) {
       data.city        || "",
       data.state       || "",
       data.country     || "",
+      data.role        || "",
       data.submittedAt || "",
       data.sourcePage  || "",
       data.ip          || "",
@@ -95,7 +96,7 @@ function getOrCreateSheet() {
     sheet = ss.insertSheet(SHEET_NAME);
     const headers = [
       "Timestamp", "Full Name", "Email", "Mobile",
-      "City", "State", "Country", "Submitted At", "Source Page", "IP"
+      "City", "State", "Country", "Role", "Submitted At", "Source Page", "IP"
     ];
     sheet.appendRow(headers);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
