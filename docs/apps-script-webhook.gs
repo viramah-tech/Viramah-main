@@ -5,11 +5,15 @@
  * 1. Open Google Sheets → Extensions → Apps Script
  * 2. Delete any existing code and paste this entire file
  * 3. Click Deploy → Manage deployments → edit → New version → Deploy
- * 4. Copy the deployment URL → GOOGLE_SHEET_WEBHOOK_URL in .env / Amplify
+ * 4. Copy the deployment URL → paste into GOOGLE_SHEET_WEBHOOK_URL in .env / Amplify
+ *
+ * SHEET COLUMNS (after Role removal):
+ *   A: Timestamp | B: Full Name | C: Email | D: Mobile
+ *   E: City | F: State | G: Country | H: Submitted At | I: Source Page | J: IP
  */
 
-const SHEET_NAME  = "Enquiries"; // Sheet tab name
-const EMAIL_COL   = 3;           // Column C = Email (1-indexed). Adjust if your layout differs.
+const SHEET_NAME = "Enquiries"; // Sheet tab name
+const EMAIL_COL  = 3;           // Column C = Email (1-indexed)
 
 // ── doPost — primary entry point ─────────────────────────────────
 function doPost(e) {
@@ -60,7 +64,6 @@ function handleRequest(e) {
       data.city        || "",
       data.state       || "",
       data.country     || "",
-      data.role        || "",
       data.submittedAt || "",
       data.sourcePage  || "",
       data.ip          || "",
@@ -79,7 +82,7 @@ function isDuplicate(sheet, email) {
   if (lastRow < 2) return false; // Only header row — no leads yet
 
   // Get all values in the Email column (column C = index 3)
-  const emailRange    = sheet.getRange(2, EMAIL_COL, lastRow - 1, 1);
+  const emailRange     = sheet.getRange(2, EMAIL_COL, lastRow - 1, 1);
   const existingEmails = emailRange.getValues().flat();
 
   return existingEmails.some(
@@ -96,10 +99,19 @@ function getOrCreateSheet() {
     sheet = ss.insertSheet(SHEET_NAME);
     const headers = [
       "Timestamp", "Full Name", "Email", "Mobile",
-      "City", "State", "Country", "Role", "Submitted At", "Source Page", "IP"
+      "City", "State", "Country", "Submitted At", "Source Page", "IP"
     ];
     sheet.appendRow(headers);
-    sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
+
+    // Bold + freeze the header row
+    const headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setFontWeight("bold");
+    headerRange.setBackground("#1F3A2D");
+    headerRange.setFontColor("#D8B56A");
+    sheet.setFrozenRows(1);
+
+    // Auto-resize columns for readability
+    sheet.autoResizeColumns(1, headers.length);
   }
 
   return sheet;

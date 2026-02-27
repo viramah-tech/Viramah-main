@@ -24,7 +24,6 @@ interface EnquiryPayload {
     city: string;
     state: string;
     country: string;
-    role: string;
 }
 
 // ── Input Validation ──────────────────────────────────────────
@@ -57,7 +56,6 @@ function validate(body: unknown): { valid: true; data: EnquiryPayload } | { vali
             city: typeof b.city === "string" ? b.city.trim() : "",
             state: typeof b.state === "string" ? b.state.trim() : "",
             country: typeof b.country === "string" ? b.country.trim() : "",
-            role: typeof b.role === "string" ? b.role.trim() : "",
         },
     };
 }
@@ -76,7 +74,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const { fullName, email, mobile, city, state, country, role } = validation.data;
+        const { fullName, email, mobile, city, state, country } = validation.data;
 
         // ── 2. Timestamp (IST) ────────────────────────────────────
         const submittedAt = new Date().toLocaleString("en-IN", {
@@ -106,7 +104,6 @@ export async function POST(req: NextRequest) {
                     city,
                     state,
                     country,
-                    role,
                     submittedAt,
                     sourcePage: req.headers.get("referer") || "direct",
                     ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "",
@@ -185,7 +182,7 @@ export async function POST(req: NextRequest) {
 
         // ── 5. Render email HTML ──────────────────────────────────
         const emailHtml = await render(
-            EnquiryReceiptEmail({ fullName, email, mobile, city, state, country, role, submittedAt })
+            EnquiryReceiptEmail({ fullName, email, mobile, city, state, country, submittedAt })
         );
 
         // ── 6. Get Resend client (lazy — will not crash on serve if key missing) ──

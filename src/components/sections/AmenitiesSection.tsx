@@ -15,6 +15,18 @@ interface AmenityItem {
 
 const AMENITY_ITEMS: AmenityItem[] = [
   {
+    id: "frontdesk",
+    title: "In-House Mess",
+    icon: "/amenities/FOOD.png",
+    alt: "In-House Mess — Nutritious home-style meals served fresh every day",
+  },
+  {
+    id: "surveillance",
+    title: "2 Layer Security",
+    icon: "/amenities/surveillance.png",
+    alt: "2 Layer Security — Round-the-clock CCTV security monitoring",
+  },
+  {
     id: "wifi",
     title: "High Speed WiFi",
     icon: "/amenities/wifi.png",
@@ -45,22 +57,16 @@ const AMENITY_ITEMS: AmenityItem[] = [
     alt: "Common Areas — Spacious areas for relaxation",
   },
   {
-    id: "frontdesk",
-    title: "Food",
-    icon: "/amenities/FOOD.png",
-    alt: "Food — Nutritious meals and dining options",
-  },
-  {
     id: "lockers",
     title: "Secure Lockers",
     icon: "/amenities/secure locker.png",
     alt: "Secure Lockers — Safe storage for your belongings",
   },
   {
-    id: "coworking",
-    title: "Co-Working Space",
-    icon: "/amenities/coworking space.png",
-    alt: "Co-working Space — Professional workstations",
+    id: "sports",
+    title: "Sports",
+    icon: "/amenities/sports.png",
+    alt: "Sports — Physical sports and outdoor activities",
   },
   {
     id: "water",
@@ -73,12 +79,6 @@ const AMENITY_ITEMS: AmenityItem[] = [
     title: "Café",
     icon: "/amenities/cafe.png",
     alt: "Café — Convenient dining and refreshments",
-  },
-  {
-    id: "surveillance",
-    title: "Security",
-    icon: "/amenities/surveillance.png",
-    alt: "Security — Round-the-clock CCTV security monitoring",
   },
   {
     id: "gaming",

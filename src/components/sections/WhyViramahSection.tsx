@@ -30,7 +30,7 @@ const USPS = [
             </svg>
         ),
         title: "Nutritious Food",
-        desc: "Wholesome, home-style meals served fresh every day — because great living starts with great food.",
+        desc: "In-House Quality Mess · 24x7 Canteen · Self Pantry Services · Restaurant. The mess menu is selected by you, for you.",
     },
     {
         num: "03",
@@ -40,10 +40,20 @@ const USPS = [
             </svg>
         ),
         title: "Safe & Secure Living",
-        desc: "Round-the-clock security, CCTV monitoring, and smart access — so you can focus on you, stress-free.",
+        desc: "2 Layer Security · 24x7 CCTV Surveillance. Every corner monitored, every entry secured — so you can focus on what matters most, stress-free.",
     },
     {
         num: "04",
+        icon: (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+        ),
+        title: "Health & Wellness",
+        desc: "24x7 Ambulance · Doctor on Call · Gym · Meditation & Yoga · Physical Sports. Your well-being, always taken care of.",
+    },
+    {
+        num: "05",
         icon: (
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -53,10 +63,10 @@ const USPS = [
             </svg>
         ),
         title: "Community Vibes",
-        desc: "Connect with driven students, creators, and professionals. Collaborate, chill, and grow — all under one roof.",
+        desc: "Common Areas · Live Coach · Alumni Network · Movie Nights · Events & many more. A thriving community that grows with you.",
     },
     {
-        num: "05",
+        num: "06",
         icon: (
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -66,17 +76,6 @@ const USPS = [
         ),
         title: "Housekeeping & Maintenance",
         desc: "You live your best life — we handle the rest. Fresh living, clean spaces, zero worries. Daily housekeeping included.",
-    },
-    {
-        num: "06",
-        icon: (
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v4l3 3" />
-            </svg>
-        ),
-        title: "Events & Experiences",
-        desc: "From weekend movie nights to skill-building sessions and mini fests — every week is a new opportunity to vibe.",
     },
 ];
 

@@ -7,7 +7,6 @@ import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 import "@/styles/community-section.css";
 
 const PERKS = [
-    { icon: "", label: "Weekly Dinners" },
     { icon: "", label: "Peer Mentorship" },
     { icon: "", label: "Shared Workspaces" },
     { icon: "", label: "Cultural Nights" },

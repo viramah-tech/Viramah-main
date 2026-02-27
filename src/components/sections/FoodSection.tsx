@@ -27,19 +27,25 @@ export function FoodSection() {
                     <div className="food-content">
                         <span className="food-eyebrow">Beyond the Plate</span>
                         <h2 className="food-title">
-                            Don't come expecting <br />
-                            <span className="food-highlight">"hostel-PG food"</span>
+                            In House Mess
                         </h2>
+                        <p className="food-subtitle">
+                            Don't come expecting{" "}
+                            <span className="food-highlight">"hostel-PG food"</span>
+                        </p>
                         <div className="food-body">
                             <p>
                                 Instead, bring along a big appetite for healthy, yummy meals.
-                                With flavours that have a local touch. And that, at the same time, take
-                                your taste buds on a journey back home.
+                                With flavours that have a local touch — and that take your taste buds
+                                on a journey back home.
                             </p>
-                            <p>
-                                We believe that what you eat fuels how you think. No repetitive menus,
-                                no oily compromises. Just balanced, nutritious dining that makes you
-                                look forward to every meal.
+                            <ul className="food-features">
+                                <li>24x7 Canteen</li>
+                                <li>Self Pantry Services</li>
+                                <li>Restaurant</li>
+                            </ul>
+                            <p className="food-tagline">
+                                The mess menu is selected by <em>you</em>, for <em>you</em>.
                             </p>
                         </div>
                         <div className="food-ctas">

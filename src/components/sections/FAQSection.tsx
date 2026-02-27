@@ -8,19 +8,15 @@ import "@/styles/faq-section.css";
 const FAQS = [
     {
         q: "What is included in the rent?",
-        a: "Our all-inclusive rent covers your premium furnished stay, high-speed WiFi, daily housekeeping, 24/7 security, and full access to all community spaces like the gaming zone, gym, and library. We believe in zero hidden surprises."
+        a: "Our all-inclusive rent covers your premium furnished stay, high-speed WiFi, daily housekeeping, 24/7 security, In-House Mess with 3 meals a day (Breakfast, Supper & Dinner), and full access to all community spaces like the gaming zone, gym, and library. We believe in zero hidden surprises."
     },
     {
         q: "Is food available?",
-        a: "Yes! We take food seriously. At Viramah, you get healthy, home-style meals with a local touch. No boring hostel food here — only fresh, nutritious, and delicious flavors that make you feel at home."
-    },
-    {
-        q: "Are there separate areas for boys and girls?",
-        a: "Yes, we have strictly separate floors/wings and dedicated security protocols for both male and female residents to ensure maximum comfort, privacy, and safety for everyone."
+        a: "Yes! We take food seriously. At Viramah, we serve 3 wholesome meals a day — Breakfast, Supper, and Dinner — through our In-House Quality Mess. Beyond that, we also have a 24x7 Canteen, Self Pantry Services, and a Restaurant on-site. And the best part? The mess menu is selected by you, for you."
     },
     {
         q: "What security measures are in place?",
-        a: "Your safety is our priority. We have round-the-clock security personnel, continuous CCTV monitoring of common areas, and bio-metric/smart-card access control to all residential zones."
+        a: "Your safety is our priority. We have 2-layer round-the-clock security with continuous 24x7 CCTV surveillance monitoring of all common areas and residential zones, so you can live stress-free."
     },
     {
         q: "What is the booking process?",

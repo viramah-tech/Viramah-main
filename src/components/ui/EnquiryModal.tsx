@@ -12,7 +12,6 @@ interface FormState {
     city: string;
     state: string;
     country: string;
-    role: "Student" | "Parent" | "";
 }
 
 const INITIAL_FORM: FormState = {
@@ -22,7 +21,6 @@ const INITIAL_FORM: FormState = {
     city: "",
     state: "",
     country: "",
-    role: "",
 };
 
 // ── Location Data ──────────────────────────────────────────
@@ -327,7 +325,7 @@ const FieldInput = forwardRef<HTMLInputElement, FieldInputProps>(
 FieldInput.displayName = "FieldInput";
 
 // ── SubmitButton ─────────────────────────────────────────────
-function SubmitButton({ loading }: { loading: boolean }) {
+function SubmitButton({ loading, text = "Send Dispatch" }: { loading: boolean, text?: string }) {
     const [hovered, setHovered] = useState(false);
     const [pressed, setPressed] = useState(false);
 
@@ -365,17 +363,15 @@ function SubmitButton({ loading }: { loading: boolean }) {
                 opacity: loading ? 0.8 : 1,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center", // Added for better alignment
-                width: "100%", // Make button full-width
+                justifyContent: "center",
+                width: "100%",
                 gap: "10px"
             }}
         >
             {loading ? (
-                <>
-                    <span className="animate-pulse">Dispatching...</span>
-                </>
+                <span className="animate-pulse">Processing...</span>
             ) : (
-                "Send Dispatch"
+                text
             )}
         </button>
     );
@@ -391,21 +387,40 @@ export function EnquiryModal() {
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const firstInputRef = useRef<HTMLInputElement>(null);
 
+    const [step, setStep] = useState<"form" | "otp">("form");
+    const [otp, setOtp] = useState("");
+    const [otpError, setOtpError] = useState("");
+    const [timeLeft, setTimeLeft] = useState(300);
+
     // Helper — only returning users can manually close
-    const closeModal = () => {
-        setIsOpen(false);
-    };
+    const closeModal = () => setIsOpen(false);
+
+    // OTP Timer
+    useEffect(() => {
+        if (step !== "otp") return;
+        const interval = setInterval(() => {
+            setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [step]);
 
     // Lock body scroll when open
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = "hidden";
+            // Reset state if opened fresh
+            if (isSubmitted) {
+                setIsSubmitted(false);
+                setStep("form");
+                setForm(INITIAL_FORM);
+                setOtp("");
+            }
             const t = setTimeout(() => firstInputRef.current?.focus(), 600);
             return () => clearTimeout(t);
         } else {
             document.body.style.overflow = "";
         }
-    }, [isOpen]);
+    }, [isOpen, isSubmitted]);
 
     // Global open trigger + Escape key
     useEffect(() => {
@@ -424,30 +439,52 @@ export function EnquiryModal() {
     const handleChange = (field: keyof FormState, value: string) => {
         setForm((prev) => {
             const next = { ...prev, [field]: value };
-
-            // If country changes, reset state and city
-            if (field === "country") {
-                next.state = "";
-                next.city = "";
-            }
-            // If state changes, reset city
-            if (field === "state") {
-                next.city = "";
-            }
-
+            if (field === "country") { next.state = ""; next.city = ""; }
+            if (field === "state") { next.city = ""; }
             return next;
         });
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setOtpError("");
 
         try {
-            const response = await fetch("/api/enquiry", {
+            const response = await fetch("/api/send-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
+                body: JSON.stringify({ email: form.email, fullName: form.fullName }),
+            });
+            const result = await response.json();
+
+            if (!response.ok) throw new Error(result.error || "Failed to send OTP");
+
+            setIsSubmitting(false);
+            setStep("otp");
+            setTimeLeft(300); // 5 mins
+            setOtp("");
+        } catch (error) {
+            setIsSubmitting(false);
+            alert((error instanceof Error ? error.message : "Something went wrong.") + "\nOr call us directly: +91 8679001662");
+        }
+    };
+
+    const handleVerifySubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (otp.length !== 6) {
+            setOtpError("OTP must be 6 digits.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        setOtpError("");
+
+        try {
+            const response = await fetch("/api/verify-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...form, otp }),
             });
 
             const result = await response.json();
@@ -456,7 +493,10 @@ export function EnquiryModal() {
             if (response.status === 409 && result.duplicate) {
                 setIsSubmitting(false);
                 setIsDuplicate(true);
+
+                setStep("form");
                 setIsSubmitted(true);
+
                 setTimeout(() => {
                     setIsSubmitted(false);
                     setIsDuplicate(false);
@@ -466,15 +506,20 @@ export function EnquiryModal() {
             }
 
             if (!response.ok || !result.success) {
-                throw new Error(result.error || "Submission failed. Please try again.");
+                throw new Error(result.error || "Verification failed. Please try again.");
             }
 
+            // Success!!
             setIsSubmitting(false);
             localStorage.setItem("viramah_enquiry_data_submitted", "true");
             setIsDuplicate(false);
+
+            // We set step to form FIRST, then flag submitted true, 
+            // so AnimatePresence mounts the success block clearly.
+            setStep("form");
             setIsSubmitted(true);
 
-            // Give the user more time to read the updated success message
+            // Hide and reset after a moment
             setTimeout(() => {
                 setIsSubmitted(false);
                 setForm(INITIAL_FORM);
@@ -484,10 +529,7 @@ export function EnquiryModal() {
         } catch (error) {
             console.error("Submission failed:", error);
             setIsSubmitting(false);
-            alert(
-                (error instanceof Error ? error.message : "Something went wrong.") +
-                "\nOr call us directly: +91 8679001662"
-            );
+            setOtpError(error instanceof Error ? error.message : "Invalid or expired OTP.");
         }
     };
 
@@ -628,19 +670,19 @@ export function EnquiryModal() {
                                     {/* Header row */}
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
-
-                                            <h2
-                                                style={{
-                                                    fontFamily: "var(--font-display, serif)",
-                                                    fontSize: "clamp(1.5rem, 6vw, 2.4rem)",
-                                                    color: "#2d2b28",
-                                                    lineHeight: 1.1,
-                                                    fontWeight: 400,
-                                                }}
-                                            >
-                                                Welcome to Viramah
-                                            </h2>
-
+                                            {!isSubmitted && (
+                                                <h2
+                                                    style={{
+                                                        fontFamily: "var(--font-display, serif)",
+                                                        fontSize: "clamp(1.5rem, 6vw, 2.4rem)",
+                                                        color: "#2d2b28",
+                                                        lineHeight: 1.1,
+                                                        fontWeight: 400,
+                                                    }}
+                                                >
+                                                    Welcome to Viramah
+                                                </h2>
+                                            )}
                                         </div>
 
                                         {/* Close button */}
@@ -747,14 +789,98 @@ export function EnquiryModal() {
                                                     </p>
                                                 </div>
                                             </motion.div>
-                                        ) : (
-                                            /* Form */
+                                        ) : step === "otp" ? (
+                                            /* OTP Verification Step */
                                             <motion.form
-                                                key="form"
+                                                key="otp-step"
                                                 variants={containerVariants}
                                                 initial="hidden"
                                                 animate="visible"
-                                                onSubmit={handleSubmit}
+                                                exit="exit"
+                                                onSubmit={handleVerifySubmit}
+                                                className="flex flex-col gap-6"
+                                            >
+                                                <div className="text-center mb-2">
+                                                    <p style={{
+                                                        fontFamily: "var(--font-mono, monospace)",
+                                                        fontSize: "0.85rem",
+                                                        color: "#6b5526",
+                                                        lineHeight: 1.6
+                                                    }}>
+                                                        We sent a 6-digit code to:<br />
+                                                        <strong style={{ color: "#1F3A2D" }}>{form.email}</strong>
+                                                    </p>
+                                                </div>
+
+                                                <motion.div variants={itemVariants} className="flex flex-col gap-1.5 items-center">
+                                                    <FieldLabel htmlFor="enquiry-otp">Verification Code</FieldLabel>
+                                                    <input
+                                                        id="enquiry-otp"
+                                                        type="text"
+                                                        placeholder="••••••"
+                                                        maxLength={6}
+                                                        value={otp}
+                                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                                        style={{
+                                                            background: "rgba(255,255,255,0.5)",
+                                                            border: otpError ? "1.5px solid #d9534f" : "1.5px solid #b5934a",
+                                                            borderRadius: "4px",
+                                                            padding: "12px 0",
+                                                            fontFamily: "var(--font-mono, monospace)",
+                                                            fontSize: "1.8rem",
+                                                            letterSpacing: "0.4em",
+                                                            textAlign: "center",
+                                                            color: "#2d2b28",
+                                                            outline: "none",
+                                                            width: "100%",
+                                                            maxWidth: "240px",
+                                                            boxShadow: "inset 0 2px 4px rgba(0,0,0,0.02)"
+                                                        }}
+                                                        required
+                                                    />
+
+                                                    {otpError ? (
+                                                        <span style={{ color: "#d9534f", fontSize: "0.75rem", fontFamily: "var(--font-mono)", marginTop: 4 }}>{otpError}</span>
+                                                    ) : (
+                                                        <span style={{ color: "#6b5526", fontSize: "0.75rem", fontFamily: "var(--font-mono)", marginTop: 4 }}>
+                                                            {timeLeft > 0 ? `Code expires in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}` : "Code expired."}
+                                                        </span>
+                                                    )}
+                                                </motion.div>
+
+                                                <motion.div variants={itemVariants} className="pt-2">
+                                                    <SubmitButton loading={isSubmitting} text="Verify & Enquire" />
+                                                </motion.div>
+
+                                                <div className="flex justify-between items-center text-xs mt-2" style={{ fontFamily: "var(--font-mono, monospace)" }}>
+                                                    <button type="button" onClick={() => setStep("form")} style={{ color: "#6b5526", textDecoration: "underline" }}>
+                                                        &larr; Back
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleSendOTP}
+                                                        disabled={timeLeft > 270 || isSubmitting}
+                                                        style={{
+                                                            color: timeLeft > 270 ? "#a89f91" : "#1F3A2D",
+                                                            textDecoration: timeLeft > 270 ? "none" : "underline",
+                                                            cursor: timeLeft > 270 ? "not-allowed" : "pointer",
+                                                            fontWeight: 600
+                                                        }}
+                                                    >
+                                                        Resend Code
+                                                    </button>
+                                                </div>
+                                            </motion.form>
+                                        ) : (
+                                            /* Form Step */
+                                            <motion.form
+                                                key="details-step"
+                                                variants={containerVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="exit"
+                                                onSubmit={handleSendOTP}
                                                 className="flex flex-col gap-4"
                                             >
                                                 {/* Full Name */}
@@ -774,38 +900,6 @@ export function EnquiryModal() {
                                                     />
                                                 </motion.div>
 
-                                                {/* Role Toggle — Student / Parent */}
-                                                <motion.div variants={itemVariants} className="flex flex-col gap-2">
-                                                    <FieldLabel>I am a</FieldLabel>
-                                                    <div style={{ display: "flex", gap: "10px" }}>
-                                                        {(["Student", "Parent"] as const).map((r) => (
-                                                            <button
-                                                                key={r}
-                                                                type="button"
-                                                                onClick={() => handleChange("role", r)}
-                                                                style={{
-                                                                    flex: 1,
-                                                                    padding: "9px 12px",
-                                                                    fontFamily: "var(--font-mono, monospace)",
-                                                                    fontSize: "0.72rem",
-                                                                    fontWeight: 700,
-                                                                    textTransform: "uppercase",
-                                                                    letterSpacing: "0.18em",
-                                                                    cursor: "pointer",
-                                                                    border: form.role === r
-                                                                        ? "1.5px solid #b5934a"
-                                                                        : "1px solid rgba(45,43,40,0.2)",
-                                                                    background: form.role === r ? "#1F3A2D" : "transparent",
-                                                                    color: form.role === r ? "#D8B56A" : "#6b5526",
-                                                                    borderRadius: 2,
-                                                                    transition: "all 0.25s ease",
-                                                                }}
-                                                            >
-                                                                {r}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </motion.div>
 
                                                 {/* Mobile + Email */}
                                                 <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -890,11 +984,9 @@ export function EnquiryModal() {
                                                     }}
                                                 />
 
-                                                {/* Submit row */}
-                                                <motion.div variants={itemVariants} className="flex justify-between items-center">
-
-
-                                                    <SubmitButton loading={isSubmitting} />
+                                                {/* Submit Button */}
+                                                <motion.div variants={itemVariants} className="mt-2">
+                                                    <SubmitButton loading={isSubmitting} text="Send OTP" />
                                                 </motion.div>
                                             </motion.form>
                                         )}

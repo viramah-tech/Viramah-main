@@ -22,7 +22,6 @@ export interface EnquiryReceiptEmailProps {
     city: string;
     state: string;
     country: string;
-    role: string;
     submittedAt: string;
 }
 
@@ -50,7 +49,6 @@ export default function EnquiryReceiptEmail({
     city = "",
     state = "",
     country = "India",
-    role = "",
     submittedAt = "",
 }: EnquiryReceiptEmailProps) {
     const firstName = fullName.split(" ")[0];
@@ -144,7 +142,6 @@ export default function EnquiryReceiptEmail({
                                     { label: "Full Name", val: fullName },
                                     { label: "Email", val: email },
                                     { label: "Mobile", val: mobile },
-                                    { label: "Role", val: role || "Not specified" },
                                     { label: "Location", val: location || "Not specified" },
                                     { label: "Received", val: `${submittedAt} IST` },
                                 ].map(({ label, val }, i, arr) => (
