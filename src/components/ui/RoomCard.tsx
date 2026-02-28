@@ -212,15 +212,20 @@ export function RoomCard({
                         <div>
                             <span className="font-mono text-[0.6rem] text-charcoal/40">Starting from</span>
                             <br />
-                            <span className="font-display text-[1.4rem] text-charcoal leading-tight">
+                            <span className="font-display text-[1.5rem] text-charcoal leading-tight">
                                 {price}
                                 <span className="font-mono text-[0.6rem] text-charcoal/40 ml-1">/mo</span>
                             </span>
+                            <br />
+
                         </div>
+
                     </div>
 
                     <EnquireNowButton variant="dark" label="Book Now" />
                 </div>
+                <span className="font-mono text-[0.8rem] text-charcoal leading-[1.5] block"> Including Mess & All Amenities </span>
+
             </div>
         </motion.div>
     );
