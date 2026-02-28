@@ -130,6 +130,10 @@ export function HeroSection() {
         measure();
         window.addEventListener("resize", measure);
 
+        // Use ResizeObserver to catch font/image loading size changes without layout thrashing
+        const ro = new ResizeObserver(() => measure());
+        ro.observe(el);
+
         // ── RAF tick ──────────────────────────────────────────
         const tick = () => {
             // Optimization: Pause processing if a modal is open (overflow hidden)
@@ -204,6 +208,7 @@ export function HeroSection() {
         stage.style.cursor = "grab";
 
         return () => {
+            ro.disconnect();
             cancelAnimationFrame(rafId);
             window.removeEventListener("resize", measure);
             stage.removeEventListener("mousedown", onPointerDown as EventListener);
@@ -399,6 +404,18 @@ export function HeroSection() {
 
                 </motion.div>
             </header>
+
+            {/* ── Marquee Ribbon ────────────────────────────── */}
+            <div className="hero-ribbon" aria-hidden="true">
+                <div className="hero-ribbon-content">
+                    {[...Array(20)].map((_, i) => (
+                        <div key={i} className="hero-ribbon-item">
+                            <span>Viramah is coming soon in krishna valley vrindavan</span>
+                            <span style={{ color: "#D8B56A" }}>✦</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
             {/* ── Marquee Stage ─────────────────────────────── */}
             <motion.div

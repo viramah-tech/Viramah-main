@@ -98,8 +98,52 @@
 }
 
 /* ===================
-   3. MARQUEE STAGE
+   3. MARQUEE STAGE & RIBBON
    =================== */
+
+/* ── Marquee Ribbon ────────────────────────── */
+.hero-ribbon {
+    width: 100%;
+    background-color: var(--luxury-green);
+    color: #D8B56A;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    border-top: 1px solid rgba(216, 181, 106, 0.2);
+    border-bottom: 1px solid rgba(216, 181, 106, 0.2);
+}
+
+.hero-ribbon-content {
+    display: flex;
+    white-space: nowrap;
+    animation: ribbonMarquee 45s linear infinite;
+    padding-left: 40px;
+}
+
+.hero-ribbon-item {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding-right: 40px;
+}
+
+@keyframes ribbonMarquee {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+/* ── Marquee Stage ─────────────────────────── */
 .hero-stage {
     position: relative;
     padding: 60px 0;

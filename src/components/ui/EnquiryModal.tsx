@@ -387,22 +387,8 @@ export function EnquiryModal() {
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const firstInputRef = useRef<HTMLInputElement>(null);
 
-    const [step, setStep] = useState<"form" | "otp">("form");
-    const [otp, setOtp] = useState("");
-    const [otpError, setOtpError] = useState("");
-    const [timeLeft, setTimeLeft] = useState(300);
-
     // Helper — only returning users can manually close
     const closeModal = () => setIsOpen(false);
-
-    // OTP Timer
-    useEffect(() => {
-        if (step !== "otp") return;
-        const interval = setInterval(() => {
-            setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [step]);
 
     // Lock body scroll when open
     useEffect(() => {
@@ -411,9 +397,7 @@ export function EnquiryModal() {
             // Reset state if opened fresh
             if (isSubmitted) {
                 setIsSubmitted(false);
-                setStep("form");
                 setForm(INITIAL_FORM);
-                setOtp("");
             }
             const t = setTimeout(() => firstInputRef.current?.focus(), 600);
             return () => clearTimeout(t);
@@ -445,46 +429,15 @@ export function EnquiryModal() {
         });
     };
 
-    const handleSendOTP = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        setOtpError("");
 
         try {
-            const response = await fetch("/api/send-otp", {
+            const response = await fetch("/api/enquiry", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: form.email, fullName: form.fullName }),
-            });
-            const result = await response.json();
-
-            if (!response.ok) throw new Error(result.error || "Failed to send OTP");
-
-            setIsSubmitting(false);
-            setStep("otp");
-            setTimeLeft(300); // 5 mins
-            setOtp("");
-        } catch (error) {
-            setIsSubmitting(false);
-            alert((error instanceof Error ? error.message : "Something went wrong.") + "\nOr call us directly: +91 8679001662");
-        }
-    };
-
-    const handleVerifySubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (otp.length !== 6) {
-            setOtpError("OTP must be 6 digits.");
-            return;
-        }
-
-        setIsSubmitting(true);
-        setOtpError("");
-
-        try {
-            const response = await fetch("/api/verify-otp", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...form, otp }),
+                body: JSON.stringify(form),
             });
 
             const result = await response.json();
@@ -494,7 +447,6 @@ export function EnquiryModal() {
                 setIsSubmitting(false);
                 setIsDuplicate(true);
 
-                setStep("form");
                 setIsSubmitted(true);
 
                 setTimeout(() => {
@@ -506,7 +458,7 @@ export function EnquiryModal() {
             }
 
             if (!response.ok || !result.success) {
-                throw new Error(result.error || "Verification failed. Please try again.");
+                throw new Error(result.error || "Submission failed. Please try again.");
             }
 
             // Success!!
@@ -514,9 +466,6 @@ export function EnquiryModal() {
             localStorage.setItem("viramah_enquiry_data_submitted", "true");
             setIsDuplicate(false);
 
-            // We set step to form FIRST, then flag submitted true, 
-            // so AnimatePresence mounts the success block clearly.
-            setStep("form");
             setIsSubmitted(true);
 
             // Hide and reset after a moment
@@ -529,7 +478,7 @@ export function EnquiryModal() {
         } catch (error) {
             console.error("Submission failed:", error);
             setIsSubmitting(false);
-            setOtpError(error instanceof Error ? error.message : "Invalid or expired OTP.");
+            alert((error instanceof Error ? error.message : "Something went wrong.") + "\nOr call us directly: +91 8679001662");
         }
     };
 
@@ -789,89 +738,6 @@ export function EnquiryModal() {
                                                     </p>
                                                 </div>
                                             </motion.div>
-                                        ) : step === "otp" ? (
-                                            /* OTP Verification Step */
-                                            <motion.form
-                                                key="otp-step"
-                                                variants={containerVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                                exit="exit"
-                                                onSubmit={handleVerifySubmit}
-                                                className="flex flex-col gap-6"
-                                            >
-                                                <div className="text-center mb-2">
-                                                    <p style={{
-                                                        fontFamily: "var(--font-mono, monospace)",
-                                                        fontSize: "0.85rem",
-                                                        color: "#6b5526",
-                                                        lineHeight: 1.6
-                                                    }}>
-                                                        We sent a 6-digit code to:<br />
-                                                        <strong style={{ color: "#1F3A2D" }}>{form.email}</strong>
-                                                    </p>
-                                                </div>
-
-                                                <motion.div variants={itemVariants} className="flex flex-col gap-1.5 items-center">
-                                                    <FieldLabel htmlFor="enquiry-otp">Verification Code</FieldLabel>
-                                                    <input
-                                                        id="enquiry-otp"
-                                                        type="text"
-                                                        placeholder="••••••"
-                                                        maxLength={6}
-                                                        value={otp}
-                                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                                        style={{
-                                                            background: "rgba(255,255,255,0.5)",
-                                                            border: otpError ? "1.5px solid #d9534f" : "1.5px solid #b5934a",
-                                                            borderRadius: "4px",
-                                                            padding: "12px 0",
-                                                            fontFamily: "var(--font-mono, monospace)",
-                                                            fontSize: "1.8rem",
-                                                            letterSpacing: "0.4em",
-                                                            textAlign: "center",
-                                                            color: "#2d2b28",
-                                                            outline: "none",
-                                                            width: "100%",
-                                                            maxWidth: "240px",
-                                                            boxShadow: "inset 0 2px 4px rgba(0,0,0,0.02)"
-                                                        }}
-                                                        required
-                                                    />
-
-                                                    {otpError ? (
-                                                        <span style={{ color: "#d9534f", fontSize: "0.75rem", fontFamily: "var(--font-mono)", marginTop: 4 }}>{otpError}</span>
-                                                    ) : (
-                                                        <span style={{ color: "#6b5526", fontSize: "0.75rem", fontFamily: "var(--font-mono)", marginTop: 4 }}>
-                                                            {timeLeft > 0 ? `Code expires in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}` : "Code expired."}
-                                                        </span>
-                                                    )}
-                                                </motion.div>
-
-                                                <motion.div variants={itemVariants} className="pt-2">
-                                                    <SubmitButton loading={isSubmitting} text="Verify & Enquire" />
-                                                </motion.div>
-
-                                                <div className="flex justify-between items-center text-xs mt-2" style={{ fontFamily: "var(--font-mono, monospace)" }}>
-                                                    <button type="button" onClick={() => setStep("form")} style={{ color: "#6b5526", textDecoration: "underline" }}>
-                                                        &larr; Back
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleSendOTP}
-                                                        disabled={timeLeft > 270 || isSubmitting}
-                                                        style={{
-                                                            color: timeLeft > 270 ? "#a89f91" : "#1F3A2D",
-                                                            textDecoration: timeLeft > 270 ? "none" : "underline",
-                                                            cursor: timeLeft > 270 ? "not-allowed" : "pointer",
-                                                            fontWeight: 600
-                                                        }}
-                                                    >
-                                                        Resend Code
-                                                    </button>
-                                                </div>
-                                            </motion.form>
                                         ) : (
                                             /* Form Step */
                                             <motion.form
@@ -880,7 +746,7 @@ export function EnquiryModal() {
                                                 initial="hidden"
                                                 animate="visible"
                                                 exit="exit"
-                                                onSubmit={handleSendOTP}
+                                                onSubmit={handleSubmit}
                                                 className="flex flex-col gap-4"
                                             >
                                                 {/* Full Name */}
@@ -986,7 +852,7 @@ export function EnquiryModal() {
 
                                                 {/* Submit Button */}
                                                 <motion.div variants={itemVariants} className="mt-2">
-                                                    <SubmitButton loading={isSubmitting} text="Send OTP" />
+                                                    <SubmitButton loading={isSubmitting} text="Enquire Now" />
                                                 </motion.div>
                                             </motion.form>
                                         )}
