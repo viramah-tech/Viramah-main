@@ -224,7 +224,7 @@ export function RoomCard({
 
                     <EnquireNowButton variant="dark" label="Book Now" />
                 </div>
-                <span className="font-mono text-[0.8rem] text-charcoal leading-[1.5] block"> Including Mess & All Amenities </span>
+                <span className="font-mono text-[0.8rem] text-charcoal leading-[1.5] block"> Including Mess & All Amenities* </span>
 
             </div>
         </motion.div>
