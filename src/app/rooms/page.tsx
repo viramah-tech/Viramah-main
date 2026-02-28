@@ -14,6 +14,12 @@ const ROOMS = [
         price: "₹17,749",
         tag: "Premium",
         amenities: ["AC", "High-Speed WiFi", "Study Desk", "Housekeeping", "3 Meals"],
+        images: [
+            "/room images/1 seater/room side view.png",
+            "/room images/1 seater/bed + table .png",
+            "/room images/1 seater/cuboard.png",
+            "/room images/1 seater/toilet.jpeg",
+        ],
     },
     {
         title: "VIRAMAH AXIS",
@@ -21,6 +27,12 @@ const ROOMS = [
         price: "₹14,999",
         tag: "Luxury",
         amenities: ["AC", "High-Speed WiFi", "Study Desk", "Housekeeping", "3 Meals"],
+        images: [
+            "/room images/2 seater/bed + table.png",
+            "/room images/2 seater/cuboard + beds.png",
+            "/room images/2 seater/cuboard.png",
+            "/room images/2 seater/toilet .png.jpeg",
+        ],
     },
     {
         title: "VIRAMAH STUDIO",
@@ -28,6 +40,12 @@ const ROOMS = [
         price: "₹14,999",
         tag: "Comfort",
         amenities: ["High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"],
+        images: [
+            "/room images/1 seater/room side view.png",
+            "/room images/1 seater/bed + table .png",
+            "/room images/1 seater/cuboard.png",
+            "/room images/1 seater/toilet.jpeg",
+        ],
     },
     {
         title: "VIRAMAH AXIS",
@@ -35,6 +53,12 @@ const ROOMS = [
         price: "₹12,499",
         tag: "Best Value",
         amenities: ["High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"],
+        images: [
+            "/room images/2 seater/bed + table.png",
+            "/room images/2 seater/cuboard + beds.png",
+            "/room images/2 seater/cuboard.png",
+            "/room images/2 seater/toilet .png.jpeg",
+        ],
     },
     {
         title: "VIRAMAH AXIS+",
@@ -42,6 +66,12 @@ const ROOMS = [
         price: "₹16,399",
         tag: "Exclusive",
         amenities: ["Spacious Living", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"],
+        images: [
+            "/room images/2 seater/cuboard + beds.png",
+            "/room images/2 seater/bed + table.png",
+            "/room images/2 seater/cuboard.png",
+            "/room images/2 seater/toilet .png.jpeg",
+        ],
     },
     {
         title: "VIRAMAH COLLECTIVE+",
@@ -49,6 +79,7 @@ const ROOMS = [
         price: "₹11,499",
         tag: "Updated",
         amenities: ["Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"],
+        images: [] as string[],
     },
     {
         title: "VIRAMAH NEXUS+",
@@ -56,6 +87,12 @@ const ROOMS = [
         price: "₹9,090",
         tag: "Budget Friendly",
         amenities: ["Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals"],
+        images: [
+            "/room images/4 seater/room 1.webp",
+            "/room images/4 seater/room 2.webp",
+            "/room images/4 seater/study tables.webp",
+            "/room images/4 seater/toilet.webp",
+        ],
     },
 ];
 
@@ -157,7 +194,7 @@ export default function RoomsPage() {
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
                         {ROOMS.map((room) => (
                             <RoomCard
                                 key={`${room.title}-${room.type}`}
@@ -166,7 +203,7 @@ export default function RoomsPage() {
                                 price={room.price}
                                 tag={room.tag}
                                 amenities={room.amenities}
-                                image=""
+                                images={room.images}
                             />
                         ))}
                     </div>

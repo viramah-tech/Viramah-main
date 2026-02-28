@@ -65,28 +65,35 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12 items-start">
 
               <RoomCard
                 title="VIRAMAH COLLECTIVE"
                 type="3 SEATER"
                 price="₹11,499"
-                image="/placeholder-1.jpg"
-
               />
               <RoomCard
                 title="VIRAMAH NEXUS+"
                 type="4 SEATER"
                 price="₹9,090"
-                image="/placeholder-3.jpg"
+                images={[
+                  "/room images/4 seater/room 1.webp",
+                  "/room images/4 seater/room 2.webp",
+                  "/room images/4 seater/study tables.webp",
+                  "/room images/4 seater/toilet.webp",
+                ]}
                 className="md:translate-y-20"
               />
               <RoomCard
                 title="VIRAMAH AXIS"
                 type="2 SEATER · STUDIO"
                 price="₹12,499"
-                image="/placeholder-2.jpg"
-
+                images={[
+                  "/room images/2 seater/bed + table.png",
+                  "/room images/2 seater/cuboard + beds.png",
+                  "/room images/2 seater/cuboard.png",
+                  "/room images/2 seater/toilet .png.jpeg",
+                ]}
               />
 
             </div>
