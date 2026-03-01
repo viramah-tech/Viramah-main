@@ -18,6 +18,13 @@
     z-index: 0;
 }
 
+/* Disable grain on mobile */
+@media (max-width: 767px) {
+    .cs-grain {
+        display: none;
+    }
+}
+
 .cs-inner {
     position: relative;
     z-index: 2;
@@ -223,8 +230,8 @@
         flex-direction: row;
         gap: clamp(1rem, 4vw, 3rem);
         min-width: unset;
-        background: rgba(15, 32, 24, 0.85);
-        backdrop-filter: blur(8px);
+        background: rgba(15, 32, 24, 0.92);
+        /* backdrop-filter removed on mobile — GPU expensive */
         padding: 1.25rem 2rem;
     }
 

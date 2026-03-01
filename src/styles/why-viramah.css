@@ -21,6 +21,13 @@
     pointer-events: none;
 }
 
+/* Disable grain on mobile — GPU compositor overhead not justified */
+@media (max-width: 767px) {
+    .wv-grain {
+        display: none;
+    }
+}
+
 /* Large decorative background text */
 .wv-bg-text {
     position: absolute;
@@ -260,8 +267,8 @@
     }
 
     .wv-bg-text {
-        font-size: 40vw;
-        opacity: 0.03;
+        display: none;
+        /* Huge font rasterization not worth it at 3% opacity */
     }
 
     .wv-cta {

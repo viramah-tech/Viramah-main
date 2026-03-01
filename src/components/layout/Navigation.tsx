@@ -27,15 +27,15 @@ const ClockDisplay = memo(function ClockDisplay() {
     useEffect(() => {
         const updateTime = () => {
             const now = new Date();
+            // Show HH:MM only — updating per-minute saves 59/60 renders vs per-second
             const timeStr =
                 now.getHours().toString().padStart(2, '0') + ":" +
-                now.getMinutes().toString().padStart(2, '0') + ":" +
-                now.getSeconds().toString().padStart(2, '0');
+                now.getMinutes().toString().padStart(2, '0');
             setCurrentTime(timeStr);
         };
 
         updateTime();
-        const interval = setInterval(updateTime, 1000);
+        const interval = setInterval(updateTime, 60000); // every minute, not every second
         return () => clearInterval(interval);
     }, []);
 

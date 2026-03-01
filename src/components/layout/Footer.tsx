@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 export function Footer() {
-    const [utcTime, setUtcTime] = useState("00:00:00");
+    const [utcTime, setUtcTime] = useState("00:00 UTC");
+    const [mapLoaded, setMapLoaded] = useState(false);
     const footerRef = useRef<HTMLElement>(null);
+    const mapWrapRef = useRef<HTMLDivElement>(null);
 
     // Live UTC clock — client-only, initialised as "00:00:00" to avoid SSR mismatch
     useEffect(() => {
@@ -13,15 +15,15 @@ export function Footer() {
             const now = new Date();
             const h = String(now.getUTCHours()).padStart(2, "0");
             const m = String(now.getUTCMinutes()).padStart(2, "0");
-            const s = String(now.getUTCSeconds()).padStart(2, "0");
-            setUtcTime(`${h}:${m}:${s} UTC`);
+            // HH:MM UTC — per-minute update saves 59/60 renders vs per-second
+            setUtcTime(`${h}:${m} UTC`);
         };
         tick();
-        const id = setInterval(tick, 1000);
+        const id = setInterval(tick, 60000); // every minute
         return () => clearInterval(id);
     }, []);
 
-    // Staggered scroll-reveal
+    // Staggered scroll-reveal + lazy map loading
     useEffect(() => {
         const footer = footerRef.current;
         if (!footer) return;
@@ -39,7 +41,24 @@ export function Footer() {
         );
 
         footer.querySelectorAll(".footer-reveal").forEach((el) => observer.observe(el));
-        return () => observer.disconnect();
+
+        // Lazy-load Google Maps iframe only when map wrapper enters viewport
+        // Defers ~500KB of Google Maps JS until user scrolls to footer
+        const mapObserver = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setMapLoaded(true);
+                    mapObserver.disconnect();
+                }
+            },
+            { threshold: 0.1 }
+        );
+        if (mapWrapRef.current) mapObserver.observe(mapWrapRef.current);
+
+        return () => {
+            observer.disconnect();
+            mapObserver.disconnect();
+        };
     }, []);
 
     return (
@@ -156,19 +175,35 @@ export function Footer() {
                 <div className="lux-footer-location footer-reveal" style={{ transitionDelay: "0.3s" }}>
                     <span className="lux-footer-nav-label">Find Us</span>
 
-                    {/* Embedded map */}
-                    <div className="lux-footer-map-wrapper">
-                        <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3548.3999999999996!2d77.6116949!3d27.5733148!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39736d6c12990b97%3A0xcdeab523fe2de96f!2sViramah%20Stays!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-                            width="100%"
-                            height="155"
-                            style={{ border: 0 }}
-                            allowFullScreen
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            title="Viramah Stays on Google Maps"
-                            className="lux-footer-map-iframe"
-                        />
+                    {/* Embedded map — lazy-loaded when footer enters viewport */}
+                    <div className="lux-footer-map-wrapper" ref={mapWrapRef}>
+                        {mapLoaded ? (
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3548.3999999999996!2d77.6116949!3d27.5733148!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39736d6c12990b97%3A0xcdeab523fe2de96f!2sViramah%20Stays!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                                width="100%"
+                                height="155"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title="Viramah Stays on Google Maps"
+                                className="lux-footer-map-iframe"
+                            />
+                        ) : (
+                            // Placeholder shown before map loads — prevents layout shift
+                            <div
+                                style={{
+                                    height: 155,
+                                    background: "rgba(192, 122, 90, 0.06)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    borderRadius: 12,
+                                }}
+                            >
+                                <span style={{ fontSize: "0.65rem", opacity: 0.35, fontFamily: "var(--font-mono, monospace)" }}>LOCATING...</span>
+                            </div>
+                        )}
                         {/* Overlay gradient + pulsing pin */}
                         <div className="lux-footer-map-overlay">
                             <span className="lux-footer-map-pulse" />

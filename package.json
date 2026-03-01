@@ -9,6 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "clean": "node -e \"const fs=require('fs');fs.existsSync('.next')&&fs.rmSync('.next',{recursive:true,force:true});console.log('Cleaned .next')\"",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
     "content-audit": "node scripts/content_audit.js"

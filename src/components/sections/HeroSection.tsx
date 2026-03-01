@@ -117,6 +117,11 @@ export function HeroSection() {
         const BASE_VEL = 0.6;   // px/frame auto-scroll at 60fps
         const DECAY = 0.92;  // momentum decay per frame (higher = longer glide)
 
+        // 30fps cap on mobile — halves CPU usage while still looking smooth
+        const isMobile = window.innerWidth < 768;
+        const TARGET_FPS = isMobile ? 30 : 60;
+        const FRAME_MS = 1000 / TARGET_FPS;
+
         let position = 0;
         let velocity = 0;     // current momentum (negative = left)
         let isDragging = false;
@@ -125,6 +130,8 @@ export function HeroSection() {
         let dragVel = 0;     // instantaneous drag velocity
         let loopWidth = 0;
         let rafId: number;
+        let lastFrameTs = 0;
+        let isHeroVisible = true; // track visibility for IntersectionObserver pause
 
         const measure = () => { loopWidth = el.scrollWidth / 2; };
         measure();
@@ -134,8 +141,29 @@ export function HeroSection() {
         const ro = new ResizeObserver(() => measure());
         ro.observe(el);
 
+        // ── IntersectionObserver: pause RAF when hero scrolled off-screen ──
+        // This eliminates 100% CPU usage from the loop while user reads other sections
+        const visibilityObserver = new IntersectionObserver(
+            ([entry]) => { isHeroVisible = entry.isIntersecting; },
+            { threshold: 0 }
+        );
+        visibilityObserver.observe(stage);
+
         // ── RAF tick ──────────────────────────────────────────
-        const tick = () => {
+        const tick = (ts: number) => {
+            // Skip frame if hero is not visible — zero CPU while scrolled away
+            if (!isHeroVisible) {
+                rafId = requestAnimationFrame(tick);
+                return;
+            }
+
+            // Mobile FPS cap — skip frames to hit target FPS
+            if (ts - lastFrameTs < FRAME_MS) {
+                rafId = requestAnimationFrame(tick);
+                return;
+            }
+            lastFrameTs = ts;
+
             // Optimization: Pause processing if a modal is open (overflow hidden)
             if (document.body.style.overflow === "hidden") {
                 rafId = requestAnimationFrame(tick);
@@ -209,6 +237,7 @@ export function HeroSection() {
 
         return () => {
             ro.disconnect();
+            visibilityObserver.disconnect();
             cancelAnimationFrame(rafId);
             window.removeEventListener("resize", measure);
             stage.removeEventListener("mousedown", onPointerDown as EventListener);
@@ -220,6 +249,7 @@ export function HeroSection() {
             stage.removeEventListener("touchend", onPointerUp);
         };
     }, []);
+
 
     // ── Detect hover capability ─────────────────────────────
     useEffect(() => {
@@ -408,7 +438,7 @@ export function HeroSection() {
             {/* ── Marquee Ribbon ────────────────────────────── */}
             <div className="hero-ribbon" aria-hidden="true">
                 <div className="hero-ribbon-content">
-                    {[...Array(20)].map((_, i) => (
+                    {[...Array(8)].map((_, i) => (
                         <div key={i} className="hero-ribbon-item">
                             <span>Viramah is coming soon in krishna valley vrindavan</span>
                             <span style={{ color: "#D8B56A" }}>✦</span>
@@ -462,8 +492,8 @@ export function HeroSection() {
                                 sizes="(max-width: 374px) 70vw, (max-width: 767px) 65vw, (max-width: 1024px) 38vw, 420px"
                                 quality={80}
                                 className="hero-tile-img"
-                                loading={i < 4 ? "eager" : "lazy"}
-                                priority={i < 2}
+                                loading={i === 0 ? "eager" : "lazy"}
+                                priority={i === 0}
                             />
                             <div className="hero-tile-overlay">
                                 <div className="hero-tile-meta">

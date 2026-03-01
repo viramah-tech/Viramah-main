@@ -71,6 +71,12 @@ export default function Home() {
                 title="VIRAMAH COLLECTIVE"
                 type="3 SEATER"
                 price="₹11,499"
+                images={[
+                  "/room images/3 seater/room 1.png",
+                  "/room images/3 seater/room 2.png",
+                  "/room images/3 seater/study tables.webp",
+                  "/room images/3 seater/toilet.webp",
+                ]}
               />
               <RoomCard
                 title="VIRAMAH NEXUS+"

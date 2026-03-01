@@ -3,9 +3,15 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
-  // ── Turbopack root (silences workspace lockfile warning) ──
+  // ── Turbopack: bypass broken CSS module resolution ──────────────────
+  // Turbopack's CSS @import resolver starts from the wrong directory when the
+  // project path contains spaces (known bug). resolveAlias hardwires the
+  // tailwindcss package to its absolute path so no resolution is needed.
   turbopack: {
     root: __dirname,
+    resolveAlias: {
+      "tailwindcss": `${__dirname}/node_modules/tailwindcss`,
+    },
   },
 
 
@@ -60,7 +66,7 @@ const nextConfig: NextConfig = {
       },
       {
         // Cache static assets aggressively
-        source: "/(.*)\\.( jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2)",
+        source: "/(.*)\\.(jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2)",
         headers: [
           {
             key: "Cache-Control",

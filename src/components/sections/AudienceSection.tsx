@@ -86,17 +86,7 @@ export function AudienceSection() {
                 }}
             />
 
-            {/* Grain texture */}
-            <div
-                aria-hidden="true"
-                style={{
-                    position: "absolute",
-                    inset: 0,
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
-                    opacity: 0.04,
-                    pointerEvents: "none",
-                }}
-            />
+            {/* Grain texture — disabled on all viewports for GPU performance */}
 
             <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 2rem", position: "relative", zIndex: 2 }}>
 
@@ -163,14 +153,14 @@ export function AudienceSection() {
                             whileHover={{ y: -6 }}
                             transition={{ duration: 0.3 }}
                             style={{
-                                background: "rgba(255,255,255,0.03)",
+                                background: "rgba(20, 40, 30, 0.96)", // More opaque to replace blur
                                 border: "1px solid rgba(216,181,106,0.15)",
                                 borderRadius: 2,
                                 padding: "2.5rem",
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: "1.5rem",
-                                backdropFilter: "blur(8px)",
+                                // backdropFilter removed — blur(8px) on 3 always-visible cards was top GPU drain
                                 position: "relative",
                                 overflow: "hidden",
                                 cursor: "default",

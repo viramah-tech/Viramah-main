@@ -79,7 +79,12 @@ const ROOMS = [
         price: "₹11,499",
         tag: "Updated",
         amenities: ["Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"],
-        images: [] as string[],
+        images: [
+            "/room images/3 seater/room 1.png",
+            "/room images/3 seater/room 2.png",
+            "/room images/3 seater/study tables.webp",
+            "/room images/3 seater/toilet.webp",
+        ],
     },
     {
         title: "VIRAMAH NEXUS+",

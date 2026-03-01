@@ -25,6 +25,13 @@
   z-index: 0;
 }
 
+/* Disable grain on mobile — compositor layer not worth it on small screens */
+@media (max-width: 767px) {
+  .lux-footer-grain {
+    display: none;
+  }
+}
+
 /* Subtle woven grid behind content */
 .lux-footer::before {
   content: "";
@@ -304,6 +311,14 @@
 
   100% {
     box-shadow: 0 0 0 0 rgba(192, 122, 90, 0);
+  }
+}
+
+/* Disable pulse animation on mobile — continuous box-shadow animation costs GPU */
+@media (max-width: 767px) {
+  .lux-footer-map-pulse {
+    animation: none;
+    box-shadow: none;
   }
 }
 

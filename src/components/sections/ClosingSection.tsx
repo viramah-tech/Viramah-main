@@ -2,8 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ScheduleVisitModal } from "@/components/ui/ScheduleVisitModal";
+import dynamic from "next/dynamic";
 import { EnquireNowButton } from "../ui/EnquireNowButton";
+
+// Lazy-load ScheduleVisitModal — only loads when user opens it
+const ScheduleVisitModal = dynamic(
+    () => import("@/components/ui/ScheduleVisitModal").then((m) => m.ScheduleVisitModal),
+    { ssr: false }
+);
+
 
 export function ClosingSection() {
     const [isModalOpen, setIsModalOpen] = useState(false);

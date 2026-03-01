@@ -20,6 +20,14 @@
     z-index: 0;
 }
 
+/* Disable grain on mobile — GPU compositor overhead not justified */
+@media (max-width: 767px) {
+    .food-section::before {
+        display: none;
+    }
+}
+
+
 /* Subtle gold-green radial glow */
 .food-section::after {
     content: "";

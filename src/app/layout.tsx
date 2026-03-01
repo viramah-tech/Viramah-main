@@ -2,23 +2,29 @@ import type { Metadata } from "next";
 import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "../styles/globals.css";
-import { EnquiryModal } from "@/components/ui/EnquiryModal";
+import { LazyEnquiryModal } from "@/components/ui/LazyEnquiryModal";
 import { EnquiryProvider } from "@/context/EnquiryContext";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-display",
+  display: "swap",   // Show fallback font immediately — no invisible text
+  preload: true,
 });
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-body",
+  display: "swap",
+  preload: true,
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
+  preload: false,    // Mono is decorative — no need to block for it
 });
 
 export const metadata: Metadata = {
@@ -163,7 +169,7 @@ export default function RootLayout({
         />
         <EnquiryProvider>
           {children}
-          <EnquiryModal />
+          <LazyEnquiryModal />
         </EnquiryProvider>
       </body>
     </html>

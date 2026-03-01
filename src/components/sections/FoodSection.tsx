@@ -17,7 +17,10 @@ export function FoodSection() {
                                 alt="Delicious home-style food at Viramah"
                                 fill
                                 className="food-img"
+                                sizes="(max-width: 900px) 100vw, 50vw"
+                                loading="lazy"
                             />
+
                             <div className="food-badge">
                                 <span>TASTE OF HOME</span>
                             </div>

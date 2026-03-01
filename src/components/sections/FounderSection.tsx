@@ -49,6 +49,8 @@ export function FounderSection() {
                             alt="Viramah living space"
                             fill
                             className="fs-image"
+                            sizes="(max-width: 768px) 100vw, 45vw"
+                            loading="lazy"
                             style={{ objectFit: "cover", objectPosition: "center" }}
                         />
                         {/* Gold overlay shimmer */}

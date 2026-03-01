@@ -62,6 +62,19 @@ const headerVariants = {
 // ── Component ────────────────────────────────────────────
 export function DifferenceSection() {
     const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+    // Cache inner element refs — avoid querySelector on every pointermove
+    const beforeRefs = useRef<(HTMLElement | null)[]>([]);
+    const fissureRefs = useRef<(HTMLElement | null)[]>([]);
+    const lastPointerTs = useRef(0);
+
+    // Cache inner element refs once cards mount
+    const setCardRef = useCallback((el: HTMLDivElement | null, index: number) => {
+        cardRefs.current[index] = el;
+        if (el) {
+            beforeRefs.current[index] = el.querySelector(".diff-image-before");
+            fissureRefs.current[index] = el.querySelector(".diff-fissure");
+        }
+    }, []);
 
     // ── Pointer handler (mouse + touch unified) ──
     const handlePointerMove = useCallback(
@@ -70,15 +83,19 @@ export function DifferenceSection() {
             const card = cardRefs.current[index];
             if (!card) return;
 
+            // Throttle to 60fps (16ms) — prevents excessive DOM updates
+            const now = Date.now();
+            if (now - lastPointerTs.current < 16) return;
+            lastPointerTs.current = now;
+
             const rect = card.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const percentage = ((rect.width - x) / rect.width) * 100;
             const constrained = Math.min(Math.max(percentage, 0), 100);
 
-            const before = card.querySelector(
-                ".diff-image-before"
-            ) as HTMLElement;
-            const fissure = card.querySelector(".diff-fissure") as HTMLElement;
+            // Use cached refs — no querySelector per frame
+            const before = beforeRefs.current[index];
+            const fissure = fissureRefs.current[index];
 
             if (before)
                 before.style.clipPath = `inset(0 ${constrained}% 0 0)`;
@@ -89,11 +106,8 @@ export function DifferenceSection() {
 
     // ── Reset on leave ──
     const handlePointerLeave = useCallback((index: number) => {
-        const card = cardRefs.current[index];
-        if (!card) return;
-
-        const before = card.querySelector(".diff-image-before") as HTMLElement;
-        const fissure = card.querySelector(".diff-fissure") as HTMLElement;
+        const before = beforeRefs.current[index];
+        const fissure = fissureRefs.current[index];
 
         if (before) {
             before.style.transition =
@@ -111,6 +125,7 @@ export function DifferenceSection() {
             if (fissure) fissure.style.transition = "none";
         }, 850);
     }, []);
+
 
     // ── Keyboard accessibility ──
     const handleKeyDown = useCallback(
@@ -178,6 +193,11 @@ export function DifferenceSection() {
                                 className="diff-monolith"
                                 ref={(el) => {
                                     cardRefs.current[i] = el;
+                                    // Cache inner element refs to avoid querySelector on every pointermove
+                                    if (el) {
+                                        beforeRefs.current[i] = el.querySelector(".diff-image-before");
+                                        fissureRefs.current[i] = el.querySelector(".diff-fissure");
+                                    }
                                 }}
                                 onPointerMove={(e) =>
                                     handlePointerMove(e, i)

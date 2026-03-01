@@ -121,6 +121,10 @@ interface AmenitiesSectionProps {
 export function AmenitiesSection({ className, id }: AmenitiesSectionProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [canHover, setCanHover] = useState(false);
+  // Cached DOM references — avoid querySelectorAll on every mousemove
+  const cellRefsCache = useRef<HTMLElement[]>([]);
+  const cellRectsCache = useRef<DOMRect[]>([]);
+  const lastMouseMoveTs = useRef(0);
 
   // ── Detect hover capability ─────────────────────────────
   useEffect(() => {
@@ -129,19 +133,40 @@ export function AmenitiesSection({ className, id }: AmenitiesSectionProps) {
     );
   }, []);
 
+  // ── Cache cell refs and rects on mount (updated on resize) ───
+  useEffect(() => {
+    const cacheRects = () => {
+      if (!gridRef.current) return;
+      const cells = Array.from(gridRef.current.querySelectorAll<HTMLElement>(".amen-cell"));
+      cellRefsCache.current = cells;
+      cellRectsCache.current = cells.map((c) => c.getBoundingClientRect());
+    };
+    cacheRects();
+    window.addEventListener("resize", cacheRects, { passive: true });
+    return () => window.removeEventListener("resize", cacheRects);
+  }, []);
+
   // ── Mouse Parallax on Grid (desktop only) ───────────────
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
       if (!canHover || !gridRef.current || document.body.style.overflow === "hidden") return;
 
-      const cells = gridRef.current.querySelectorAll<HTMLElement>(".amen-cell");
+      // Throttle to ~20fps (50ms) — enough for parallax, saves 66% CPU
+      const now = Date.now();
+      if (now - lastMouseMoveTs.current < 50) return;
+      lastMouseMoveTs.current = now;
+
+      const cells = cellRefsCache.current;
+      const rects = cellRectsCache.current;
       const mx = e.clientX;
       const my = e.clientY;
       const xNorm = (mx / window.innerWidth - 0.5) * 20;
       const yNorm = (my / window.innerHeight - 0.5) * 20;
 
-      cells.forEach((cell) => {
-        const rect = cell.getBoundingClientRect();
+      // Use cached rects — no getBoundingClientRect() per frame
+      cells.forEach((cell, idx) => {
+        const rect = rects[idx];
+        if (!rect) return;
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
         const dist = Math.hypot(mx - cx, my - cy);
@@ -158,12 +183,11 @@ export function AmenitiesSection({ className, id }: AmenitiesSectionProps) {
   );
 
   const handleMouseLeave = useCallback(() => {
-    if (!gridRef.current) return;
-    const cells = gridRef.current.querySelectorAll<HTMLElement>(".amen-cell");
-    cells.forEach((cell) => {
+    cellRefsCache.current.forEach((cell) => {
       cell.style.transform = "";
     });
   }, []);
+
 
   return (
     <section
