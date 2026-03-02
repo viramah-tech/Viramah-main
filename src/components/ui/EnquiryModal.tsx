@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, forwardRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -405,6 +406,15 @@ export function EnquiryModal() {
             document.body.style.overflow = "";
         }
     }, [isOpen, isSubmitted]);
+
+    const searchParams = useSearchParams();
+
+    // Auto-open if ?enquire=true is in the URL
+    useEffect(() => {
+        if (searchParams.get("enquire") === "true") {
+            setIsOpen(true);
+        }
+    }, [searchParams]);
 
     // Global open trigger + Escape key
     useEffect(() => {
