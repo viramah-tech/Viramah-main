@@ -98,10 +98,13 @@
     animation: textShimmer 5s 0s infinite linear;
 }
 
-/* Disable shimmer overlay on mobile — not worth the GPU cost */
+/* Mobile shimmer — slightly slower sweep to ease GPU load,
+   but fully visible so the gold glint shows on small screens */
 @media (max-width: 767px) {
     .hero-title-shimmer {
-        display: none;
+        animation-duration: 7s;
+        /* slower sweep is cheaper to composite */
+        will-change: background-position;
     }
 
     .hero-title-char {
@@ -170,6 +173,9 @@
     white-space: nowrap;
     animation: ribbonMarquee 45s linear infinite;
     padding-left: 40px;
+    will-change: transform;
+    transform: translateZ(0);
+    /* promote to GPU compositor layer */
 }
 
 .hero-ribbon-item {
@@ -267,7 +273,13 @@
     width: max-content;
     animation: heroMarquee var(--loop-speed) linear infinite;
     padding-left: 20px;
-    /* will-change removed — held GPU memory constantly even when idle */
+    /* GPU layer pre-promotion — compositor is ready before JS hydrates,
+       eliminates the first-paint jank on mobile */
+    will-change: transform;
+    transform: translateZ(0);
+    /* Prevent subpixel layout flickers during animation */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 @keyframes heroMarquee {
@@ -366,6 +378,12 @@
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
         background: linear-gradient(to top, rgba(255, 255, 255, 0.85), transparent);
+    }
+
+    /* Disable skeleton shimmer animation on mobile — it competes with
+       the marquee RAF for GPU resources and causes jank */
+    .hero-tile {
+        animation: none;
     }
 }
 

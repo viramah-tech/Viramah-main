@@ -11,6 +11,7 @@
 @import "./faq-section.css";
 @import "./testimonials-section.css";
 @import "./footer-section.css";
+@import "./privacy-page.css";
 
 @theme {
   --font-display: var(--font-display), "DM Serif Display", serif;

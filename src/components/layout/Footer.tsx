@@ -163,7 +163,7 @@ export function Footer() {
                 <div className="lux-footer-nav-col footer-reveal" style={{ transitionDelay: "0.2s" }}>
                     <span className="lux-footer-nav-label">Legal</span>
                     <ul className="lux-footer-nav-list">
-                        <li><Link href="#">Privacy Policy</Link></li>
+                        <li><Link href="/privacy-policy">Privacy Policy</Link></li>
                         <li><Link href="#">Terms of Service</Link></li>
                         <li><Link href="#">Support</Link></li>
                         <li><Link href="#">Login / Register</Link></li>

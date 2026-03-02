@@ -104,13 +104,10 @@ export function HeroSection() {
         // Kill CSS animation — we drive translateX manually
         el.style.animation = "none";
 
-        const BASE_VEL = 0.6;   // px/frame auto-scroll at 60fps
-        const DECAY = 0.92;  // momentum decay per frame (higher = longer glide)
-
-        // 30fps cap on mobile — halves CPU usage while still looking smooth
         const isMobile = window.innerWidth < 768;
-        const TARGET_FPS = isMobile ? 30 : 60;
-        const FRAME_MS = 1000 / TARGET_FPS;
+        // Slightly slower velocity on mobile so tiles don't fly past fingertips
+        const BASE_VEL = isMobile ? 0.38 : 0.6;  // px/frame at native 60fps
+        const DECAY = 0.92;  // momentum decay per frame (higher = longer glide)
 
         let position = 0;
         let velocity = 0;     // current momentum (negative = left)
@@ -120,7 +117,6 @@ export function HeroSection() {
         let dragVel = 0;     // instantaneous drag velocity
         let loopWidth = 0;
         let rafId: number;
-        let lastFrameTs = 0;
         let isHeroVisible = true; // track visibility for IntersectionObserver pause
 
         const measure = () => { loopWidth = el.scrollWidth / 2; };
@@ -142,20 +138,13 @@ export function HeroSection() {
         el.style.willChange = "transform";
         el.style.transform = "translate3d(0, 0, 0)"; // promote to GPU layer immediately
 
-        // ── RAF tick ──────────────────────────────────────────
-        const tick = (ts: number) => {
+        // ── RAF tick — runs at native 60fps on all devices ───────
+        const tick = () => {
             // Skip frame if hero is not visible — zero CPU while scrolled away
             if (!isHeroVisible) {
                 rafId = requestAnimationFrame(tick);
                 return;
             }
-
-            // Mobile FPS cap — skip frames to hit target FPS
-            if (ts - lastFrameTs < FRAME_MS) {
-                rafId = requestAnimationFrame(tick);
-                return;
-            }
-            lastFrameTs = ts;
 
             // Optimization: Pause processing if a modal is open (overflow hidden)
             if (document.body.style.overflow === "hidden") {
@@ -173,8 +162,8 @@ export function HeroSection() {
                 while (position <= -loopWidth) position += loopWidth;
                 while (position > 0) position -= loopWidth;
             }
-            // translate3d triggers GPU compositor — eliminates main-thread jank
-            el.style.transform = `translate3d(${position.toFixed(3)}px, 0, 0)`;
+            // translate3d keeps animation fully on the GPU compositor thread
+            el.style.transform = `translate3d(${position.toFixed(2)}px, 0, 0)`;
             rafId = requestAnimationFrame(tick);
         };
         // Seed velocity so it starts at base speed immediately

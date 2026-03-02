@@ -65,6 +65,16 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Allow PDF files to be embedded inline (iframes on the same origin)
+        // Override X-Frame-Options: DENY so the browser can render the PDF in the viewer
+        source: "/:file*.pdf",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Type", value: "application/pdf" },
+          { key: "Content-Disposition", value: "inline" },
+        ],
+      },
+      {
         // Cache static assets aggressively
         source: "/(.*)\\.(jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2)",
         headers: [
