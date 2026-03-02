@@ -47,32 +47,68 @@
     perspective: 1000px;
     display: flex;
     flex-wrap: wrap;
+    position: relative;
+    /* anchor for shimmer overlay */
 }
 
+/* Flex wrapper that holds the per-letter entrance spans */
+.hero-title-letters {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* Individual chars: plain color, no shimmer — entrance animation only */
 .hero-title-char {
     position: relative;
-    background: linear-gradient(120deg,
+    display: inline-block;
+    color: var(--ink-primary);
+}
+
+/*
+  ── Whole-word shimmer overlay ──────────────────────────────
+  This span contains the full word as a single direct text node,
+  so background-clip:text clips the gradient across the ENTIRE word
+  width in one clean sweep (not per-letter).
+  It fades in over the entrance letters after they finish flipping in.
+*/
+.hero-title-shimmer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    white-space: nowrap;
+    pointer-events: none;
+    /* Inherit all typographic properties from parent h1 */
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    /* The gold sweep — sweeps across the FULL word width as one unit */
+    background: linear-gradient(90deg,
             var(--ink-primary) 0%,
-            var(--ink-primary) 45%,
+            var(--ink-primary) 35%,
             #D8B56A 50%,
-            var(--ink-primary) 55%,
+            var(--ink-primary) 65%,
             var(--ink-primary) 100%);
-    background-size: 300% 100%;
+    background-size: 250% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: textShimmer 8s infinite linear;
+    animation: textShimmer 5s 0s infinite linear;
 }
 
-/* Disable shimmer on mobile — continuous gradient repaint is too costly on low-end GPUs */
+/* Disable shimmer overlay on mobile — not worth the GPU cost */
 @media (max-width: 767px) {
+    .hero-title-shimmer {
+        display: none;
+    }
+
     .hero-title-char {
-        animation: none;
-        background: none;
-        -webkit-text-fill-color: var(--ink-primary);
         color: var(--ink-primary);
     }
 }
+
 
 @keyframes textShimmer {
     0% {
@@ -252,7 +288,13 @@
     width: clamp(160px, 28vw, 420px);
     height: clamp(200px, 36vw, 560px);
     margin: 0 clamp(8px, 2vw, 30px);
-    background: var(--luxury-green);
+    /* Warm skeleton shown while image loads */
+    background: linear-gradient(110deg,
+            #1e3529 30%,
+            #2a4a38 50%,
+            #1e3529 70%);
+    background-size: 200% 100%;
+    animation: tileShimmer 1.6s ease-in-out infinite;
     border-radius: 4px;
     box-shadow:
         0 4px 20px var(--ceramic-shadow),
@@ -262,17 +304,40 @@
         box-shadow 0.8s var(--accent-curve);
     cursor: grab;
     flex-shrink: 0;
-    /* will-change removed — applied dynamically only during drag via JS */
+}
+
+/* Stop skeleton shimmer once image has loaded */
+.hero-tile:has(.img-loaded) {
+    animation: none;
+    background: var(--luxury-green);
+}
+
+@keyframes tileShimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .hero-tile-img {
     object-fit: cover;
     filter: saturate(0.9) contrast(1.05);
-    transition: transform 1.2s var(--accent-curve);
-    /* will-change removed — only needed on hover, applied via CSS :hover instead */
+    /* Start invisible — fade in once browser fires onLoad */
+    opacity: 0;
+    transition:
+        opacity 0.55s ease,
+        transform 1.2s var(--accent-curve);
 }
 
-/* Only promote to GPU layer on hover (desktop only) */
+/* Class added by onLoad handler — triggers smooth fade-in */
+.hero-tile-img.img-loaded {
+    opacity: 1;
+}
+
+/* Only promote image to GPU layer on hover (desktop) — not always */
 @media (hover: hover) and (pointer: fine) {
     .hero-tile:hover .hero-tile-img {
         will-change: transform;
@@ -350,20 +415,7 @@
 }
 
 /* ===================
-   7. DUST PARTICLES
-   =================== */
-.hero-particle {
-    position: fixed;
-    background: var(--terracotta-raw);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 40;
-    filter: blur(2px);
-    opacity: 0.4;
-}
-
-/* ===================
-   8. CUSTOM SCROLLBAR
+   7. CUSTOM SCROLLBAR
    =================== */
 ::-webkit-scrollbar {
     width: 4px;
@@ -554,8 +606,8 @@
 
 /* ── PREFERS REDUCED MOTION ────────────────── */
 @media (prefers-reduced-motion: reduce) {
-    .hero-particle {
-        display: none !important;
+    .hero-title-shimmer {
+        animation: none !important;
     }
 
     .hero-marquee {

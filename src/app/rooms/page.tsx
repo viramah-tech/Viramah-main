@@ -9,76 +9,24 @@ import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 
 const ROOMS = [
     {
-        title: "VIRAMAH STUDIO",
-        type: "Studio · 1 Seater · AC",
-        price: "₹17,749",
-        tag: "Premium",
-        amenities: ["AC", "High-Speed WiFi", "Study Desk", "Housekeeping", "3 Meals"],
+        title: "VIRAMAH NEXUS+",
+        type: "4 Seater",
+        price: "₹9,090",
+        tag: "Limited",
+        amenities: ["650 Sq Ft", "Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals"],
         images: [
-            "/room images/1 seater/room side view.png",
-            "/room images/1 seater/bed + table .png",
-            "/room images/1 seater/cuboard.png",
-            "/room images/1 seater/toilet.jpeg",
-        ],
-    },
-    {
-        title: "VIRAMAH AXIS",
-        type: "Studio · 2 Seater · AC",
-        price: "₹14,999",
-        tag: "Luxury",
-        amenities: ["AC", "High-Speed WiFi", "Study Desk", "Housekeeping", "3 Meals"],
-        images: [
-            "/room images/2 seater/bed + table.png",
-            "/room images/2 seater/cuboard + beds.png",
-            "/room images/2 seater/cuboard.png",
-            "/room images/2 seater/toilet .png.jpeg",
-        ],
-    },
-    {
-        title: "VIRAMAH STUDIO",
-        type: "Studio · 1 Seater · Non-AC",
-        price: "₹14,999",
-        tag: "Comfort",
-        amenities: ["High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"],
-        images: [
-            "/room images/1 seater/room side view.png",
-            "/room images/1 seater/bed + table .png",
-            "/room images/1 seater/cuboard.png",
-            "/room images/1 seater/toilet.jpeg",
-        ],
-    },
-    {
-        title: "VIRAMAH AXIS",
-        type: "Studio · 2 Seater · Non-AC",
-        price: "₹12,499",
-        tag: "Best Value",
-        amenities: ["High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"],
-        images: [
-            "/room images/2 seater/bed + table.png",
-            "/room images/2 seater/cuboard + beds.png",
-            "/room images/2 seater/cuboard.png",
-            "/room images/2 seater/toilet .png.jpeg",
-        ],
-    },
-    {
-        title: "VIRAMAH AXIS+",
-        type: "1BHK · 2 Seater · Shared",
-        price: "₹16,399",
-        tag: "Exclusive",
-        amenities: ["Spacious Living", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"],
-        images: [
-            "/room images/2 seater/cuboard + beds.png",
-            "/room images/2 seater/bed + table.png",
-            "/room images/2 seater/cuboard.png",
-            "/room images/2 seater/toilet .png.jpeg",
+            "/room images/4 seater/room 1.webp",
+            "/room images/4 seater/room 2.webp",
+            "/room images/4 seater/study tables.webp",
+            "/room images/4 seater/toilet.webp",
         ],
     },
     {
         title: "VIRAMAH COLLECTIVE+",
-        type: "1BHK · 3 Seater · Shared",
+        type: "3 Seater",
         price: "₹11,499",
-        tag: "Updated",
-        amenities: ["Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"],
+        tag: "Limited",
+        amenities: ["650 Sq Ft", "Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"],
         images: [
             "/room images/3 seater/room 1.png",
             "/room images/3 seater/room 2.png",
@@ -87,16 +35,68 @@ const ROOMS = [
         ],
     },
     {
-        title: "VIRAMAH NEXUS+",
-        type: "1BHK · 4 Seater · Shared",
-        price: "₹9,090",
-        tag: "Budget Friendly",
-        amenities: ["Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals"],
+        title: "VIRAMAH AXIS",
+        type: "2 Seater · Non-AC",
+        price: "₹12,499",
+        tag: "Best Value",
+        amenities: ["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"],
         images: [
-            "/room images/4 seater/room 1.webp",
-            "/room images/4 seater/room 2.webp",
-            "/room images/4 seater/study tables.webp",
-            "/room images/4 seater/toilet.webp",
+            "/room images/2 seater/bed + table.png",
+            "/room images/2 seater/cuboard + beds.png",
+            "/room images/2 seater/cuboard.png",
+            "/room images/2 seater/toilet .png.jpeg",
+        ],
+    },
+    {
+        title: "VIRAMAH AXIS",
+        type: "2 Seater · AC",
+        price: "₹14,999",
+        tag: "Best Value",
+        amenities: ["450 Sq Ft", "AC", "High-Speed WiFi", "Study Desk", "Housekeeping", "3 Meals"],
+        images: [
+            "/room images/2 seater/bed + table.png",
+            "/room images/2 seater/cuboard + beds.png",
+            "/room images/2 seater/cuboard.png",
+            "/room images/2 seater/toilet .png.jpeg",
+        ],
+    },
+    {
+        title: "VIRAMAH STUDIO",
+        type: "1 Seater · Non-AC",
+        price: "₹14,999",
+        tag: "Limited",
+        amenities: ["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"],
+        images: [
+            "/room images/1 seater/room side view.png",
+            "/room images/1 seater/bed + table .png",
+            "/room images/1 seater/cuboard.png",
+            "/room images/1 seater/toilet.jpeg",
+        ],
+    },
+    {
+        title: "VIRAMAH AXIS+",
+        type: "2 Seater",
+        price: "₹16,399",
+        tag: "Best Value",
+        amenities: ["650 Sq Ft", "Spacious Living", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"],
+        images: [
+            "/room images/2 seater/cuboard + beds.png",
+            "/room images/2 seater/bed + table.png",
+            "/room images/2 seater/cuboard.png",
+            "/room images/2 seater/toilet .png.jpeg",
+        ],
+    },
+    {
+        title: "VIRAMAH STUDIO",
+        type: "1 Seater · AC",
+        price: "₹17,749",
+        tag: "Limited",
+        amenities: ["450 Sq Ft", "AC", "High-Speed WiFi", "Study Desk", "Housekeeping", "3 Meals"],
+        images: [
+            "/room images/1 seater/room side view.png",
+            "/room images/1 seater/bed + table .png",
+            "/room images/1 seater/cuboard.png",
+            "/room images/1 seater/toilet.jpeg",
         ],
     },
 ];
@@ -144,7 +144,7 @@ export default function RoomsPage() {
                             {[
                                 { label: "Studio & 1BHK Types", value: "7" },
                                 { label: "Residents", value: "200+" },
-                                { label: "Sq. Ft. (avg)", value: "240" },
+                                { label: "Sq. Ft. (avg)", value: "550" },
                             ].map((stat) => (
                                 <div key={stat.label}>
                                     <div
@@ -199,7 +199,7 @@ export default function RoomsPage() {
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
                         {ROOMS.map((room) => (
                             <RoomCard
                                 key={`${room.title}-${room.type}`}
@@ -209,6 +209,7 @@ export default function RoomsPage() {
                                 tag={room.tag}
                                 amenities={room.amenities}
                                 images={room.images}
+                                featured={room.type === "4 Seater" || room.type === "3 Seater"}
                             />
                         ))}
                     </div>

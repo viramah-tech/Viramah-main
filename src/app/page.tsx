@@ -48,29 +48,32 @@ export default function Home() {
       <DifferenceSection />
 
       {/* Rooms Showcase Section */}
-      <section className="py-20 md:py-32 bg-sand-light">
+      <section className="py-16 md:py-28 bg-sand-light">
         <Container>
-          <div className="flex flex-col gap-16">
-            <div className="flex justify-between items-end">
+          <div className="flex flex-col gap-10 md:gap-16">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
               <div className="max-w-xl">
-                <h2 className="text-5xl md:text-6xl mb-6">Curated Spaces</h2>
-                <p className="text-lg opacity-70">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl mb-4 md:mb-6">Curated Spaces</h2>
+                <p className="text-base md:text-lg opacity-70">
                   Designed for focus, comfort, and community. Choose the space that fits your rhythm.
                 </p>
               </div>
-              <Link href="/rooms" className="hidden md:block">
+              <Link href="/rooms" className="">
                 <button className="border-b border-charcoal pb-1 uppercase tracking-widest font-mono text-xs hover:text-terracotta-raw hover:border-terracotta-raw transition-colors">
                   View All Spaces
                 </button>
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12 items-start">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-start">
 
               <RoomCard
                 title="VIRAMAH COLLECTIVE"
                 type="3 SEATER"
                 price="₹11,499"
+                tag="Limited"
+                featured
+                amenities={["650 Sq Ft", "Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"]}
                 images={[
                   "/room images/3 seater/room 1.png",
                   "/room images/3 seater/room 2.png",
@@ -82,18 +85,23 @@ export default function Home() {
                 title="VIRAMAH NEXUS+"
                 type="4 SEATER"
                 price="₹9,090"
+                tag="Limited"
+                featured
+                amenities={["650 Sq Ft", "Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals"]}
                 images={[
                   "/room images/4 seater/room 1.webp",
                   "/room images/4 seater/room 2.webp",
                   "/room images/4 seater/study tables.webp",
                   "/room images/4 seater/toilet.webp",
                 ]}
-                className="md:translate-y-20"
+                className=""
               />
               <RoomCard
                 title="VIRAMAH AXIS"
-                type="2 SEATER · STUDIO"
+                type="2 SEATER"
                 price="₹12,499"
+                tag="Best Value"
+                amenities={["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"]}
                 images={[
                   "/room images/2 seater/bed + table.png",
                   "/room images/2 seater/cuboard + beds.png",

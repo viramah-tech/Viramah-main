@@ -57,10 +57,9 @@ const containerVariants = {
 };
 
 const cardVariants = {
-    hidden: { opacity: 0, y: 40 },
+    hidden: { opacity: 0 },
     visible: {
         opacity: 1,
-        y: 0,
         transition: { duration: 0.65, ease: EASE },
     },
 };
@@ -92,8 +91,8 @@ export function AudienceSection() {
 
                 {/* Header */}
                 <motion.div
-                    initial={{ opacity: 0, y: 24 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
                     viewport={{ once: true, margin: "-80px" }}
                     transition={{ duration: 0.7, ease: EASE }}
                     style={{ marginBottom: "4rem", textAlign: "center" }}
@@ -150,8 +149,6 @@ export function AudienceSection() {
                         <motion.div
                             key={audience.tag}
                             variants={cardVariants}
-                            whileHover={{ y: -6 }}
-                            transition={{ duration: 0.3 }}
                             style={{
                                 background: "rgba(20, 40, 30, 0.96)", // More opaque to replace blur
                                 border: "1px solid rgba(216,181,106,0.15)",
@@ -249,8 +246,8 @@ export function AudienceSection() {
 
                 {/* Bottom CTA */}
                 <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6, delay: 0.3 }}
                     style={{ display: "flex", justifyContent: "center", gap: "1.5rem", flexWrap: "wrap" }}

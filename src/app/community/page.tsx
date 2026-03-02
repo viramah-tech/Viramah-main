@@ -9,8 +9,13 @@ import "@/styles/community-page.css";
 const PERKS = [
     {
         icon: "",
-        title: "Weekly Community Dinners",
-        desc: "Every Sunday, the whole house sits down together. Good food, real conversations, new friendships.",
+        title: "Daily Community Meals",
+        desc: "Three wholesome meals every day — breakfast, lunch, and dinner — shared with your housemates. Fuel your day, build your bonds.",
+    },
+    {
+        icon: "",
+        title: "Fitness & Wellness",
+        desc: "Gym, yoga sessions, and wellness workshops to keep your body and mind in balance.",
     },
     {
         icon: "",
@@ -27,11 +32,7 @@ const PERKS = [
         title: "Cultural Nights",
         desc: "Music, art, film screenings, and open mics — because life is more than academics.",
     },
-    {
-        icon: "",
-        title: "Fitness & Wellness",
-        desc: "Gym, yoga sessions, and wellness workshops to keep your body and mind in balance.",
-    },
+
     {
         icon: "",
         title: "Alumni Network",
@@ -153,8 +154,7 @@ export default function CommunityPage() {
                                 className="cm-perk-card"
                                 style={{
                                     opacity: 0,
-                                    transform: "translateY(30px)",
-                                    transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s cubic-bezier(0.23,1,0.32,1) ${i * 0.1}s`
+                                    transition: `opacity 0.6s ease ${i * 0.1}s`
                                 }}
                             >
                                 <span className="cm-perk-icon">{perk.icon}</span>

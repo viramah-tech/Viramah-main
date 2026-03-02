@@ -71,9 +71,30 @@
     font-family: var(--font-display, serif);
     font-size: clamp(2.8rem, 6vw, 5rem);
     font-weight: 400;
-    line-height: 1.05;
+    line-height: 1.0;
     color: #F6F4EF;
     margin-bottom: 1.5rem;
+}
+
+/* "Why Choose" — the dominant statement, visibly larger */
+.wv-title-main {
+    display: block;
+    font-size: clamp(4rem, 9vw, 8rem);
+    font-weight: 400;
+    color: #F6F4EF;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+}
+
+/* "Viramah?" — a supporting label, smaller and gold */
+.wv-title-sub {
+    display: block;
+    font-size: clamp(1.6rem, 3vw, 2.8rem);
+    font-weight: 400;
+    color: #D8B56A;
+    letter-spacing: 0.04em;
+    margin-top: 0.5rem;
+    opacity: 0.85;
 }
 
 .wv-title-gold {
@@ -153,22 +174,23 @@
 
 /* Title */
 .wv-card-title {
-    font-family: var(--font-body, sans-serif);
-    font-size: clamp(1rem, 1.4vw, 1.2rem);
+    font-family: var(--font-mono, monospace);
+    font-size: clamp(0.75rem, 1vw, 0.85rem);
     font-weight: 700;
     color: #F6F4EF;
     line-height: 1.2;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.1em;
 }
 
 /* Description */
 .wv-card-desc {
-    font-family: var(--font-body, sans-serif);
-    font-size: clamp(0.8rem, 1vw, 0.9rem);
+    font-family: var(--font-display, serif);
+    font-size: clamp(0.9rem, 1.1vw, 1rem);
     color: rgba(246, 244, 239, 0.5);
     line-height: 1.65;
     flex: 1;
+    font-style: italic;
 }
 
 /* Bottom accent line */
@@ -254,11 +276,29 @@
 /* ── PHONES ──────────────────────────────────── */
 @media (max-width: 767px) {
     .wv-section {
-        padding: 4rem 0 3.5rem;
+        padding: 4rem 0 3rem;
     }
 
     .wv-header {
-        margin-bottom: 3rem;
+        margin-bottom: 2.5rem;
+        max-width: 100%;
+    }
+
+    /* Scale down the dominant "Why Choose" headline */
+    .wv-title-main {
+        font-size: clamp(2.4rem, 12vw, 3.8rem);
+        letter-spacing: -0.02em;
+    }
+
+    /* Scale down the "Viramah?" sub */
+    .wv-title-sub {
+        font-size: clamp(1.1rem, 5vw, 1.6rem);
+        margin-top: 0.35rem;
+    }
+
+    .wv-subtitle {
+        font-size: 0.82rem;
+        max-width: 100%;
     }
 
     .wv-grid {
@@ -266,9 +306,20 @@
         gap: 1px;
     }
 
+    .wv-card {
+        padding: 1.4rem 1.2rem;
+        gap: 0.6rem;
+    }
+
+    .wv-card-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
     .wv-bg-text {
         display: none;
-        /* Huge font rasterization not worth it at 3% opacity */
     }
 
     .wv-cta {

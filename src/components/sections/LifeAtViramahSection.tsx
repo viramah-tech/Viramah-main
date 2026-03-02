@@ -8,7 +8,6 @@ import { motion } from "framer-motion";
 interface GalleryItem {
     src: string;
     alt: string;
-    label: string;
     title: string;
     stats: string[];
     span: 4 | 8 | 12;
@@ -18,7 +17,6 @@ const GALLERY_ITEMS: GalleryItem[] = [
     {
         src: "/life at viramah images/common area.jpg",
         alt: "Common area — the social hub for meetups and workshops",
-        label: "COMMUNITY_RITUALS",
         title: "Weekly Meetups",
         stats: ["SUNDAY DINNERS", "GAME NIGHTS", "STUDY GROUPS"],
         span: 8,
@@ -26,7 +24,6 @@ const GALLERY_ITEMS: GalleryItem[] = [
     {
         src: "/life at viramah images/swiming pool.jpg",
         alt: "Swimming pool and wellness deck",
-        label: "WELLNESS_CORE",
         title: "Swimming Pool",
         stats: ["YOGA SESSIONS", "POOL RECOVERY"],
         span: 4,
@@ -34,7 +31,6 @@ const GALLERY_ITEMS: GalleryItem[] = [
     {
         src: "/life at viramah images/gaming zone.jpg",
         alt: "Gaming and skills lab",
-        label: "CREATIVE_LAB",
         title: "Gaming Zone",
         stats: ["SKILL SESSIONS", "TOURNAMENTS", "LIVE"],
         span: 4,
@@ -42,34 +38,30 @@ const GALLERY_ITEMS: GalleryItem[] = [
     {
         src: "/life at viramah images/gym.jpg",
         alt: "Fully equipped gym and fitness studio",
-        label: "FITNESS_STUDIO",
         title: "Fitness & Zen",
         stats: ["STRENGTH & CARDIO", "YOGA SPACE", "ZEN ZONE"],
         span: 8,
     },
 ];
 
-// ── Animation Variants ───────────────────────────────────
+// ── Animation Variants ─────────────────────────────────────
 const cardVariants = {
-    hidden: { opacity: 0, y: 80, rotateX: 8 },
+    hidden: { opacity: 0 },
     visible: (i: number) => ({
         opacity: 1,
-        y: 0,
-        rotateX: 0,
         transition: {
-            duration: 1,
+            duration: 0.9,
             ease: [0.23, 1, 0.32, 1] as const,
-            delay: i * 0.15,
+            delay: i * 0.12,
         },
     }),
 };
 
 const headerVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0 },
     visible: {
         opacity: 1,
-        y: 0,
-        transition: { duration: 0.8, ease: [0.23, 1, 0.32, 1] as const },
+        transition: { duration: 0.7, ease: [0.23, 1, 0.32, 1] as const },
     },
 };
 
@@ -144,7 +136,7 @@ export function LifeAtViramahSection() {
                 <div className="lav-grid" role="group" aria-label="Life at Viramah gallery">
                     {GALLERY_ITEMS.map((item, i) => (
                         <motion.article
-                            key={`${item.label}-${i}`}
+                            key={item.title + i}
                             className={`lav-slate lav-span-${item.span}`}
                             custom={i}
                             initial="hidden"
@@ -176,6 +168,9 @@ export function LifeAtViramahSection() {
                                     quality={85}
                                     className="lav-slate-img"
                                     loading="lazy"
+                                    onLoad={(e) => {
+                                        (e.currentTarget as HTMLImageElement).classList.add("img-loaded");
+                                    }}
                                 />
                                 {/* Displacement gradient */}
                                 <div className="lav-displacement" />
@@ -183,7 +178,6 @@ export function LifeAtViramahSection() {
 
                             {/* Content Overlay */}
                             <div className="lav-content">
-                                <span className="lav-label">{item.label}</span>
                                 <h3 className="lav-title">{item.title}</h3>
                                 <div className="lav-stats">
                                     {item.stats.map((stat) => (

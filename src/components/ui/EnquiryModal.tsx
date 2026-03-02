@@ -524,18 +524,53 @@ export function EnquiryModal() {
                         userSelect: "none",
                     }}
                 >
-                    {/* Glowing dot */}
-                    <span
-                        style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: "50%",
-                            background: "#D8B56A",
-                            display: "inline-block",
-                            boxShadow: "0 0 8px #D8B56A",
-                            flexShrink: 0,
-                        }}
-                    />
+                    {/* Breathing dot */}
+                    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 12, height: 12, flexShrink: 0 }}>
+                        {/* Outer ripple ring */}
+                        <motion.span
+                            animate={{
+                                scale: [1, 2.2, 2.2],
+                                opacity: [0.6, 0, 0],
+                            }}
+                            transition={{
+                                duration: 2.4,
+                                ease: "easeOut",
+                                repeat: Infinity,
+                                repeatDelay: 0.2,
+                            }}
+                            style={{
+                                position: "absolute",
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                background: "#D8B56A",
+                                opacity: 0.5,
+                            }}
+                        />
+                        {/* Core dot */}
+                        <motion.span
+                            animate={{
+                                scale: [1, 1.3, 1],
+                                boxShadow: [
+                                    "0 0 6px 2px rgba(216,181,106,0.5)",
+                                    "0 0 14px 5px rgba(216,181,106,0.9)",
+                                    "0 0 6px 2px rgba(216,181,106,0.5)",
+                                ],
+                            }}
+                            transition={{
+                                duration: 2.4,
+                                ease: "easeInOut",
+                                repeat: Infinity,
+                            }}
+                            style={{
+                                width: 7,
+                                height: 7,
+                                borderRadius: "50%",
+                                background: "#D8B56A",
+                                display: "inline-block",
+                            }}
+                        />
+                    </span>
                     Enquire Now
                 </div>
             </motion.button>

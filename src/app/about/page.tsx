@@ -8,12 +8,12 @@ import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import "@/styles/about-page.css";
 
 const VALUES = [
-    { num: "01", title: "Privacy First", desc: "Your space is yours. We design for solitude as much as for togetherness." },
-    { num: "02", title: "Design Led", desc: "Every corner is intentional — materials, light, and layout chosen with care." },
-    { num: "03", title: "Community Driven", desc: "We curate a network of ambitious, curious, and kind people." },
-    { num: "04", title: "Radically Transparent", desc: "One price. No hidden fees. No surprises. Ever." },
-    { num: "05", title: "Safe & Secure", desc: "24/7 security, verified residents, and a team that genuinely cares." },
-    { num: "06", title: "Built to Last", desc: "Sustainable materials, thoughtful maintenance, and spaces that age well." },
+    { title: "Privacy First", desc: "Your space is yours. We design for solitude as much as for togetherness." },
+    { title: "Design Led", desc: "Every corner is intentional — materials, light, and layout chosen with care." },
+    { title: "Community Driven", desc: "We curate a network of ambitious, curious, and kind people." },
+    { title: "Radically Transparent", desc: "One price. No hidden fees. No surprises. Ever." },
+    { title: "Safe & Secure", desc: "24/7 security, verified residents, and a team that genuinely cares." },
+    { title: "Built to Last", desc: "Sustainable materials, thoughtful maintenance, and spaces that age well." },
 ];
 
 const FEATURES = [
@@ -55,13 +55,6 @@ const FEATURES = [
     },
 ];
 
-const TIMELINE = [
-    { year: "2022", event: "The idea is born — two students frustrated with the state of PG housing." },
-    { year: "2023", event: "First property acquired. 12 spaces. 12 residents. One shared vision." },
-    { year: "2024", event: "Viramah officially launches. 500+ residents across 3 properties." },
-    { year: "2025", event: "Expanding to 5 cities. Building the largest student living community in India." },
-];
-
 export default function AboutPage() {
     const cardsRef = useRef<HTMLDivElement>(null);
 
@@ -72,7 +65,6 @@ export default function AboutPage() {
             (entries) => entries.forEach(e => {
                 if (e.isIntersecting) {
                     (e.target as HTMLElement).style.opacity = "1";
-                    (e.target as HTMLElement).style.transform = "translateY(0)";
                     observer.unobserve(e.target);
                 }
             }),
@@ -91,7 +83,7 @@ export default function AboutPage() {
                 <div className="ab-hero-grain" aria-hidden="true" />
                 <div className="ab-hero-bg-text" aria-hidden="true">ABOUT</div>
                 <div className="ab-hero-inner">
-                    <p className="ab-eyebrow">Est. 2022 · Viramah</p>
+
                     <h1 className="ab-hero-title">
                         We didn't find it,<br />
                         <span className="ab-gold">so we built it.</span>
@@ -138,23 +130,6 @@ export default function AboutPage() {
                 </div>
             </section>
 
-            {/* ── Timeline ── */}
-            <section className="ab-timeline-section">
-                <div className="ab-timeline-inner">
-                    <p className="ab-eyebrow">Our Journey</p>
-                    <h2 className="ab-section-title ab-light">From idea to movement.</h2>
-                    <div className="ab-timeline">
-                        {TIMELINE.map((item, i) => (
-                            <div key={item.year} className="ab-timeline-item" style={{ animationDelay: `${i * 0.15}s` }}>
-                                <div className="ab-timeline-year">{item.year}</div>
-                                <div className="ab-timeline-dot" />
-                                <div className="ab-timeline-text">{item.event}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
             {/* ── Values ── */}
             <section className="ab-values-section">
                 <div className="ab-values-inner">
@@ -163,15 +138,13 @@ export default function AboutPage() {
                     <div className="ab-values-grid" ref={cardsRef}>
                         {VALUES.map((v, i) => (
                             <div
-                                key={v.num}
+                                key={v.title}
                                 className="ab-value-card"
                                 style={{
                                     opacity: 0,
-                                    transform: "translateY(30px)",
-                                    transition: `opacity 0.6s ease ${i * 0.08}s, transform 0.6s cubic-bezier(0.23,1,0.32,1) ${i * 0.08}s`
+                                    transition: `opacity 0.6s ease ${i * 0.08}s`
                                 }}
                             >
-                                <span className="ab-value-num">{v.num}</span>
                                 <h3 className="ab-value-title">{v.title}</h3>
                                 <p className="ab-value-desc">{v.desc}</p>
                             </div>

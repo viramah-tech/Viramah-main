@@ -228,12 +228,12 @@
 }
 
 .cm-perk-title {
-    font-family: var(--font-body, sans-serif);
-    font-size: clamp(1rem, 1.3vw, 1.1rem);
+    font-family: var(--font-mono, monospace);
+    font-size: clamp(0.75rem, 1vw, 0.85rem);
     font-weight: 700;
     color: #F6F4EF;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.1em;
     margin-bottom: 0.6rem;
 }
 
@@ -395,10 +395,56 @@
 
 @media (max-width: 767px) {
     .cm-hero {
-        padding: 8rem 0 5rem;
+        padding: 7rem 0 4rem;
+    }
+
+    .cm-hero-title {
+        font-size: clamp(2.4rem, 11vw, 4.5rem);
+    }
+
+    .cm-hero-sub {
+        font-size: 0.9rem;
+        max-width: 100%;
+    }
+
+    .cm-section-title {
+        font-size: clamp(1.8rem, 8vw, 3rem);
+        margin-bottom: 1rem;
+    }
+
+    .cm-body {
+        font-size: 0.9rem;
+    }
+
+    .cm-philosophy {
+        padding: 4rem 0;
+    }
+
+    .cm-perks-section {
+        padding: 4rem 0;
     }
 
     .cm-perks-grid {
         grid-template-columns: 1fr;
+    }
+
+    .cm-perk-card {
+        padding: 1.4rem 1.2rem;
+    }
+
+    .cm-testimonials {
+        padding: 4rem 0;
+    }
+
+    .cm-testimonial-card {
+        padding: 1.8rem;
+    }
+
+    .cm-cta-section {
+        padding: 4rem 0;
+    }
+
+    .cm-cta-title {
+        font-size: clamp(1.8rem, 8vw, 3rem);
     }
 }

@@ -242,19 +242,21 @@
 
     .diff-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
         gap: 1rem;
         margin-bottom: 2rem;
         padding-bottom: 1.5rem;
+        text-align: center;
     }
 
     .diff-header-quote {
         font-size: clamp(1.6rem, 6vw, 2.5rem);
         max-width: 100%;
+        text-align: center;
     }
 
     .diff-header-meta {
-        text-align: left;
+        text-align: center;
         font-size: 0.6rem;
     }
 
@@ -290,10 +292,19 @@
 
     .diff-card-title {
         font-size: 1.1rem;
+        text-align: center;
     }
 
     .diff-card-index {
         font-size: 0.65rem;
+        text-align: center;
+    }
+
+    .diff-info {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        text-align: center;
     }
 }
 

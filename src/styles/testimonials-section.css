@@ -88,12 +88,12 @@
 }
 
 .tm-name {
-    font-family: var(--font-body, sans-serif);
+    font-family: var(--font-mono, monospace);
     font-weight: 700;
     color: #D8B56A;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    font-size: 0.85rem;
+    font-size: 0.72rem;
 }
 
 .tm-role {

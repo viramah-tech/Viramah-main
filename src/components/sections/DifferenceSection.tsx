@@ -11,7 +11,6 @@ interface ComparisonItem {
     beforeAlt: string;
     afterAlt: string;
     title: string;
-    index: string;
 }
 
 const COMPARISONS: ComparisonItem[] = [
@@ -21,7 +20,6 @@ const COMPARISONS: ComparisonItem[] = [
         beforeAlt: "Before Viramah — original space",
         afterAlt: "After Viramah — modern living transformation",
         title: "Living Space",
-        index: "// 001",
     },
     {
         beforeSrc: "/diffrence section images/before(2).jpg",
@@ -29,31 +27,28 @@ const COMPARISONS: ComparisonItem[] = [
         beforeAlt: "Before Viramah — original area",
         afterAlt: "After Viramah — enhanced community area",
         title: "Living Space",
-        index: "// 002",
     },
 ];
 
 // ── Animation Variants ───────────────────────────────────
 const cardVariants = {
-    hidden: { opacity: 0, y: 50 },
+    hidden: { opacity: 0 },
     visible: (i: number) => ({
         opacity: 1,
-        y: 0,
         transition: {
-            duration: 0.9,
+            duration: 0.8,
             ease: [0.23, 1, 0.32, 1] as const,
-            delay: i * 0.2,
+            delay: i * 0.15,
         },
     }),
 };
 
 const headerVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0 },
     visible: {
         opacity: 1,
-        y: 0,
         transition: {
-            duration: 0.8,
+            duration: 0.7,
             ease: [0.23, 1, 0.32, 1] as const,
         },
     },
@@ -181,7 +176,7 @@ export function DifferenceSection() {
                 <div className="diff-grid">
                     {COMPARISONS.map((item, i) => (
                         <motion.div
-                            key={item.index}
+                            key={item.title + i}
                             custom={i}
                             initial="hidden"
                             whileInView="visible"
@@ -256,9 +251,6 @@ export function DifferenceSection() {
                             <div className="diff-info">
                                 <div className="diff-card-title">
                                     {item.title}
-                                </div>
-                                <div className="diff-card-index">
-                                    {item.index}
                                 </div>
                             </div>
                         </motion.div>

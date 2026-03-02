@@ -7,7 +7,6 @@ import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 // ── USP Data ─────────────────────────────────────────────
 const USPS = [
     {
-        num: "01",
         icon: (
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -19,7 +18,6 @@ const USPS = [
         desc: "Thoughtfully designed interiors that feel modern, clean, and peaceful — spaces that feel like home, but better.",
     },
     {
-        num: "02",
         icon: (
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
@@ -33,7 +31,6 @@ const USPS = [
         desc: "In-House Quality Mess · 24x7 Canteen · Self Pantry Services · Restaurant. The mess menu is selected by you, for you.",
     },
     {
-        num: "03",
         icon: (
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -43,7 +40,6 @@ const USPS = [
         desc: "2 Layer Security · 24x7 CCTV Surveillance. Every corner monitored, every entry secured — so you can focus on what matters most, stress-free.",
     },
     {
-        num: "04",
         icon: (
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
@@ -53,7 +49,6 @@ const USPS = [
         desc: "24x7 Ambulance · Doctor on Call · Gym · Meditation & Yoga · Physical Sports. Your well-being, always taken care of.",
     },
     {
-        num: "05",
         icon: (
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -66,7 +61,6 @@ const USPS = [
         desc: "Common Areas · Live Coach · Alumni Network · Movie Nights · Events & many more. A thriving community that grows with you.",
     },
     {
-        num: "06",
         icon: (
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -118,8 +112,8 @@ export function WhyViramahSection() {
                 <div className="wv-header">
 
                     <h2 className="wv-title">
-                        Why Choose<br />
-                        <span className="wv-title-gold">Viramah?</span>
+                        <span className="wv-title-main">Why Choose</span>
+                        <span className="wv-title-sub">Viramah?</span>
                     </h2>
                     <p className="wv-subtitle">
                         Designed for students, by students. Built for focus, comfort, and community.
@@ -130,17 +124,13 @@ export function WhyViramahSection() {
                 <div className="wv-grid">
                     {USPS.map((usp, i) => (
                         <div
-                            key={usp.num}
+                            key={usp.title}
                             className="wv-card"
                             style={{
                                 opacity: 0,
-                                transform: "translateY(40px)",
-                                transition: `opacity 0.7s ease ${i * 0.1}s, transform 0.7s cubic-bezier(0.23,1,0.32,1) ${i * 0.1}s`,
+                                transition: `opacity 0.75s ease ${i * 0.1}s`,
                             }}
                         >
-                            {/* Number */}
-                            <span className="wv-card-num">{usp.num}</span>
-
                             {/* Icon */}
                             <div className="wv-card-icon">{usp.icon}</div>
 

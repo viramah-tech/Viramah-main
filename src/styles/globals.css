@@ -91,8 +91,23 @@
 }
 
 @layer base {
+
+  /* Smooth scrolling sitewide */
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    /* Prevent iOS font bump */
+    text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-sand-light text-charcoal font-body antialiased selection:bg-terracotta-soft/30;
+    -webkit-tap-highlight-color: transparent;
+    /* Remove blue flash on tap */
+    overscroll-behavior: none;
+    /* Prevent bounce/rubber-band on iOS */
+    touch-action: pan-y;
+    /* Allow vertical scroll but no accidental zoom */
   }
 
   /* Fixed grain texture overlay */
@@ -129,18 +144,33 @@
   /* Scroll reveal base styles */
   [data-reveal] {
     opacity: 0;
-    transform: translateY(30px);
-    transition: all 1s cubic-bezier(0.215, 0.61, 0.355, 1);
+    transition: opacity 0.9s cubic-bezier(0.215, 0.61, 0.355, 1);
   }
 
   [data-reveal="active"] {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* ── Touch-action fix for all tappable elements ── */
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+    /* Eliminates 300ms tap delay */
+  }
+
+  /* ── GPU compositing hints for animated elements ── */
+  .wv-card,
+  .cm-perk-card,
+  .ab-value-card,
+  .ab-feature-card,
+  .tm-card {
+    will-change: opacity;
   }
 }

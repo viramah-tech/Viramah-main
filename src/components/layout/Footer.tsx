@@ -194,7 +194,7 @@ export function Footer() {
                             <div
                                 style={{
                                     height: 155,
-                                    background: "rgba(192, 122, 90, 0.06)",
+                                    background: "rgba(31, 58, 45, 0.05)",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",

@@ -245,12 +245,10 @@
 @keyframes fadeSlideUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
@@ -321,12 +319,12 @@
 }
 
 .ab-value-title {
-    font-family: var(--font-body, sans-serif);
-    font-size: clamp(1rem, 1.3vw, 1.15rem);
+    font-family: var(--font-mono, monospace);
+    font-size: clamp(0.75rem, 1vw, 0.85rem);
     font-weight: 700;
     color: #1a1a1a;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.1em;
     margin-bottom: 0.6rem;
 }
 
@@ -394,12 +392,12 @@
 }
 
 .ab-feature-title {
-    font-family: var(--font-body, sans-serif);
-    font-size: clamp(1rem, 1.3vw, 1.15rem);
+    font-family: var(--font-mono, monospace);
+    font-size: clamp(0.75rem, 1vw, 0.85rem);
     font-weight: 700;
     color: #1a1a1a;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.1em;
 }
 
 .ab-feature-tagline {
@@ -568,22 +566,72 @@
 
 @media (max-width: 767px) {
     .ab-hero {
-        padding: 8rem 0 5rem;
+        padding: 7rem 0 4rem;
+    }
+
+    .ab-hero-title {
+        font-size: clamp(2.4rem, 11vw, 4.5rem);
+    }
+
+    .ab-hero-sub {
+        font-size: 0.9rem;
+        max-width: 100%;
+        margin-bottom: 2.5rem;
     }
 
     .ab-hero-stats {
         gap: 1.5rem;
+        padding-top: 1.5rem;
+    }
+
+    .ab-stat-num {
+        font-size: 1.6rem;
+    }
+
+    .ab-mission {
+        padding: 4rem 0;
+    }
+
+    .ab-mission-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .ab-mission-card::before {
+        font-size: 6rem;
+    }
+
+    .ab-quote {
+        font-size: 1.1rem;
+    }
+
+    .ab-section-title {
+        font-size: clamp(1.8rem, 8vw, 3rem);
+        margin-bottom: 1rem;
+    }
+
+    .ab-body-text {
+        font-size: 0.9rem;
+    }
+
+    .ab-values-section,
+    .ab-features-section {
+        padding: 4rem 0;
     }
 
     .ab-values-grid {
         grid-template-columns: 1fr;
     }
 
-    .ab-timeline {
-        padding-left: 1.5rem;
+    .ab-value-card,
+    .ab-feature-card {
+        padding: 1.5rem;
     }
 
-    .ab-timeline-dot {
-        left: -1.75rem;
+    .ab-cta-section {
+        padding: 4rem 0;
+    }
+
+    .ab-cta-title {
+        font-size: clamp(1.8rem, 8vw, 3rem);
     }
 }

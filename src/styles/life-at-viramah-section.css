@@ -135,8 +135,15 @@
     filter: grayscale(100%) contrast(1.1);
     transition: transform 1.2s var(--lav-easing),
         filter 0.8s var(--lav-easing),
-        opacity 0.8s var(--lav-easing);
+        opacity 0.6s ease;
+    /* Start invisible — fade in once loaded */
+    opacity: 0;
+}
+
+/* Fade-in on load */
+.lav-slate-img.img-loaded {
     opacity: 0.55;
+    /* base opacity before hover */
 }
 
 /* ── 6. Displacement Overlay ───────────────── */
@@ -222,7 +229,8 @@
         z-index: 10;
     }
 
-    .lav-slate:hover .lav-slate-img {
+    .lav-slate:hover .lav-slate-img,
+    .lav-slate:hover .lav-slate-img.img-loaded {
         transform: scale(1.08);
         filter: grayscale(0%) contrast(1);
         opacity: 0.8;
@@ -251,7 +259,8 @@
         opacity: 1;
     }
 
-    .lav-slate-img {
+    .lav-slate-img,
+    .lav-slate-img.img-loaded {
         filter: grayscale(30%) contrast(1.05);
         opacity: 0.7;
     }
@@ -374,7 +383,8 @@
         opacity: 1 !important;
     }
 
-    .lav-slate-img {
+    .lav-slate-img,
+    .lav-slate-img.img-loaded {
         filter: none !important;
         transition: none !important;
         opacity: 0.8 !important;
