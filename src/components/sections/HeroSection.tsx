@@ -359,7 +359,7 @@ export function HeroSection() {
                     <div className="hero-ribbon-content">
                         {[...Array(8)].map((_, i) => (
                             <div key={i} className="hero-ribbon-item">
-                                <span>Viramah is coming soon in krishna valley vrindavan</span>
+                                <span>Bookings are open from 15th March, to get notified first Enquire now!!</span>
                                 <span style={{ color: "#D8B56A" }}>✦</span>
                             </div>
                         ))}

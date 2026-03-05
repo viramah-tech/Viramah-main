@@ -78,39 +78,37 @@ const LOCATION_DATA: Record<string, Record<string, string[]>> = {
 // ── Animation Variants ───────────────────────────────────────
 const backdropVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.4 } },
-    exit: { opacity: 0, transition: { duration: 0.35, delay: 0.1 } },
+    visible: { opacity: 1, transition: { duration: 0.2 } },
+    exit: { opacity: 0, transition: { duration: 0.18 } },
 };
 
 const panelVariants = {
-    hidden: { scale: 0.88, opacity: 0, y: 24 },
+    hidden: { opacity: 0, y: 32 },
     visible: {
-        scale: 1,
         opacity: 1,
         y: 0,
-        transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] },
+        transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
     },
     exit: {
-        scale: 0.92,
         opacity: 0,
-        y: 16,
-        transition: { duration: 0.35, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] },
+        y: 20,
+        transition: { duration: 0.2, ease: [0.55, 0, 1, 0.45] as [number, number, number, number] },
     },
 };
 
 const containerVariants = {
     hidden: {},
     visible: {
-        transition: { staggerChildren: 0.07, delayChildren: 0.25 },
+        transition: { staggerChildren: 0.04, delayChildren: 0.05 },
     },
 };
 
 const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 10, opacity: 0 },
     visible: {
         y: 0,
         opacity: 1,
-        transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] },
+        transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
     },
 };
 
@@ -176,10 +174,10 @@ function FancySelect({ id, label, value, options, placeholder, onChange, onFocus
             {isOpen && (
                 <motion.ul
                     id={`${id}-menu`}
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
                     style={{
                         position: "fixed",
                         top: coords.top,
@@ -193,13 +191,13 @@ function FancySelect({ id, label, value, options, placeholder, onChange, onFocus
                         boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
                         border: "1px solid rgba(216,181,106,0.2)",
                         marginTop: "0",
-                        padding: "6px"
+                        padding: "6px",
+                        willChange: "opacity, transform",
                     }}
                 >
                     {options.map((opt) => (
-                        <motion.li
+                        <li
                             key={opt}
-                            whileHover={{ background: "rgba(216,181,106,0.15)", color: "#D8B56A" }}
                             onClick={() => {
                                 onChange(opt);
                                 setIsOpen(false);
@@ -209,10 +207,11 @@ function FancySelect({ id, label, value, options, placeholder, onChange, onFocus
                                 padding: "12px 14px",
                                 fontSize: "0.85rem",
                                 fontFamily: "var(--font-mono, monospace)",
-                                color: "#F6F4EF",
+                                color: opt === value ? "#D8B56A" : "#F6F4EF",
                                 cursor: "pointer",
                                 borderRadius: "2px",
-                                transition: "all 0.2s ease",
+                                background: opt === value ? "rgba(216,181,106,0.12)" : "transparent",
+                                transition: "background 0.15s ease, color 0.15s ease",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.05em",
                                 display: "flex",
@@ -226,7 +225,7 @@ function FancySelect({ id, label, value, options, placeholder, onChange, onFocus
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
                             )}
-                        </motion.li>
+                        </li>
                     ))}
                 </motion.ul>
             )}
@@ -506,8 +505,7 @@ export function EnquiryModal() {
                 style={{ transform: "translateY(-50%)" }}
                 initial={{ x: 80, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1.5, duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-                whileHover={{ x: -4 }}
+                transition={{ delay: 1.2, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 whileTap={{ scale: 0.97 }}
             >
                 <div
@@ -598,10 +596,11 @@ export function EnquiryModal() {
                             exit="exit"
                             className="fixed inset-0 z-[999]"
                             style={{
-                                background: "rgba(10, 20, 15, 0.85)",
-                                backdropFilter: "blur(12px)",
-                                WebkitBackdropFilter: "blur(12px)",
+                                background: "rgba(10, 20, 15, 0.8)",
+                                backdropFilter: "blur(4px)",
+                                WebkitBackdropFilter: "blur(4px)",
                                 cursor: "pointer",
+                                willChange: "opacity",
                             }}
                             onClick={closeModal}
                             aria-hidden="true"
@@ -630,6 +629,7 @@ export function EnquiryModal() {
                                     borderRadius: 4,
                                     pointerEvents: "all",
                                     position: "relative",
+                                    willChange: "opacity, transform",
                                 }}
                             >
                                 {/* Grain texture */}
