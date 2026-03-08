@@ -495,93 +495,175 @@ export function EnquiryModal() {
 
     return (
         <>
-            {/* ── Vertical Side Trigger Button ─────────────── */}
-            <motion.button
-                id="enquiry-trigger-btn"
-                aria-label="Open enquiry form"
-                aria-expanded={isOpen}
-                onClick={() => setIsOpen(true)}
+            {/* ── Side Action Group: WhatsApp + Enquiry Tab + Call ── */}
+            <div
                 className="fixed right-0 top-1/2 z-[998]"
-                style={{ transform: "translateY(-50%)" }}
-                initial={{ x: 80, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1.2, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                whileTap={{ scale: 0.97 }}
+                style={{
+                    transform: "translateY(-50%)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    width: 42,
+                    gap: "6px",
+                }}
             >
-                <div
+                {/* WhatsApp icon — above the side tab */}
+                <motion.a
+                    href="https://wa.me/918679001662"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Chat on WhatsApp"
+                    title="Chat on WhatsApp"
+                    initial={{ x: 80, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 1.0, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ scale: 1.08, x: -3 }}
+                    whileTap={{ scale: 0.95 }}
                     style={{
-                        writingMode: "vertical-rl",
-                        textOrientation: "mixed",
-                        transform: "rotate(180deg)",
-                        background: "linear-gradient(180deg, #1F3A2D 0%, #2a4d3a 100%)",
-                        color: "#D8B56A",
-                        padding: "22px 14px",
-                        borderRadius: "10px 0 0 10px",
-                        fontFamily: "var(--font-mono, monospace)",
-                        fontSize: "0.65rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.25em",
-                        textTransform: "uppercase",
                         display: "flex",
                         alignItems: "center",
-                        gap: 10,
-                        boxShadow: "-4px 0 24px rgba(0,0,0,0.3), inset 1px 0 0 rgba(255,255,255,0.08)",
+                        justifyContent: "center",
+                        height: 42,
+                        borderRadius: "8px 0 0 8px",
+                        background: "linear-gradient(180deg, #1F3A2D 0%, #2a4d3a 100%)",
+                        color: "#D8B56A",
                         border: "1px solid rgba(216,181,106,0.25)",
                         borderRight: "none",
+                        boxShadow: "-4px 0 16px rgba(0,0,0,0.25)",
                         cursor: "pointer",
-                        userSelect: "none",
+                        textDecoration: "none",
                     }}
                 >
-                    {/* Breathing dot */}
-                    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 12, height: 12, flexShrink: 0 }}>
-                        {/* Outer ripple ring */}
-                        <motion.span
-                            animate={{
-                                scale: [1, 2.2, 2.2],
-                                opacity: [0.6, 0, 0],
-                            }}
-                            transition={{
-                                duration: 2.4,
-                                ease: "easeOut",
-                                repeat: Infinity,
-                                repeatDelay: 0.2,
-                            }}
-                            style={{
-                                position: "absolute",
-                                width: 8,
-                                height: 8,
-                                borderRadius: "50%",
-                                background: "#D8B56A",
-                                opacity: 0.5,
-                            }}
-                        />
-                        {/* Core dot */}
-                        <motion.span
-                            animate={{
-                                scale: [1, 1.3, 1],
-                                boxShadow: [
-                                    "0 0 6px 2px rgba(216,181,106,0.5)",
-                                    "0 0 14px 5px rgba(216,181,106,0.9)",
-                                    "0 0 6px 2px rgba(216,181,106,0.5)",
-                                ],
-                            }}
-                            transition={{
-                                duration: 2.4,
-                                ease: "easeInOut",
-                                repeat: Infinity,
-                            }}
-                            style={{
-                                width: 7,
-                                height: 7,
-                                borderRadius: "50%",
-                                background: "#D8B56A",
-                                display: "inline-block",
-                            }}
-                        />
-                    </span>
-                    Enquire Now
-                </div>
-            </motion.button>
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
+                    </svg>
+                </motion.a>
+
+                {/* Vertical Enquire Now tab */}
+                <motion.button
+                    id="enquiry-trigger-btn"
+                    aria-label="Open enquiry form"
+                    aria-expanded={isOpen}
+                    onClick={() => setIsOpen(true)}
+                    initial={{ x: 80, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 1.2, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{
+                        border: "none",
+                        background: "none",
+                        padding: 0,
+                        margin: 0,
+                        cursor: "pointer",
+                    }}
+                >
+                    <div
+                        style={{
+                            writingMode: "vertical-rl",
+                            textOrientation: "mixed",
+                            transform: "rotate(180deg)",
+                            background: "linear-gradient(180deg, #1F3A2D 0%, #2a4d3a 100%)",
+                            color: "#D8B56A",
+                            padding: "22px 0",
+                            width: 42,
+                            borderRadius: "0 8px 8px 0",
+                            fontFamily: "var(--font-mono, monospace)",
+                            fontSize: "0.65rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.25em",
+                            textTransform: "uppercase",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 10,
+                            boxShadow: "-4px 0 24px rgba(0,0,0,0.3), inset 1px 0 0 rgba(255,255,255,0.08)",
+                            border: "1px solid rgba(216,181,106,0.25)",
+                            borderRight: "none",
+                            userSelect: "none",
+                            boxSizing: "border-box",
+                        }}
+                    >
+                        {/* Breathing dot */}
+                        <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 12, height: 12, flexShrink: 0 }}>
+                            {/* Outer ripple ring */}
+                            <motion.span
+                                animate={{
+                                    scale: [1, 2.2, 2.2],
+                                    opacity: [0.6, 0, 0],
+                                }}
+                                transition={{
+                                    duration: 2.4,
+                                    ease: "easeOut",
+                                    repeat: Infinity,
+                                    repeatDelay: 0.2,
+                                }}
+                                style={{
+                                    position: "absolute",
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: "50%",
+                                    background: "#D8B56A",
+                                    opacity: 0.5,
+                                }}
+                            />
+                            {/* Core dot */}
+                            <motion.span
+                                animate={{
+                                    scale: [1, 1.3, 1],
+                                    boxShadow: [
+                                        "0 0 6px 2px rgba(216,181,106,0.5)",
+                                        "0 0 14px 5px rgba(216,181,106,0.9)",
+                                        "0 0 6px 2px rgba(216,181,106,0.5)",
+                                    ],
+                                }}
+                                transition={{
+                                    duration: 2.4,
+                                    ease: "easeInOut",
+                                    repeat: Infinity,
+                                }}
+                                style={{
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: "50%",
+                                    background: "#D8B56A",
+                                    display: "inline-block",
+                                }}
+                            />
+                        </span>
+                        Enquire Now
+                    </div>
+                </motion.button>
+
+                {/* Call icon — below the side tab */}
+                <motion.a
+                    href="tel:+918679001661"
+                    aria-label="Call us"
+                    title="Call +91 8679001661"
+                    initial={{ x: 80, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 1.4, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ scale: 1.08, x: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: 42,
+                        borderRadius: "8px 0 0 8px",
+                        background: "linear-gradient(180deg, #1F3A2D 0%, #2a4d3a 100%)",
+                        color: "#D8B56A",
+                        border: "1px solid rgba(216,181,106,0.25)",
+                        borderRight: "none",
+                        boxShadow: "-4px 0 16px rgba(0,0,0,0.25)",
+                        cursor: "pointer",
+                        textDecoration: "none",
+                    }}
+                >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                </motion.a>
+            </div>
 
             {/* ── Modal Overlay + Panel ─────────────────────── */}
             <AnimatePresence>

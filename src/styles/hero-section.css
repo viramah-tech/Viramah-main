@@ -171,7 +171,7 @@
 .hero-ribbon-content {
     display: flex;
     white-space: nowrap;
-    animation: ribbonMarquee 45s linear infinite;
+    animation: ribbonMarquee 20s linear infinite;
     padding-left: 40px;
     will-change: transform;
     transform: translateZ(0);
