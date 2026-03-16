@@ -357,9 +357,9 @@ export function HeroSection() {
                 {/* ── Marquee Ribbon ──────────────────────────────── */}
                 <div className="hero-ribbon" aria-hidden="true">
                     <div className="hero-ribbon-content">
-                        {[...Array(20)].map((_, i) => (
+                        {[...Array(10)].map((_, i) => (
                             <div key={i} className="hero-ribbon-item">
-                                <span>COMING SOON</span>
+                                <span>REGISTRATION OPENS FROM 27TH MARCH</span>
                                 <span style={{ color: "#D8B56A" }}>✦</span>
                             </div>
                         ))}
