@@ -11,6 +11,7 @@ interface RoomCardProps {
     type: string;
     images?: string[];
     price: string;
+    originalPrice?: string;
     tag?: string;
     amenities?: string[];
     featured?: boolean;
@@ -21,6 +22,7 @@ export function RoomCard({
     title,
     type,
     price,
+    originalPrice,
     tag,
     amenities = [],
     images = [],
@@ -341,6 +343,22 @@ export function RoomCard({
                                 Krishna Valley, Vrindavan
                             </span>
                             <span className="font-mono text-[0.58rem] text-charcoal/40">Starting from</span>
+                            {originalPrice && (
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span
+                                        className="font-mono text-[0.78rem] line-through"
+                                        style={{ color: "#b94040", opacity: 0.75 }}
+                                    >
+                                        {originalPrice}
+                                    </span>
+                                    <span
+                                        className="font-mono text-[0.55rem] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm"
+                                        style={{ background: "#2e7d4f", color: "#fff" }}
+                                    >
+                                        40% OFF
+                                    </span>
+                                </div>
+                            )}
                             <span className="font-display text-[1.7rem] text-charcoal leading-tight">
                                 {price}
                                 <span className="font-mono text-[0.58rem] text-charcoal/40 ml-1">/mo</span>

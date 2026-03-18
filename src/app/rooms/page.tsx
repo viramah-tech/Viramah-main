@@ -12,8 +12,9 @@ const ROOMS = [
         title: "VIRAMAH NEXUS+",
         type: "4 Seater",
         price: "₹9,090",
+        originalPrice: "₹15,150",
         tag: "Limited",
-        amenities: ["650 Sq Ft", "Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals"],
+        amenities: ["650 Sq Ft", "Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals", "2 Bean Bags"],
         images: [
             "/room images/4 seater/room 1.webp",
             "/room images/4 seater/room 2.webp",
@@ -24,9 +25,10 @@ const ROOMS = [
     {
         title: "VIRAMAH COLLECTIVE+",
         type: "3 Seater",
-        price: "₹11,499",
+        price: "₹12,490",
+        originalPrice: "₹20,817",
         tag: "Limited",
-        amenities: ["650 Sq Ft", "Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"],
+        amenities: ["650 Sq Ft", "Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals", "2 Bean Bags"],
         images: [
             "/room images/3 seater/room 1.png",
             "/room images/3 seater/room 2.png",
@@ -36,62 +38,26 @@ const ROOMS = [
     },
     {
         title: "VIRAMAH AXIS",
-        type: "2 Seater · Non-AC",
-        price: "₹12,499",
-        tag: "Best Value",
-        amenities: ["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"],
-        images: [
-            "/room images/2 seater/bed + table.png",
-            "/room images/2 seater/cuboard + beds.png",
-            "/room images/2 seater/cuboard.png",
-            "/room images/2 seater/toilet .png.jpeg",
-        ],
-    },
-    {
-        title: "VIRAMAH AXIS",
-        type: "2 Seater · AC",
-        price: "₹14,999",
-        tag: "Best Value",
-        amenities: ["450 Sq Ft", "AC", "High-Speed WiFi", "Study Desk", "Housekeeping", "3 Meals"],
-        images: [
-            "/room images/2 seater/bed + table.png",
-            "/room images/2 seater/cuboard + beds.png",
-            "/room images/2 seater/cuboard.png",
-            "/room images/2 seater/toilet .png.jpeg",
-        ],
-    },
-    {
-        title: "VIRAMAH STUDIO",
-        type: "1 Seater · Non-AC",
-        price: "₹14,999",
-        tag: "Limited",
-        amenities: ["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"],
-        images: [
-            "/room images/1 seater/room side view.png",
-            "/room images/1 seater/bed + table .png",
-            "/room images/1 seater/cuboard.png",
-            "/room images/1 seater/toilet.jpeg",
-        ],
-    },
-    {
-        title: "VIRAMAH AXIS+",
         type: "2 Seater",
-        price: "₹16,399",
+        price: "₹14,490",
+        originalPrice: "₹24,150",
         tag: "Best Value",
-        amenities: ["650 Sq Ft", "Spacious Living", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"],
+        amenities: ["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals", "1 Bean Bag"],
         images: [
-            "/room images/2 seater/cuboard + beds.png",
             "/room images/2 seater/bed + table.png",
+            "/room images/2 seater/cuboard + beds.png",
             "/room images/2 seater/cuboard.png",
             "/room images/2 seater/toilet .png.jpeg",
         ],
     },
+
     {
         title: "VIRAMAH STUDIO",
-        type: "1 Seater · AC",
-        price: "₹17,749",
+        type: "1 Seater",
+        price: "₹16,490",
+        originalPrice: "₹27,483",
         tag: "Limited",
-        amenities: ["450 Sq Ft", "AC", "High-Speed WiFi", "Study Desk", "Housekeeping", "3 Meals"],
+        amenities: ["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals", "1 Bean Bag"],
         images: [
             "/room images/1 seater/room side view.png",
             "/room images/1 seater/bed + table .png",
@@ -206,6 +172,7 @@ export default function RoomsPage() {
                                 title={room.title}
                                 type={room.type}
                                 price={room.price}
+                                originalPrice={room.originalPrice}
                                 tag={room.tag}
                                 amenities={room.amenities}
                                 images={room.images}
