@@ -68,12 +68,13 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-start">
 
               <RoomCard
-                title="VIRAMAH COLLECTIVE"
+                title="VIRAMAH COLLECTIVE+"
                 type="3 SEATER"
-                price="₹11,499"
+                price="₹12,490"
+                originalPrice="₹20,817"
                 tag="Limited"
                 featured
-                amenities={["650 Sq Ft", "Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals"]}
+                amenities={["650 Sq Ft", "Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals", "2 Bean Bags"]}
                 images={[
                   "/room images/3 seater/room 1.png",
                   "/room images/3 seater/room 2.png",
@@ -85,9 +86,10 @@ export default function Home() {
                 title="VIRAMAH NEXUS+"
                 type="4 SEATER"
                 price="₹9,090"
+                originalPrice="₹15,150"
                 tag="Limited"
                 featured
-                amenities={["650 Sq Ft", "Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals"]}
+                amenities={["650 Sq Ft", "Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals", "2 Bean Bags"]}
                 images={[
                   "/room images/4 seater/room 1.webp",
                   "/room images/4 seater/room 2.webp",
@@ -99,9 +101,10 @@ export default function Home() {
               <RoomCard
                 title="VIRAMAH AXIS"
                 type="2 SEATER"
-                price="₹12,499"
+                price="₹14,490"
+                originalPrice="₹24,150"
                 tag="Best Value"
-                amenities={["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals"]}
+                amenities={["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals", "1 Bean Bag"]}
                 images={[
                   "/room images/2 seater/bed + table.png",
                   "/room images/2 seater/cuboard + beds.png",
