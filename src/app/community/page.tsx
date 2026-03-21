@@ -1,5 +1,6 @@
 "use client";
 
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { useEffect, useRef } from "react";
@@ -119,7 +120,10 @@ export default function CommunityPage() {
                             When you live at Viramah, you live with people who inspire you.
                             That's not an accident — it's by design.
                         </p>
-                        <EnquireNowButton variant="dark" label="Enquire Now" />
+                        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+                            <EnquireNowButton variant="gold" label="Enquire Now" />
+                            <ScheduleVisitButton variant="dark" />
+                        </div>
                     </div>
                     <div className="cm-philosophy-visual">
                         <div className="cm-visual-card">
@@ -194,7 +198,10 @@ export default function CommunityPage() {
                 <div className="cm-cta-inner">
                     <h2 className="cm-cta-title">Your people are waiting.</h2>
                     <p className="cm-cta-sub">Join a community that will shape who you become.</p>
-                    <EnquireNowButton variant="gold" label="Enquire Now" />
+                    <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap", alignItems: "center" }}>
+                        <EnquireNowButton variant="gold" label="Enquire Now" />
+                        <ScheduleVisitButton variant="outline" />
+                    </div>
                 </div>
             </section>
 

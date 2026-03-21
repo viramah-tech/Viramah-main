@@ -2,6 +2,7 @@
 
 import { Container } from "@/components/layout/Container";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 import "@/styles/testimonials-section.css";
 
 const TESTIMONIALS = [
@@ -47,7 +48,7 @@ export function TestimonialsSection() {
 
                 <div className="tm-ctas" style={{ display: "flex", gap: "1.5rem", justifyContent: "center", marginTop: "5rem" }}>
                     <EnquireNowButton variant="gold" label="Book a Space" />
-                    <EnquireNowButton variant="outline" label="Schedule a Visit" />
+                    <ScheduleVisitButton variant="outline" />
                 </div>
             </Container>
         </section>

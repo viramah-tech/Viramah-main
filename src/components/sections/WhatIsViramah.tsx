@@ -2,6 +2,7 @@
 
 import { Container } from "@/components/layout/Container";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 import "@/styles/what-is-viramah.css";
 
 export function WhatIsViramah() {
@@ -30,7 +31,7 @@ export function WhatIsViramah() {
                         </div>
                         <div className="wv-intro-ctas">
                             <EnquireNowButton variant="dark" label="Book a Space" />
-                            <EnquireNowButton variant="outline" label="Schedule a Visit" />
+                            <ScheduleVisitButton variant="outline" />
                         </div>
                     </div>
                     <div className="wv-intro-visual">

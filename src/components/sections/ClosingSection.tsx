@@ -1,19 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import dynamic from "next/dynamic";
 import { EnquireNowButton } from "../ui/EnquireNowButton";
-
-// Lazy-load ScheduleVisitModal — only loads when user opens it
-const ScheduleVisitModal = dynamic(
-    () => import("@/components/ui/ScheduleVisitModal").then((m) => m.ScheduleVisitModal),
-    { ssr: false }
-);
+import { ScheduleVisitButton } from "../ui/ScheduleVisitButton";
 
 
 export function ClosingSection() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const sectionRef = useRef<HTMLElement>(null);
 
@@ -39,63 +31,57 @@ export function ClosingSection() {
     });
 
     return (
-        <>
-            <section ref={sectionRef} className="cta-section-wrapper">
-                <div className="cta-pulp-card">
+        <section ref={sectionRef} className="cta-section-wrapper">
+            <div className="cta-pulp-card">
 
+                {/* Left — Primary content */}
+                <div className="cta-content">
+                    <span className="cta-mono-label" style={reveal("0.1s")}>
+                        Admissions // 2026.AUG
+                    </span>
 
-                    {/* Left — Primary content */}
-                    <div className="cta-content">
-                        <span className="cta-mono-label" style={reveal("0.1s")}>
-                            Admissions // 2026.AUG
-                        </span>
-
-                        <h2
-                            className="cta-headline"
-                            style={{
-                                opacity: isVisible ? 1 : 0,
-                                transform: isVisible ? "translateY(0)" : "translateY(30px)",
-                                transition: "opacity 1s cubic-bezier(0.23,1,0.32,1) 0.2s, transform 1s cubic-bezier(0.23,1,0.32,1) 0.2s",
-                                fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
-                                lineHeight: "1.1",
-                                marginBottom: "1.5rem",
-                                letterSpacing: "0.01em"
-                            }}
-                        >
-                            Everyone deserves <br />to live <span style={{ fontStyle: "italic", color: "#D8B56A" }}>better</span>.
-                        </h2>
-
-                        <p className="cta-description" style={reveal("0.3s")}>
-
-                        </p>
-
-                        <div className="cta-btn-group" style={reveal("0.4s")}>
-                            <EnquireNowButton label="schedule a visit" />
-                        </div>
-                    </div>
-
-                    {/* Right — Meta block */}
-                    <div
-                        className="cta-meta"
+                    <h2
+                        className="cta-headline"
                         style={{
-                            textAlign: "right",
-                            ...reveal("0.5s"),
+                            opacity: isVisible ? 1 : 0,
+                            transform: isVisible ? "translateY(0)" : "translateY(30px)",
+                            transition: "opacity 1s cubic-bezier(0.23,1,0.32,1) 0.2s, transform 1s cubic-bezier(0.23,1,0.32,1) 0.2s",
+                            fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
+                            lineHeight: "1.1",
+                            marginBottom: "1.5rem",
+                            letterSpacing: "0.01em"
                         }}
                     >
-                        <div className="cta-dots" aria-hidden="true">
-                            <div className="cta-dot" />
-                            <div className="cta-dot" />
-                            <div className="cta-dot" />
-                        </div>
+                        Everyone deserves <br />to live <span style={{ fontStyle: "italic", color: "#D8B56A" }}>better</span>.
+                    </h2>
 
+                    <p className="cta-description" style={reveal("0.3s")}>
+
+                    </p>
+
+                    <div className="cta-btn-group" style={reveal("0.4s")}>
+                        <EnquireNowButton label="Enquire Now" />
+                        <ScheduleVisitButton variant="outline" />
                     </div>
                 </div>
-            </section>
 
-            <ScheduleVisitModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-            />
-        </>
+                {/* Right — Meta block */}
+                <div
+                    className="cta-meta"
+                    style={{
+                        textAlign: "right",
+                        ...reveal("0.5s"),
+                    }}
+                >
+                    <div className="cta-dots" aria-hidden="true">
+                        <div className="cta-dot" />
+                        <div className="cta-dot" />
+                        <div className="cta-dot" />
+                    </div>
+
+                </div>
+            </div>
+        </section>
     );
 }
+

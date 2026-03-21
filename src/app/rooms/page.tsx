@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { SearchBar } from "@/components/search/SearchBar";
 import { RoomCard } from "@/components/ui/RoomCard";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 
 const ROOMS = [
     {
@@ -206,7 +207,10 @@ export default function RoomsPage() {
                                 Schedule a free walkthrough — see it before you sign.
                             </p>
                         </div>
-                        <EnquireNowButton variant="gold" label="Book a Visit" />
+                        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+                            <EnquireNowButton variant="dark" label="Enquire Now" />
+                            <ScheduleVisitButton variant="dark" />
+                        </div>
                     </div>
                 </Container>
             </section>

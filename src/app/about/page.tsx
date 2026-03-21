@@ -4,6 +4,7 @@ import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { useEffect, useRef } from "react";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import "@/styles/about-page.css";
 
@@ -117,7 +118,10 @@ export default function AboutPage() {
                         <p className="ab-body-text">
                             Viramah is built to balance privacy with community — giving you the space to rest, reflect, and grow into the person you're becoming.
                         </p>
-                        <EnquireNowButton variant="dark" label="Enquire Now" />
+                        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+                            <EnquireNowButton variant="dark" label="Enquire Now" />
+                            <ScheduleVisitButton variant="outline" />
+                        </div>
                     </div>
                     <div className="ab-mission-right">
                         <div className="ab-mission-card">
@@ -188,8 +192,9 @@ export default function AboutPage() {
                     <p className="ab-eyebrow">Ready?</p>
                     <h2 className="ab-cta-title">Join the movement.</h2>
                     <p className="ab-cta-sub">500+ students already call Viramah home. Your chapter starts here.</p>
-                    <div className="ab-cta-btns">
+                    <div className="ab-cta-btns" style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap", alignItems: "center" }}>
                         <EnquireNowButton variant="gold" label="Enquire Now" />
+                        <ScheduleVisitButton variant="outline" />
                     </div>
                 </div>
             </section>

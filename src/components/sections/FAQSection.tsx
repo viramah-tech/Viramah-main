@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Container } from "@/components/layout/Container";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 import "@/styles/faq-section.css";
 
 const FAQS = [
@@ -37,7 +38,7 @@ export function FAQSection() {
                         <p className="faq-subtitle">Everything you need to know about living the Viramah life.</p>
                         <div className="faq-header-ctas" style={{ display: "flex", gap: "1rem", marginTop: "2.5rem", flexWrap: "wrap" }}>
                             <EnquireNowButton variant="gold" label="Book a Space" />
-                            <EnquireNowButton variant="outline" label="Schedule a Visit" />
+                            <ScheduleVisitButton variant="dark" />
                         </div>
                     </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 
 // ─── Tile Data ──────────────────────────────────────────────
 interface MarqueeTile {
@@ -343,6 +344,22 @@ export function HeroSection() {
                     }}>
                         AAP BAS APNA DHYAN RAKHO, <br />BAKI SAB HAM SAMBHAL LENEGE.
                     </span>
+
+
+                </motion.div>
+
+                {/* CTA Buttons */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8, duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                    style={{
+                        display: "flex",
+                        gap: "1rem",
+                        marginTop: "1.5rem",
+                        flexWrap: "wrap",
+                    }}
+                >
 
 
                 </motion.div>

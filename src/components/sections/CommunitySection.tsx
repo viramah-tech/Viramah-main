@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 import "@/styles/community-section.css";
 
 const PERKS = [
@@ -115,6 +116,7 @@ export function CommunitySection() {
                     {/* CTAs */}
                     <div className="cs-ctas">
                         <EnquireNowButton variant="gold" label="Enquire Now" />
+                        <ScheduleVisitButton variant="dark" />
                         <Link href="/community" className="cs-link-btn">
                             Meet the Community
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

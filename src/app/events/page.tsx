@@ -4,6 +4,7 @@ import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { useState } from "react";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 import "@/styles/events-page.css";
 
 const EVENTS = [
@@ -179,7 +180,10 @@ export default function EventsPage() {
                                 </div>
 
                                 {/* CTA */}
-                                <EnquireNowButton variant="dark" label="Enquire Now" />
+                                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+                                    <EnquireNowButton variant="dark" label="Enquire Now" />
+                                    <ScheduleVisitButton variant="outline" />
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -196,7 +200,10 @@ export default function EventsPage() {
                         Our most beloved ritual. No agenda, no phones (well, mostly), just good food and real conversations.
                         Every resident is welcome. Every Sunday. No exceptions.
                     </p>
-                    <EnquireNowButton variant="gold" label="Enquire Now" />
+                    <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap", alignItems: "center" }}>
+                        <EnquireNowButton variant="gold" label="Enquire Now" />
+                        <ScheduleVisitButton variant="outline" />
+                    </div>
                 </div>
             </section>
 

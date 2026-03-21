@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
     RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL ?? "",
     GOOGLE_SHEET_WEBHOOK_URL: process.env.GOOGLE_SHEET_WEBHOOK_URL ?? "",
+    GOOGLE_SHEET_SCHEDULE_VISIT_URL: process.env.GOOGLE_SHEET_SCHEDULE_VISIT_URL ?? "",
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? "https://viramahstay.com",
   },
 
   /* Image Optimization for Vercel */

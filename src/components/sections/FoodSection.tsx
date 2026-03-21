@@ -3,6 +3,7 @@
 import { Container } from "@/components/layout/Container";
 import Image from "next/image";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
+import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 import "@/styles/food-section.css";
 
 export function FoodSection() {
@@ -53,7 +54,7 @@ export function FoodSection() {
                         </div>
                         <div className="food-ctas">
                             <EnquireNowButton variant="gold" label="Enquire Now" />
-                            <EnquireNowButton variant="outline" label="Schedule a Visit" />
+                            <ScheduleVisitButton variant="outline" />
                         </div>
                     </div>
                 </div>

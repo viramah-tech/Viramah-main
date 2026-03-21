@@ -4,6 +4,8 @@ import Script from "next/script";
 import "../styles/globals.css";
 import { LazyEnquiryModal } from "@/components/ui/LazyEnquiryModal";
 import { EnquiryProvider } from "@/context/EnquiryContext";
+import { ScheduleVisitProvider } from "@/context/ScheduleVisitContext";
+import { LazyScheduleVisitModal } from "@/components/ui/LazyScheduleVisitModal";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -168,8 +170,11 @@ export default function RootLayout({
           }}
         />
         <EnquiryProvider>
-          {children}
-          <LazyEnquiryModal />
+          <ScheduleVisitProvider>
+            {children}
+            <LazyEnquiryModal />
+            <LazyScheduleVisitModal />
+          </ScheduleVisitProvider>
         </EnquiryProvider>
       </body>
     </html>
