@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { PortalNav } from "@/components/layout/PortalNav";
-import { mockUser } from "@/lib/auth";
+import { useAuth } from "@/context/AuthContext";
 import { Bell, Menu, X } from "lucide-react";
 
 const GREEN = "#1F3A2D";
@@ -9,6 +10,26 @@ const GOLD = "#D8B56A";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { user, loading, isAuthenticated } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && !isAuthenticated) {
+            router.push("/login");
+        }
+    }, [loading, isAuthenticated, router]);
+
+    if (loading) {
+        return (
+            <div style={{ minHeight: "100vh", background: "#F6F4EF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", color: "rgba(31,58,45,0.5)" }}>Loading...</p>
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) return null;
+
+    const userName = user?.name || "Student";
 
     return (
         <div style={{ minHeight: "100vh", background: "#F6F4EF", display: "flex" }}>
@@ -26,7 +47,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 }}
                 className={`sidebar-wrapper ${sidebarOpen ? "sidebar-open" : ""}`}
             >
-                <PortalNav role="student" userName={mockUser.name} />
+                <PortalNav role="student" userName={userName} />
             </div>
 
             {/* Mobile overlay */}
@@ -152,7 +173,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                                 color: GOLD,
                                 fontWeight: 700,
                             }}>
-                                {mockUser.name.charAt(0)}
+                                {userName.charAt(0)}
                             </span>
                         </div>
                     </div>

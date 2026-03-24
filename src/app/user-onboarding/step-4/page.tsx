@@ -1,247 +1,376 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Settings2, Moon, Sun, Volume2, VolumeX } from "lucide-react";
+import {
+    ArrowLeft, ArrowRight, Shield, Phone, Home, Check, Pencil,
+    Plus, CreditCard,
+} from "lucide-react";
+import { useOnboarding } from "@/context/OnboardingContext";
+import {
+    NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
+    containerVariants, itemVariants,
+} from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
 
-interface PreferenceOption {
-    value: string;
-    label: string;
-    icon: React.ElementType;
-    description: string;
-}
+// ── Review Section Card ──────────────────────────────────────
 
-const DIET_OPTIONS: PreferenceOption[] = [
-    { value: "veg", label: "Vegetarian", icon: Settings2, description: "Plant-based meals only" },
-    { value: "non-veg", label: "Non-Vegetarian", icon: Settings2, description: "All meal types" },
-    { value: "vegan", label: "Vegan", icon: Settings2, description: "No animal products" },
-];
-
-const SLEEP_OPTIONS: PreferenceOption[] = [
-    { value: "early", label: "Early Bird", icon: Sun, description: "Sleep before 10 PM" },
-    { value: "late", label: "Night Owl", icon: Moon, description: "Sleep after midnight" },
-    { value: "flexible", label: "Flexible", icon: Settings2, description: "No fixed schedule" },
-];
-
-const NOISE_OPTIONS: PreferenceOption[] = [
-    { value: "quiet", label: "Quiet", icon: VolumeX, description: "Prefer silence" },
-    { value: "moderate", label: "Moderate", icon: Volume2, description: "Some background noise" },
-    { value: "social", label: "Social", icon: Volume2, description: "Love a lively environment" },
-];
-
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
-};
-const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] } },
-};
-
-function PreferenceGroup({
+function ReviewCard({
+    icon: Icon,
+    iconBg,
+    iconColor,
     title,
-    options,
-    value,
-    onChange,
+    subtitle,
+    editStep,
+    onEdit,
+    children,
 }: {
+    icon: React.ElementType;
+    iconBg: string;
+    iconColor: string;
     title: string;
-    options: PreferenceOption[];
-    value: string;
-    onChange: (v: string) => void;
+    subtitle: string;
+    editStep: string;
+    onEdit: () => void;
+    children: React.ReactNode;
 }) {
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <p
-                style={{
-                    fontFamily: "var(--font-mono, monospace)",
-                    fontSize: "0.62rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.25em",
-                    color: "rgba(31,58,45,0.55)",
-                    fontWeight: 700,
-                    margin: 0,
-                }}
-            >
-                {title}
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-                {options.map((opt) => {
-                    const isSelected = value === opt.value;
-                    const Icon = opt.icon;
-                    return (
-                        <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => onChange(opt.value)}
-                            style={{
-                                padding: "16px 12px",
-                                borderRadius: 12,
-                                border: `2px solid ${isSelected ? GREEN : "rgba(31,58,45,0.12)"}`,
-                                background: isSelected ? "rgba(31,58,45,0.06)" : "#fff",
-                                textAlign: "left",
-                                cursor: "pointer",
-                                transition: "all 0.25s ease",
-                                boxShadow: isSelected ? "0 4px 16px rgba(31,58,45,0.1)" : "none",
-                            }}
-                        >
-                            <Icon
-                                size={20}
-                                color={isSelected ? GREEN : "rgba(31,58,45,0.3)"}
-                                style={{ marginBottom: 8, display: "block" }}
-                            />
-                            <span
-                                style={{
-                                    fontFamily: "var(--font-body, sans-serif)",
-                                    fontSize: "0.85rem",
-                                    fontWeight: 600,
-                                    color: isSelected ? GREEN : "rgba(31,58,45,0.7)",
-                                    display: "block",
-                                    marginBottom: 4,
-                                }}
-                            >
-                                {opt.label}
-                            </span>
-                            <span
-                                style={{
-                                    fontFamily: "var(--font-mono, monospace)",
-                                    fontSize: "0.6rem",
-                                    color: "rgba(31,58,45,0.4)",
-                                    letterSpacing: "0.03em",
-                                    display: "block",
-                                }}
-                            >
-                                {opt.description}
-                            </span>
-                        </button>
-                    );
-                })}
+        <div
+            style={{
+                background: "#fff",
+                borderRadius: 16,
+                border: "1px solid rgba(31,58,45,0.1)",
+                padding: 24,
+                boxShadow: "0 2px 16px rgba(31,58,45,0.05)",
+            }}
+        >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                <div
+                    style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 10,
+                        background: iconBg,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                    }}
+                >
+                    <Icon size={18} color={iconColor} />
+                </div>
+                <div style={{ flex: 1 }}>
+                    <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 600, color: GREEN, margin: 0 }}>
+                        {title}
+                    </p>
+                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.4)", margin: 0, letterSpacing: "0.05em" }}>
+                        {subtitle}
+                    </p>
+                </div>
+                <button
+                    onClick={onEdit}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: "6px 12px",
+                        borderRadius: 8,
+                        border: "1px solid rgba(31,58,45,0.15)",
+                        background: "none",
+                        cursor: "pointer",
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontSize: "0.6rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.15em",
+                        color: "rgba(31,58,45,0.5)",
+                        transition: "all 0.2s ease",
+                    }}
+                    className="hover:border-[#1F3A2D] hover:text-[#1F3A2D]"
+                >
+                    <Pencil size={11} /> Edit
+                </button>
             </div>
+            {children}
         </div>
     );
 }
 
+// ── Detail Row ───────────────────────────────────────────────
+
+function DetailRow({ label, value, mono = false, highlight = false }: {
+    label: string;
+    value: string;
+    mono?: boolean;
+    highlight?: boolean;
+}) {
+    return (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0" }}>
+            <span
+                style={{
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: "0.65rem",
+                    color: "rgba(31,58,45,0.45)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                }}
+            >
+                {label}
+            </span>
+            <span
+                style={{
+                    fontFamily: mono ? "var(--font-mono, monospace)" : "var(--font-body, sans-serif)",
+                    fontSize: mono ? "0.75rem" : "0.85rem",
+                    color: highlight ? GREEN : "rgba(31,58,45,0.75)",
+                    fontWeight: highlight ? 600 : 400,
+                    letterSpacing: mono ? "0.03em" : 0,
+                }}
+            >
+                {value}
+            </span>
+        </div>
+    );
+}
+
+// ── ID Type Label Helper ─────────────────────────────────────
+
+const ID_LABELS: Record<string, string> = {
+    aadhaar: "Aadhaar",
+    passport: "Passport",
+    driving_license: "Driving License",
+    voter_id: "Voter ID",
+};
+
+// ── Main Page ────────────────────────────────────────────────
+
 export default function Step4Page() {
-    const [preferences, setPreferences] = useState({
-        dietary: "",
-        sleep: "",
-        noise: "",
-    });
+    const router = useRouter();
+    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal } = useOnboarding();
+    const { step1, step2, step3 } = state;
+
+    if (!canAccessStep(4)) {
+        router.replace("/user-onboarding/step-3");
+        return null;
+    }
+
+    const enabledAddOns = step3.addOns.filter((a) => a.enabled);
+    const totalCost = getTotalCost();
+
+    const handleConfirm = () => {
+        markStepComplete(4);
+        router.push("/user-onboarding/confirm");
+    };
 
     return (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 999, background: "rgba(31,58,45,0.08)", border: "1px solid rgba(31,58,45,0.12)", marginBottom: 16 }}>
-                    <Settings2 size={14} color={GREEN} />
-                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.3em", color: GREEN }}>
-                        Lifestyle Preferences
-                    </span>
-                </div>
-                <h1 style={{ fontFamily: "var(--font-display, serif)", fontSize: "clamp(2rem, 4vw, 2.8rem)", color: GREEN, lineHeight: 1.1, fontWeight: 400, marginBottom: 10 }}>
-                    Tell us about yourself
-                </h1>
-                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", color: "rgba(31,58,45,0.55)", maxWidth: 420, margin: "0 auto", lineHeight: 1.6 }}>
-                    Help us match you with compatible roommates and provide personalized services.
-                </p>
+                <StepBadge icon={Check} label="Almost Done" />
+                <StepTitle>Review &amp; Confirm</StepTitle>
+                <StepSubtitle>
+                    Please review your information before proceeding to payment.
+                </StepSubtitle>
             </motion.div>
 
-            {/* Preferences Card */}
+            {/* Personal Details */}
+            <motion.div variants={itemVariants}>
+                <ReviewCard
+                    icon={Shield}
+                    iconBg="rgba(31,58,45,0.08)"
+                    iconColor={GREEN}
+                    title="Personal Details"
+                    subtitle="Step 1 — Identity Verification"
+                    editStep="/user-onboarding/step-1"
+                    onEdit={() => router.push("/user-onboarding/step-1")}
+                >
+                    <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 2 }}>
+                        <DetailRow label="Name" value={step1.fullName || "—"} />
+                        <DetailRow label="Date of Birth" value={step1.dateOfBirth || "—"} />
+                        <DetailRow label="ID Type" value={ID_LABELS[step1.idType] || step1.idType} />
+                        <DetailRow label="ID Number" value={step1.idNumber || "—"} mono />
+                        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                            {step1.idFront && (
+                                <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
+                                    <img src={step1.idFront.preview} alt="ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                </div>
+                            )}
+                            {step1.idBack && (
+                                <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
+                                    <img src={step1.idBack.preview} alt="ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </ReviewCard>
+            </motion.div>
+
+            {/* Emergency Details */}
+            <motion.div variants={itemVariants}>
+                <ReviewCard
+                    icon={Phone}
+                    iconBg="rgba(216,181,106,0.12)"
+                    iconColor={GOLD}
+                    title="Emergency Contact"
+                    subtitle="Step 2 — Guardian Details"
+                    editStep="/user-onboarding/step-2"
+                    onEdit={() => router.push("/user-onboarding/step-2")}
+                >
+                    <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 2 }}>
+                        <DetailRow label="Contact Name" value={step2.emergencyName || "—"} />
+                        <DetailRow label="Phone" value={step2.emergencyPhone || "—"} mono />
+                        <DetailRow label="Relationship" value={step2.emergencyRelation || "—"} />
+                        {step2.alternatePhone && (
+                            <DetailRow label="Alternate Phone" value={step2.alternatePhone} mono />
+                        )}
+                        <div style={{ height: 1, background: "rgba(31,58,45,0.08)", margin: "8px 0" }} />
+                        <DetailRow label="Guardian ID Type" value={ID_LABELS[step2.parentIdType] || step2.parentIdType} />
+                        <DetailRow label="Guardian ID Number" value={step2.parentIdNumber || "—"} mono />
+                        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                            {step2.parentIdFront && (
+                                <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
+                                    <img src={step2.parentIdFront.preview} alt="Guardian ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                </div>
+                            )}
+                            {step2.parentIdBack && (
+                                <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
+                                    <img src={step2.parentIdBack.preview} alt="Guardian ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </ReviewCard>
+            </motion.div>
+
+            {/* Room Selection */}
+            <motion.div variants={itemVariants}>
+                <ReviewCard
+                    icon={Home}
+                    iconBg="rgba(31,58,45,0.08)"
+                    iconColor={GREEN}
+                    title="Room Selected"
+                    subtitle="Step 3 — Room & Services"
+                    editStep="/user-onboarding/step-3"
+                    onEdit={() => router.push("/user-onboarding/step-3")}
+                >
+                    <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 2 }}>
+                        {step3.selectedRoom ? (
+                            <>
+                                <DetailRow label="Room" value={`${step3.selectedRoom.title} (${step3.selectedRoom.type})`} />
+                                <DetailRow label="Room Rent" value={`${step3.selectedRoom.priceLabel}/mo`} mono />
+                                {enabledAddOns.length > 0 && (
+                                    <>
+                                        <div style={{ height: 1, background: "rgba(31,58,45,0.08)", margin: "8px 0" }} />
+                                        {enabledAddOns.map((addon) => (
+                                            <DetailRow key={addon.id} label={addon.name} value={`₹${addon.price.toLocaleString()}/mo`} mono />
+                                        ))}
+                                    </>
+                                )}
+                            </>
+                        ) : (
+                            <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.4)" }}>
+                                No room selected
+                            </p>
+                        )}
+                    </div>
+                </ReviewCard>
+            </motion.div>
+
+            {/* Add-ons Summary */}
+            {enabledAddOns.length > 0 && (
+                <motion.div variants={itemVariants}>
+                    <div
+                        style={{
+                            background: "#fff",
+                            borderRadius: 16,
+                            border: "1px solid rgba(31,58,45,0.1)",
+                            padding: 24,
+                            boxShadow: "0 2px 16px rgba(31,58,45,0.05)",
+                        }}
+                    >
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(31,58,45,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <Plus size={18} color={GREEN} />
+                            </div>
+                            <div>
+                                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 600, color: GREEN, margin: 0 }}>Add-on Services</p>
+                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.4)", margin: 0 }}>Optional monthly services</p>
+                            </div>
+                        </div>
+                        <div style={{ paddingLeft: 52, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            {enabledAddOns.map((addon) => (
+                                <span
+                                    key={addon.id}
+                                    style={{
+                                        padding: "4px 12px",
+                                        borderRadius: 999,
+                                        background: "rgba(31,58,45,0.07)",
+                                        border: "1px solid rgba(31,58,45,0.12)",
+                                        fontFamily: "var(--font-mono, monospace)",
+                                        fontSize: "0.65rem",
+                                        color: GREEN,
+                                        letterSpacing: "0.05em",
+                                    }}
+                                >
+                                    {addon.name} — ₹{addon.price.toLocaleString()}/mo
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Total Summary Banner */}
             <motion.div
                 variants={itemVariants}
                 style={{
-                    background: "#fff",
-                    borderRadius: 20,
-                    border: "1px solid rgba(31,58,45,0.1)",
-                    padding: 32,
-                    boxShadow: "0 4px 24px rgba(31,58,45,0.07)",
+                    background: "linear-gradient(135deg, #1F3A2D 0%, #162b1e 100%)",
+                    borderRadius: 16,
+                    padding: "24px 28px",
                     display: "flex",
-                    flexDirection: "column",
-                    gap: 32,
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    boxShadow: "0 8px 32px rgba(31,58,45,0.25)",
                 }}
             >
-                <PreferenceGroup
-                    title="Dietary Preference"
-                    options={DIET_OPTIONS}
-                    value={preferences.dietary}
-                    onChange={(v) => setPreferences({ ...preferences, dietary: v })}
-                />
-                <div style={{ height: 1, background: "rgba(31,58,45,0.08)" }} />
-                <PreferenceGroup
-                    title="Sleep Schedule"
-                    options={SLEEP_OPTIONS}
-                    value={preferences.sleep}
-                    onChange={(v) => setPreferences({ ...preferences, sleep: v })}
-                />
-                <div style={{ height: 1, background: "rgba(31,58,45,0.08)" }} />
-                <PreferenceGroup
-                    title="Noise Preference"
-                    options={NOISE_OPTIONS}
-                    value={preferences.noise}
-                    onChange={(v) => setPreferences({ ...preferences, noise: v })}
-                />
+                <div>
+                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(216,181,106,0.6)", margin: 0 }}>
+                        Monthly Total
+                    </p>
+                    <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.2rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>
+                        ₹{totalCost.toLocaleString()}
+                    </p>
+                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(246,244,239,0.4)", margin: "6px 0 0" }}>
+                        Room {step3.selectedRoom?.priceLabel ?? "—"}
+                        {enabledAddOns.length > 0 && ` + Add-ons ₹${getAddOnsTotal().toLocaleString()}`}
+                    </p>
+                </div>
+                <div
+                    style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: "50%",
+                        background: "rgba(216,181,106,0.15)",
+                        border: "1px solid rgba(216,181,106,0.3)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    <Check size={20} color={GOLD} strokeWidth={2.5} />
+                </div>
             </motion.div>
 
             {/* Navigation */}
             <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
-                <Link href="/user-onboarding/step-3" style={{ textDecoration: "none" }}>
-                    <SecondaryButton><ArrowLeft size={16} /> Back</SecondaryButton>
-                </Link>
-                <Link href="/user-onboarding/confirm" style={{ textDecoration: "none" }}>
-                    <NavButton>Continue to Review <ArrowRight size={16} /></NavButton>
-                </Link>
+                <SecondaryButton onClick={() => router.push("/user-onboarding/step-3")}>
+                    <ArrowLeft size={16} /> Back
+                </SecondaryButton>
+                <NavButton onClick={handleConfirm}>
+                    <CreditCard size={16} />
+                    Proceed to Payment
+                </NavButton>
             </motion.div>
         </motion.div>
-    );
-}
-
-function NavButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
-    const [hovered, setHovered] = useState(false);
-    return (
-        <button
-            disabled={disabled}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            style={{
-                display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 28px",
-                background: disabled ? "rgba(31,58,45,0.15)" : hovered ? "linear-gradient(135deg, #2a4d3a, #1F3A2D)" : "linear-gradient(135deg, #1F3A2D, #162b1e)",
-                color: disabled ? "rgba(31,58,45,0.35)" : GOLD,
-                border: "none", borderRadius: 10,
-                fontFamily: "var(--font-mono, monospace)", fontWeight: 700, fontSize: "0.7rem",
-                textTransform: "uppercase", letterSpacing: "0.18em",
-                cursor: disabled ? "not-allowed" : "pointer",
-                transform: hovered && !disabled ? "translateY(-2px)" : "translateY(0)",
-                boxShadow: hovered && !disabled ? "0 10px 28px rgba(31,58,45,0.3)" : "0 4px 14px rgba(31,58,45,0.18)",
-                transition: "all 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
-            }}
-        >
-            {children}
-        </button>
-    );
-}
-
-function SecondaryButton({ children }: { children: React.ReactNode }) {
-    const [hovered, setHovered] = useState(false);
-    return (
-        <button
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            style={{
-                display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 24px",
-                background: hovered ? "rgba(31,58,45,0.06)" : "transparent",
-                color: GREEN,
-                border: `1.5px solid ${hovered ? GREEN : "rgba(31,58,45,0.2)"}`,
-                borderRadius: 10,
-                fontFamily: "var(--font-mono, monospace)", fontWeight: 700, fontSize: "0.7rem",
-                textTransform: "uppercase", letterSpacing: "0.15em",
-                cursor: "pointer",
-                transition: "all 0.25s ease",
-            }}
-        >
-            {children}
-        </button>
     );
 }

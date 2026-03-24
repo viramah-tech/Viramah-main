@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -9,7 +9,8 @@ import {
     Zap, Droplets, Wifi, Sparkles, MoreHorizontal,
     Clock, CheckCircle2, AlertCircle, Plus
 } from "lucide-react";
-import { mockUser } from "@/lib/auth";
+import { useAuth, type AuthUser } from "@/context/AuthContext";
+import { useSocket } from "@/hooks/useSocket";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -67,6 +68,15 @@ const itemVariants = {
 
 export default function StudentDashboard() {
     const [hoveredAction, setHoveredAction] = useState<string | null>(null);
+    const { user, updateUser } = useAuth();
+
+    // Real-time sync: update user data when socket events arrive
+    const handleSocketEvent = useCallback((event: string, data: unknown) => {
+        if (event === "user:updated" && data) {
+            updateUser(data as Partial<AuthUser>);
+        }
+    }, [updateUser]);
+    useSocket(user?._id, handleSocketEvent);
 
     const greeting = () => {
         const hour = new Date().getHours();
@@ -104,7 +114,7 @@ export default function StudentDashboard() {
                             marginTop: 4,
                             fontWeight: 400,
                         }}>
-                            Welcome back, {mockUser.name.split(" ")[0]}
+                            Welcome back, {user?.name?.split(" ")[0] || "Student"}
                         </h1>
                         <p style={{
                             fontFamily: "var(--font-body, sans-serif)",

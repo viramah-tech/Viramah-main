@@ -149,7 +149,7 @@ export function ScheduleVisitModal() {
     const dates = getAvailableDates();
     const fomoSlots = selectedDate ? getFomoSlotIndices(selectedDate) : new Set<number>();
 
-    // Global open trigger + Escape key
+    // Global open trigger + Escape key + URL check
     useEffect(() => {
         const onOpen = () => {
             setIsOpen(true);
@@ -163,11 +163,29 @@ export function ScheduleVisitModal() {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") setIsOpen(false);
         };
+        
         window.addEventListener("viramah:open-schedule-visit", onOpen);
         window.addEventListener("keydown", onKeyDown);
+
+        // Check URL for direct link access
+        const checkUrl = () => {
+            if (window.location.hash === "#schedule-visit" || window.location.search.includes("schedule=true") || window.location.search.includes("schedule-visit=true")) {
+                onOpen();
+            }
+        };
+
+        // Slight delay for initial mount
+        setTimeout(checkUrl, 100);
+        
+        // Listen for client-side navigation (back/forward) or hash changes
+        window.addEventListener("popstate", checkUrl);
+        window.addEventListener("hashchange", checkUrl);
+
         return () => {
             window.removeEventListener("viramah:open-schedule-visit", onOpen);
             window.removeEventListener("keydown", onKeyDown);
+            window.removeEventListener("popstate", checkUrl);
+            window.removeEventListener("hashchange", checkUrl);
         };
     }, []);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
     LayoutDashboard,
@@ -15,6 +15,7 @@ import {
     Wrench
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -41,7 +42,14 @@ interface PortalNavProps {
 
 export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { logout } = useAuth();
     const navItems = role === "student" ? STUDENT_NAV : STUDENT_NAV;
+
+    const handleLogout = () => {
+        logout();
+        router.push("/login");
+    };
 
     return (
         <aside style={{
@@ -164,8 +172,7 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
 
             {/* Footer */}
             <div style={{ padding: "12px", borderTop: "1px solid rgba(31,58,45,0.07)" }}>
-                <Link href="/" style={{ textDecoration: "none" }}>
-                    <div style={{
+                <button onClick={handleLogout} style={{
                         display: "flex",
                         alignItems: "center",
                         gap: 10,
@@ -173,11 +180,13 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
                         borderRadius: 10,
                         cursor: "pointer",
                         transition: "background 0.2s ease",
+                        background: "none",
+                        border: "none",
+                        width: "100%",
                     }}>
                         <LogOut size={16} color="rgba(31,58,45,0.4)" />
                         <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", color: "rgba(31,58,45,0.5)" }}>Sign Out</span>
-                    </div>
-                </Link>
+                </button>
             </div>
 
             <style>{`

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, Check } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -37,8 +39,45 @@ export default function SignUpPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const { signup, user, isAuthenticated } = useAuth();
+    const router = useRouter();
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (!isAuthenticated || !user) return;
+        if (user.onboardingStatus === "completed") {
+            router.push("/student/dashboard");
+        } else {
+            router.push("/user-onboarding/step-1");
+        }
+    }, [isAuthenticated, user, router]);
 
     const passwordsMatch = password && confirmPassword && password === confirmPassword;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!passwordsMatch) {
+            setError("Passwords don't match");
+            return;
+        }
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters");
+            return;
+        }
+        setError("");
+        setSubmitting(true);
+        try {
+            await signup(name, email, password);
+            router.push("/user-onboarding/step-1");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
+            setError(message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     return (
         <div className="min-h-screen flex">
@@ -155,7 +194,20 @@ export default function SignUpPage() {
                     </motion.div>
 
                     {/* Form */}
-                    <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-5">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                        {error && (
+                            <motion.div variants={itemVariants} style={{
+                                padding: "12px 16px",
+                                borderRadius: 10,
+                                background: "rgba(192,57,43,0.08)",
+                                border: "1px solid rgba(192,57,43,0.2)",
+                                fontFamily: "var(--font-body, sans-serif)",
+                                fontSize: "0.85rem",
+                                color: "#c0392b",
+                            }}>
+                                {error}
+                            </motion.div>
+                        )}
                         {/* Full Name */}
                         <motion.div variants={itemVariants} className="flex flex-col gap-2">
                             <AuthLabel htmlFor="signup-name">Full Name</AuthLabel>
@@ -256,12 +308,10 @@ export default function SignUpPage() {
 
                         {/* Submit */}
                         <motion.div variants={itemVariants} className="mt-2">
-                            <Link href="/user-onboarding/step-1">
-                                <PrimaryButton>
-                                    Create Account
-                                    <ArrowRight size={16} />
-                                </PrimaryButton>
-                            </Link>
+                            <PrimaryButton disabled={submitting}>
+                                {submitting ? "Creating account..." : "Create Account"}
+                                {!submitting && <ArrowRight size={16} />}
+                            </PrimaryButton>
                         </motion.div>
 
                         {/* Terms */}
@@ -328,7 +378,9 @@ function AuthInput({ focused, style, ...props }: AuthInputProps) {
             style={{
                 width: "100%",
                 background: focused ? "#fff" : "rgba(255,255,255,0.6)",
-                border: focused ? "1.5px solid #1F3A2D" : "1.5px solid rgba(46,42,38,0.15)",
+                borderWidth: "1.5px",
+                borderStyle: "solid",
+                borderColor: focused ? "#1F3A2D" : "rgba(46,42,38,0.15)",
                 borderRadius: 10,
                 padding: "13px 16px",
                 fontFamily: "var(--font-body, sans-serif)",
@@ -343,12 +395,13 @@ function AuthInput({ focused, style, ...props }: AuthInputProps) {
     );
 }
 
-function PrimaryButton({ children }: { children: React.ReactNode }) {
+function PrimaryButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
     const [hovered, setHovered] = useState(false);
 
     return (
         <button
             type="submit"
+            disabled={disabled}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
@@ -358,6 +411,7 @@ function PrimaryButton({ children }: { children: React.ReactNode }) {
                 justifyContent: "center",
                 gap: 8,
                 padding: "15px 24px",
+                opacity: disabled ? 0.7 : 1,
                 background: hovered ? "linear-gradient(135deg, #2a4d3a, #1F3A2D)" : "linear-gradient(135deg, #1F3A2D, #162b1e)",
                 color: "#D8B56A",
                 border: "none",

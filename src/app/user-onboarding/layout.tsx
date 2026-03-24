@@ -1,17 +1,19 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, ChevronDown, ChevronUp, Lock } from "lucide-react";
+import { OnboardingProvider } from "@/context/OnboardingContext";
+import { useAuth } from "@/context/AuthContext";
 
 const BOOKING_STEPS = [
     { id: 1, label: "Identity", description: "KYC Verification" },
     { id: 2, label: "Emergency", description: "Contact Info" },
-    { id: 3, label: "Room", description: "Select Room" },
-    { id: 4, label: "Preferences", description: "Room Setup" },
-    { id: 5, label: "Confirm", description: "Review" },
+    { id: 3, label: "Room", description: "Select & Add-ons" },
+    { id: 4, label: "Review", description: "Verify Details" },
+    { id: 5, label: "Payment", description: "Confirm Booking" },
 ];
 
 function getStepFromPath(pathname: string): number {
@@ -20,6 +22,7 @@ function getStepFromPath(pathname: string): number {
     if (pathname.includes("step-3")) return 3;
     if (pathname.includes("step-4")) return 4;
     if (pathname.includes("confirm")) return 5;
+    if (pathname.includes("payment-status")) return 6; // post-flow
     return 1;
 }
 
@@ -221,9 +224,29 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
 
 export default function RoomBookingLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { loading, isAuthenticated } = useAuth();
     const currentStep = getStepFromPath(pathname);
+    const isPostFlow = currentStep > 5;
     const [isScrolled, setIsScrolled] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
+
+    // Auth guard: redirect to login if not authenticated
+    useEffect(() => {
+        if (!loading && !isAuthenticated) {
+            router.push("/login");
+        }
+    }, [loading, isAuthenticated, router]);
+
+    if (loading) {
+        return (
+            <div style={{ minHeight: "100vh", background: "#F6F4EF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", color: "rgba(31,58,45,0.5)" }}>Loading...</p>
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) return null;
 
     useEffect(() => {
         const handleScroll = () => {
@@ -241,6 +264,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
     }, [pathname]);
 
     return (
+        <OnboardingProvider>
         <div
             style={{ minHeight: "100vh", background: "#F6F4EF" }}
         >
@@ -293,7 +317,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
 
                         {/* Compact stepper when scrolled */}
                         <AnimatePresence mode="wait">
-                            {isScrolled && !isExpanded && (
+                            {!isPostFlow && isScrolled && !isExpanded && (
                                 <motion.div
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -307,7 +331,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
 
                         {/* Right: logo + toggle */}
                         <div className="flex items-center gap-3">
-                            {isScrolled && (
+                            {!isPostFlow && isScrolled && (
                                 <button
                                     onClick={() => setIsExpanded(!isExpanded)}
                                     style={{
@@ -346,7 +370,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
 
                     {/* Expanded stepper */}
                     <AnimatePresence>
-                        {(!isScrolled || isExpanded) && (
+                        {!isPostFlow && (!isScrolled || isExpanded) && (
                             <motion.div
                                 initial={{ height: 0, opacity: 0, marginTop: 0 }}
                                 animate={{ height: "auto", opacity: 1, marginTop: 24 }}
@@ -405,9 +429,10 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         letterSpacing: "0.1em",
                     }}
                 >
-                    Step {currentStep} of 5
+                    {isPostFlow ? "Booking Submitted" : `Step ${currentStep} of 5`}
                 </span>
             </footer>
         </div>
+        </OnboardingProvider>
     );
 }

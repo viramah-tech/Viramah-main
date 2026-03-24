@@ -6,6 +6,7 @@ import { LazyEnquiryModal } from "@/components/ui/LazyEnquiryModal";
 import { EnquiryProvider } from "@/context/EnquiryContext";
 import { ScheduleVisitProvider } from "@/context/ScheduleVisitContext";
 import { LazyScheduleVisitModal } from "@/components/ui/LazyScheduleVisitModal";
+import { AuthProvider } from "@/context/AuthContext";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -169,13 +170,15 @@ export default function RootLayout({
             })
           }}
         />
-        <EnquiryProvider>
-          <ScheduleVisitProvider>
-            {children}
-            <LazyEnquiryModal />
-            <LazyScheduleVisitModal />
-          </ScheduleVisitProvider>
-        </EnquiryProvider>
+        <AuthProvider>
+          <EnquiryProvider>
+            <ScheduleVisitProvider>
+              {children}
+              <LazyEnquiryModal />
+              <LazyScheduleVisitModal />
+            </ScheduleVisitProvider>
+          </EnquiryProvider>
+        </AuthProvider>
       </body>
     </html>
   );

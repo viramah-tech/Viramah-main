@@ -1,178 +1,315 @@
 "use client";
 
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowLeft, Check, Shield, Home, Phone, Settings } from "lucide-react";
-import { useState } from "react";
-
-interface Detail {
-    label: string;
-    mono: boolean;
-    highlight?: boolean;
-}
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    CreditCard, ArrowLeft, Upload, X, Building2, Banknote,
+    Check, AlertCircle, Camera,
+} from "lucide-react";
+import { useOnboarding } from "@/context/OnboardingContext";
+import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api";
+import type { UploadedFile } from "@/context/OnboardingContext";
+import {
+    FieldLabel, FieldInput, FieldError, NavButton, SecondaryButton,
+    StepBadge, StepTitle, StepSubtitle, FormCard,
+    containerVariants, itemVariants,
+} from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
 
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
-};
-const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] } },
-};
+// ── Payment Method Card ──────────────────────────────────────
 
-
-const SUMMARY_ITEMS: {
+function PaymentMethodCard({
+    icon: Icon,
+    title,
+    description,
+    selected,
+    onClick,
+}: {
     icon: React.ElementType;
-    iconBg: string;
-    iconColor: string;
     title: string;
-    step: string;
-    details?: Detail[];
-    tags?: string[];
-}[] = [
-        {
-            icon: Shield,
-            iconBg: "rgba(31,58,45,0.08)",
-            iconColor: GREEN,
-            title: "Identity Verified",
-            step: "Step 1 Complete",
-            details: [
-                { label: "Arjun Mehta", mono: false },
-                { label: "Aadhaar: XXXX-XXXX-1234", mono: true },
-            ],
-        },
-        {
-            icon: Phone,
-            iconBg: "rgba(216,181,106,0.12)",
-            iconColor: GOLD,
-            title: "Emergency Contact",
-            step: "Step 2 Complete",
-            details: [
-                { label: "Rajesh Mehta (Father)", mono: false },
-                { label: "+91 98XXX XXXXX", mono: true },
-            ],
-        },
-        {
-            icon: Home,
-            iconBg: "rgba(31,58,45,0.08)",
-            iconColor: GREEN,
-            title: "Room Selected",
-            step: "Step 3 Complete",
-            details: [
-                { label: "Room 201 · Single Occupancy", mono: false },
-                { label: "₹8,500/mo + Full Board ₹4,500/mo", mono: true },
-                { label: "Total: ₹13,000/month", mono: false, highlight: true },
-            ],
-        },
-        {
-            icon: Settings,
-            iconBg: "rgba(31,58,45,0.06)",
-            iconColor: GREEN,
-            title: "Preferences Set",
-            step: "Step 4 Complete",
-            tags: ["Vegetarian", "Early Bird", "Quiet"],
-        },
-    ];
+    description: string;
+    selected: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            onClick={onClick}
+            style={{
+                flex: 1,
+                padding: "20px 16px",
+                borderRadius: 16,
+                border: `2px solid ${selected ? GREEN : "rgba(31,58,45,0.12)"}`,
+                background: selected ? "rgba(31,58,45,0.04)" : "#fff",
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+                boxShadow: selected ? "0 4px 16px rgba(31,58,45,0.1)" : "none",
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+            }}
+        >
+            <div
+                style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    background: selected ? "rgba(31,58,45,0.1)" : "rgba(31,58,45,0.05)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                }}
+            >
+                <Icon size={22} color={selected ? GREEN : "rgba(31,58,45,0.35)"} />
+            </div>
+            <div style={{ flex: 1 }}>
+                <span
+                    style={{
+                        fontFamily: "var(--font-body, sans-serif)",
+                        fontSize: "0.9rem",
+                        fontWeight: 600,
+                        color: selected ? GREEN : "rgba(31,58,45,0.7)",
+                        display: "block",
+                    }}
+                >
+                    {title}
+                </span>
+                <span
+                    style={{
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontSize: "0.6rem",
+                        color: "rgba(31,58,45,0.4)",
+                        letterSpacing: "0.05em",
+                    }}
+                >
+                    {description}
+                </span>
+            </div>
+            <div
+                style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    border: `2px solid ${selected ? GREEN : "rgba(31,58,45,0.2)"}`,
+                    background: selected ? GREEN : "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    transition: "all 0.2s ease",
+                }}
+            >
+                {selected && <Check size={12} color={GOLD} strokeWidth={3} />}
+            </div>
+        </button>
+    );
+}
 
+// ── Screenshot Upload ────────────────────────────────────────
+
+function ScreenshotUpload({
+    file,
+    onUpload,
+    onRemove,
+}: {
+    file: UploadedFile | null;
+    onUpload: (file: UploadedFile) => void;
+    onRemove: () => void;
+}) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [hovered, setHovered] = useState(false);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                onUpload({ name: selectedFile.name, preview: reader.result as string });
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+    };
+
+    return (
+        <div>
+            <FieldLabel>Payment Screenshot</FieldLabel>
+            <div style={{ marginTop: 8 }}>
+                {file ? (
+                    <div
+                        style={{
+                            position: "relative",
+                            maxWidth: 300,
+                            borderRadius: 12,
+                            overflow: "hidden",
+                            border: `2px solid ${GREEN}`,
+                        }}
+                    >
+                        <img src={file.preview} alt="Payment screenshot" style={{ width: "100%", height: "auto", display: "block" }} />
+                        <button
+                            onClick={onRemove}
+                            style={{
+                                position: "absolute",
+                                top: 8,
+                                right: 8,
+                                width: 28,
+                                height: 28,
+                                borderRadius: "50%",
+                                background: "rgba(255,255,255,0.95)",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                            }}
+                        >
+                            <X size={14} color={GREEN} />
+                        </button>
+                        <div
+                            style={{
+                                position: "absolute",
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                background: "rgba(31,58,45,0.85)",
+                                backdropFilter: "blur(8px)",
+                                padding: "6px 12px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                            }}
+                        >
+                            <Check size={12} color={GOLD} />
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: GOLD }}>
+                                Uploaded: {file.name}
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        onClick={() => inputRef.current?.click()}
+                        onMouseEnter={() => setHovered(true)}
+                        onMouseLeave={() => setHovered(false)}
+                        style={{
+                            width: "100%",
+                            maxWidth: 300,
+                            aspectRatio: "4/3",
+                            borderRadius: 12,
+                            border: `2px dashed ${hovered ? GREEN : "rgba(31,58,45,0.2)"}`,
+                            background: hovered ? "rgba(31,58,45,0.04)" : "rgba(255,255,255,0.5)",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 10,
+                            transition: "all 0.25s ease",
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 12,
+                                background: "#fff",
+                                boxShadow: "0 2px 8px rgba(31,58,45,0.1)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <Camera size={22} color={hovered ? GREEN : "rgba(31,58,45,0.35)"} />
+                        </div>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: hovered ? GREEN : "rgba(31,58,45,0.4)" }}>
+                            Upload payment screenshot
+                        </span>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.3)" }}>
+                            JPG, PNG, or PDF
+                        </span>
+                    </button>
+                )}
+            </div>
+            <input ref={inputRef} type="file" accept="image/*,.pdf" onChange={handleFileChange} style={{ display: "none" }} />
+        </div>
+    );
+}
+
+// ── Main Page ────────────────────────────────────────────────
 
 export default function ConfirmPage() {
+    const router = useRouter();
+    const { state, updatePayment, markStepComplete, canAccessStep, setStatus, getTotalCost } = useOnboarding();
+    const { token } = useAuth();
+    const { payment, step3 } = state;
+
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [attempted, setAttempted] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+
+    if (!canAccessStep(5)) {
+        router.replace("/user-onboarding/step-4");
+        return null;
+    }
+
+    const totalCost = getTotalCost();
+
+    const validate = (): boolean => {
+        const errs: Record<string, string> = {};
+        if (!payment.method) errs.method = "Please select a payment method";
+        if (!payment.transactionId.trim()) errs.transactionId = "Transaction ID is required";
+        if (payment.transactionId.trim().length < 4) errs.transactionId = "Transaction ID must be at least 4 characters";
+        if (!payment.screenshot) errs.screenshot = "Payment screenshot is required";
+        setErrors(errs);
+        return Object.keys(errs).length === 0;
+    };
+
+    const handleSubmit = async () => {
+        setAttempted(true);
+        if (!validate()) return;
+
+        setSubmitting(true);
+        try {
+            // Submit payment to backend
+            await apiFetch("/api/public/payments/initiate", {
+                method: "POST",
+                token,
+                body: {
+                    amount: totalCost,
+                    paymentMethod: payment.method,
+                    description: `Onboarding payment - ${step3.selectedRoom?.title || "Room"}`,
+                    transactionId: payment.transactionId,
+                    receiptUrl: payment.screenshot?.preview || "",
+                },
+            });
+
+            markStepComplete(5);
+            setStatus("payment_submitted");
+            router.push("/user-onboarding/payment-status");
+        } catch {
+            setErrors({ method: "Payment submission failed. Please try again." });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 999, background: "rgba(31,58,45,0.08)", border: "1px solid rgba(31,58,45,0.12)", marginBottom: 16 }}>
-                    <Check size={14} color={GREEN} />
-                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.3em", color: GREEN }}>
-                        Almost Done
-                    </span>
-                </div>
-                <h1 style={{ fontFamily: "var(--font-display, serif)", fontSize: "clamp(2rem, 4vw, 2.8rem)", color: GREEN, lineHeight: 1.1, fontWeight: 400, marginBottom: 10 }}>
-                    Review & Confirm
-                </h1>
-                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", color: "rgba(31,58,45,0.55)", maxWidth: 420, margin: "0 auto", lineHeight: 1.6 }}>
-                    Please review your information before completing your booking.
-                </p>
+                <StepBadge icon={CreditCard} label="Payment" />
+                <StepTitle>Complete your payment</StepTitle>
+                <StepSubtitle>
+                    Choose a payment method and upload your payment proof to confirm your booking.
+                </StepSubtitle>
             </motion.div>
 
-            {/* Summary Cards */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {SUMMARY_ITEMS.map((item, i) => {
-                    const Icon = item.icon;
-                    return (
-                        <motion.div
-                            key={i}
-                            variants={itemVariants}
-                            style={{
-                                background: "#fff",
-                                borderRadius: 16,
-                                border: "1px solid rgba(31,58,45,0.1)",
-                                padding: 24,
-                                boxShadow: "0 2px 16px rgba(31,58,45,0.05)",
-                            }}
-                        >
-                            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: item.details || item.tags ? 16 : 0 }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 10, background: item.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                    <Icon size={18} color={item.iconColor} />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 600, color: GREEN, margin: 0 }}>{item.title}</p>
-                                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.4)", margin: 0, letterSpacing: "0.05em" }}>{item.step}</p>
-                                </div>
-                                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(31,58,45,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <Check size={13} color={GREEN} strokeWidth={2.5} />
-                                </div>
-                            </div>
-
-                            {item.details && (
-                                <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 4 }}>
-                                    {item.details.map((d, j) => (
-                                        <p
-                                            key={j}
-                                            style={{
-                                                fontFamily: d.mono ? "var(--font-mono, monospace)" : "var(--font-body, sans-serif)",
-                                                fontSize: d.mono ? "0.7rem" : "0.85rem",
-                                                color: d.highlight ? GREEN : "rgba(31,58,45,0.6)",
-                                                fontWeight: d.highlight ? 600 : 400,
-                                                margin: 0,
-                                                letterSpacing: d.mono ? "0.03em" : 0,
-                                            }}
-                                        >
-                                            {d.label}
-                                        </p>
-                                    ))}
-                                </div>
-                            )}
-
-                            {item.tags && (
-                                <div style={{ paddingLeft: 52, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                    {item.tags.map((tag) => (
-                                        <span
-                                            key={tag}
-                                            style={{
-                                                padding: "4px 12px",
-                                                borderRadius: 999,
-                                                background: "rgba(31,58,45,0.07)",
-                                                border: "1px solid rgba(31,58,45,0.12)",
-                                                fontFamily: "var(--font-mono, monospace)",
-                                                fontSize: "0.65rem",
-                                                color: GREEN,
-                                                letterSpacing: "0.05em",
-                                            }}
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </motion.div>
-                    );
-                })}
-            </div>
-
-            {/* Total Summary Banner */}
+            {/* Amount Due */}
             <motion.div
                 variants={itemVariants}
                 style={{
@@ -187,13 +324,13 @@ export default function ConfirmPage() {
             >
                 <div>
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(216,181,106,0.6)", margin: 0 }}>
-                        Monthly Total
+                        First Month Payment
                     </p>
-                    <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.2rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>
-                        ₹13,000
+                    <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.4rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>
+                        ₹{totalCost.toLocaleString()}
                     </p>
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(246,244,239,0.4)", margin: "6px 0 0" }}>
-                        Room ₹8,500 + Mess ₹4,500 · Security deposit ₹17,000 (refundable)
+                        {step3.selectedRoom?.title} + Services
                     </p>
                 </div>
                 <div
@@ -208,69 +345,150 @@ export default function ConfirmPage() {
                         justifyContent: "center",
                     }}
                 >
-                    <Check size={20} color={GOLD} strokeWidth={2.5} />
+                    <CreditCard size={20} color={GOLD} />
                 </div>
+            </motion.div>
+
+            {/* Payment Method */}
+            <motion.div variants={itemVariants}>
+                <FormCard>
+                    <div>
+                        <FieldLabel>Select Payment Method</FieldLabel>
+                        {attempted && errors.method && <FieldError>{errors.method}</FieldError>}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <PaymentMethodCard
+                            icon={Building2}
+                            title="Bank Transfer"
+                            description="NEFT / IMPS / UPI"
+                            selected={payment.method === "bank_transfer"}
+                            onClick={() => updatePayment({ method: "bank_transfer" })}
+                        />
+                        <PaymentMethodCard
+                            icon={Banknote}
+                            title="Cash Deposit"
+                            description="Bank counter deposit"
+                            selected={payment.method === "cash_deposit"}
+                            onClick={() => updatePayment({ method: "cash_deposit" })}
+                        />
+                    </div>
+                </FormCard>
+            </motion.div>
+
+            {/* Bank Details Info */}
+            <AnimatePresence>
+                {payment.method && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        style={{ overflow: "hidden" }}
+                    >
+                        <div
+                            style={{
+                                background: "rgba(216,181,106,0.08)",
+                                border: "1px solid rgba(216,181,106,0.2)",
+                                borderRadius: 12,
+                                padding: 20,
+                                display: "flex",
+                                gap: 12,
+                            }}
+                        >
+                            <AlertCircle size={18} color={GOLD} style={{ flexShrink: 0, marginTop: 2 }} />
+                            <div>
+                                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 600, color: GREEN, margin: "0 0 8px" }}>
+                                    {payment.method === "bank_transfer" ? "Bank Transfer Details" : "Cash Deposit Instructions"}
+                                </p>
+                                {payment.method === "bank_transfer" ? (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.7)" }}>
+                                            Account Name: <strong>VIRAMAH Student Living Pvt Ltd</strong>
+                                        </span>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.7)" }}>
+                                            Account No: <strong>1234 5678 9012 3456</strong>
+                                        </span>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.7)" }}>
+                                            IFSC: <strong>SBIN0001234</strong>
+                                        </span>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.7)" }}>
+                                            UPI: <strong>viramah@ybl</strong>
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.7)" }}>
+                                            Deposit at any SBI branch to:
+                                        </span>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.7)" }}>
+                                            Account Name: <strong>VIRAMAH Student Living Pvt Ltd</strong>
+                                        </span>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.7)" }}>
+                                            Account No: <strong>1234 5678 9012 3456</strong>
+                                        </span>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.7)" }}>
+                                            Collect the deposit receipt and upload a photo below.
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Transaction ID & Screenshot */}
+            <motion.div variants={itemVariants}>
+                <FormCard>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <FieldLabel htmlFor="txn-id">Transaction / Reference ID</FieldLabel>
+                        <FieldInput
+                            id="txn-id"
+                            type="text"
+                            placeholder="e.g. UTR123456789 or deposit receipt number"
+                            value={payment.transactionId}
+                            onChange={(e) => updatePayment({ transactionId: e.target.value })}
+                            focused={focusedField === "txnId"}
+                            hasError={attempted && !!errors.transactionId}
+                            onFocus={() => setFocusedField("txnId")}
+                            onBlur={() => setFocusedField(null)}
+                        />
+                        {attempted && errors.transactionId && <FieldError>{errors.transactionId}</FieldError>}
+                    </div>
+
+                    <div style={{ height: 1, background: "rgba(31,58,45,0.08)" }} />
+
+                    <ScreenshotUpload
+                        file={payment.screenshot}
+                        onUpload={(f) => updatePayment({ screenshot: f })}
+                        onRemove={() => updatePayment({ screenshot: null })}
+                    />
+                    {attempted && errors.screenshot && <FieldError>{errors.screenshot}</FieldError>}
+                </FormCard>
             </motion.div>
 
             {/* Navigation */}
             <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
-                <Link href="/user-onboarding/step-4" style={{ textDecoration: "none" }}>
-                    <SecondaryButton><ArrowLeft size={16} /> Back</SecondaryButton>
-                </Link>
-                <Link href="/student/dashboard" style={{ textDecoration: "none" }}>
-                    <ConfirmButton>
-                        <Home size={16} />
-                        Confirm Booking
-                    </ConfirmButton>
-                </Link>
+                <SecondaryButton onClick={() => router.push("/user-onboarding/step-4")}>
+                    <ArrowLeft size={16} /> Back
+                </SecondaryButton>
+                <NavButton onClick={handleSubmit} disabled={submitting}>
+                    {submitting ? (
+                        <>
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(216,181,106,0.3)", borderTopColor: GOLD }}
+                            />
+                            Submitting...
+                        </>
+                    ) : (
+                        <>
+                            <Check size={16} />
+                            Submit Payment Proof
+                        </>
+                    )}
+                </NavButton>
             </motion.div>
         </motion.div>
-    );
-}
-
-function ConfirmButton({ children }: { children: React.ReactNode }) {
-    const [hovered, setHovered] = useState(false);
-    return (
-        <button
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            style={{
-                display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 32px",
-                background: hovered ? "linear-gradient(135deg, #2a4d3a, #1F3A2D)" : "linear-gradient(135deg, #1F3A2D, #162b1e)",
-                color: GOLD,
-                border: "none", borderRadius: 10,
-                fontFamily: "var(--font-mono, monospace)", fontWeight: 700, fontSize: "0.7rem",
-                textTransform: "uppercase", letterSpacing: "0.18em",
-                cursor: "pointer",
-                transform: hovered ? "translateY(-2px)" : "translateY(0)",
-                boxShadow: hovered ? "0 12px 32px rgba(31,58,45,0.35)" : "0 4px 14px rgba(31,58,45,0.18)",
-                transition: "all 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
-            }}
-        >
-            {children}
-        </button>
-    );
-}
-
-function SecondaryButton({ children }: { children: React.ReactNode }) {
-    const [hovered, setHovered] = useState(false);
-    return (
-        <button
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            style={{
-                display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 24px",
-                background: hovered ? "rgba(31,58,45,0.06)" : "transparent",
-                color: GREEN,
-                border: `1.5px solid ${hovered ? GREEN : "rgba(31,58,45,0.2)"}`,
-                borderRadius: 10,
-                fontFamily: "var(--font-mono, monospace)", fontWeight: 700, fontSize: "0.7rem",
-                textTransform: "uppercase", letterSpacing: "0.15em",
-                cursor: "pointer",
-                transition: "all 0.25s ease",
-            }}
-        >
-            {children}
-        </button>
     );
 }

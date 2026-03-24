@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -27,6 +29,38 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const { login, user, isAuthenticated } = useAuth();
+    const router = useRouter();
+
+    const getRedirectPath = (u: { onboardingStatus: string; paymentStatus: string }) => {
+        if (u.onboardingStatus === "completed") return "/student/dashboard";
+        if (u.paymentStatus === "pending" || u.paymentStatus === "approved") return "/user-onboarding/payment-status";
+        return "/user-onboarding/step-1";
+    };
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            router.replace(getRedirectPath(user));
+        }
+    }, [isAuthenticated, user, router]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setSubmitting(true);
+        try {
+            const loggedInUser = await login(email, password);
+            router.replace(getRedirectPath(loggedInUser));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Login failed. Please try again.";
+            setError(message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     return (
         <div className="min-h-screen flex">
@@ -247,7 +281,20 @@ export default function LoginPage() {
                     </motion.div>
 
                     {/* Form */}
-                    <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-5">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                        {error && (
+                            <motion.div variants={itemVariants} style={{
+                                padding: "12px 16px",
+                                borderRadius: 10,
+                                background: "rgba(192,57,43,0.08)",
+                                border: "1px solid rgba(192,57,43,0.2)",
+                                fontFamily: "var(--font-body, sans-serif)",
+                                fontSize: "0.85rem",
+                                color: "#c0392b",
+                            }}>
+                                {error}
+                            </motion.div>
+                        )}
                         {/* Email */}
                         <motion.div variants={itemVariants} className="flex flex-col gap-2">
                             <AuthLabel htmlFor="login-email">Email Address</AuthLabel>
@@ -318,12 +365,10 @@ export default function LoginPage() {
 
                         {/* Submit */}
                         <motion.div variants={itemVariants} className="mt-2">
-                            <Link href="/user-onboarding/step-1">
-                                <PrimaryButton>
-                                    Sign In
-                                    <ArrowRight size={16} />
-                                </PrimaryButton>
-                            </Link>
+                            <PrimaryButton disabled={submitting}>
+                                {submitting ? "Signing in..." : "Sign In"}
+                                {!submitting && <ArrowRight size={16} />}
+                            </PrimaryButton>
                         </motion.div>
 
                         {/* Divider */}
@@ -426,12 +471,13 @@ function AuthInput({ focused, style, ...props }: AuthInputProps) {
     );
 }
 
-function PrimaryButton({ children }: { children: React.ReactNode }) {
+function PrimaryButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
     const [hovered, setHovered] = useState(false);
 
     return (
         <button
             type="submit"
+            disabled={disabled}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
