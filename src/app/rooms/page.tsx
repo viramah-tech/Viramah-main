@@ -10,7 +10,7 @@ import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 
 const ROOMS = [
     {
-        title: "VIRAMAH NEXUS+",
+        title: "VIRAMAH NEXUS",
         type: "4 Seater",
         price: "₹9,090",
         originalPrice: "₹15,150",
@@ -24,7 +24,7 @@ const ROOMS = [
         ],
     },
     {
-        title: "VIRAMAH COLLECTIVE+",
+        title: "VIRAMAH COLLECTIVE",
         type: "3 Seater",
         price: "₹12,490",
         originalPrice: "₹20,817",
@@ -53,7 +53,7 @@ const ROOMS = [
     },
 
     {
-        title: "VIRAMAH STUDIO",
+        title: "VIRAMAH AXIS+",
         type: "1 Seater",
         price: "₹16,490",
         originalPrice: "₹27,483",

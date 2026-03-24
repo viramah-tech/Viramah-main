@@ -68,7 +68,7 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-start">
 
               <RoomCard
-                title="VIRAMAH COLLECTIVE+"
+                title="VIRAMAH COLLECTIVE"
                 type="3 SEATER"
                 price="₹12,490"
                 originalPrice="₹20,817"
@@ -83,7 +83,7 @@ export default function Home() {
                 ]}
               />
               <RoomCard
-                title="VIRAMAH NEXUS+"
+                title="VIRAMAH NEXUS"
                 type="4 SEATER"
                 price="₹9,090"
                 originalPrice="₹15,150"
