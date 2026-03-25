@@ -1,6 +1,10 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import {
+    createContext, useContext, useState, useCallback, useEffect, useRef,
+    ReactNode,
+} from "react";
+import { apiFetch } from "@/lib/api";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -106,10 +110,34 @@ const INITIAL_STATE: OnboardingState = {
     completedSteps: [],
 };
 
+const STORAGE_KEY = "viramah_onboarding";
+
+// ── localStorage helpers ─────────────────────────────────────
+
+function loadFromStorage(): OnboardingState | null {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw) as OnboardingState;
+    } catch {
+        return null;
+    }
+}
+
+function saveToStorage(state: OnboardingState) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+        // Storage full or unavailable — silently ignore
+    }
+}
+
 // ── Context ──────────────────────────────────────────────────
 
 interface OnboardingContextType {
     state: OnboardingState;
+    hydrating: boolean;
+    saving: boolean;
     updateStep1: (data: Partial<Step1Data>) => void;
     updateStep2: (data: Partial<Step2Data>) => void;
     updateStep3: (data: Partial<Step3Data>) => void;
@@ -122,10 +150,13 @@ interface OnboardingContextType {
     getAddOnsTotal: () => number;
     setStatus: (status: OnboardingStatus) => void;
     resetOnboarding: () => void;
+    saveStepToBackend: (step: number, payload: Record<string, unknown>) => Promise<void>;
 }
 
 const OnboardingContext = createContext<OnboardingContextType>({
     state: INITIAL_STATE,
+    hydrating: true,
+    saving: false,
     updateStep1: () => {},
     updateStep2: () => {},
     updateStep3: () => {},
@@ -138,12 +169,145 @@ const OnboardingContext = createContext<OnboardingContextType>({
     getAddOnsTotal: () => 0,
     setStatus: () => {},
     resetOnboarding: () => {},
+    saveStepToBackend: async () => {},
 });
 
 // ── Provider ─────────────────────────────────────────────────
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
     const [state, setState] = useState<OnboardingState>(INITIAL_STATE);
+    const [hydrating, setHydrating] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const didHydrate = useRef(false);
+
+    // ── Hydration: localStorage first, then backend ──────────
+    useEffect(() => {
+        if (didHydrate.current) return;
+        didHydrate.current = true;
+
+        // 1. Immediate restore from localStorage (instant)
+        const cached = loadFromStorage();
+        if (cached) {
+            setState(cached);
+        }
+
+        // 2. Attempt backend hydration (async, best-effort)
+        (async () => {
+            try {
+                const res = await apiFetch<{
+                    data: {
+                        onboardingStatus: string;
+                        name: string;
+                        dateOfBirth: string;
+                        idType: string;
+                        idNumber: string;
+                        documents: { idProof: string; addressProof: string; photo: string };
+                        emergencyContact: { name: string; phone: string; relation: string };
+                        parentDocuments: { idType: string; idNumber: string; idFront: string; idBack: string };
+                        selectedRoom: { _id: string; roomNumber: string; roomType: string; pricePerMonth: number } | null;
+                        roomNumber: string;
+                        roomType: string;
+                        messPackage: string;
+                        preferences: { diet: string; sleepSchedule: string; noise: string };
+                        paymentStatus: string;
+                    };
+                }>("/api/public/onboarding/status");
+
+                const d = res.data;
+                const completedSteps: number[] = [];
+
+                // Infer completed steps from backend data
+                if (d.documents?.idProof) completedSteps.push(1);
+                if (d.emergencyContact?.name && d.emergencyContact?.phone) completedSteps.push(2);
+                if (d.selectedRoom) completedSteps.push(3);
+                if (d.preferences?.diet) completedSteps.push(4);
+
+                setState((prev) => {
+                    const merged: OnboardingState = {
+                        ...prev,
+                        completedSteps: [
+                            ...new Set([...prev.completedSteps, ...completedSteps]),
+                        ],
+                    };
+
+                    // Restore Step 1: KYC text fields from backend
+                    if (d.name || d.idNumber) {
+                        merged.step1 = {
+                            ...prev.step1,
+                            fullName: d.name || prev.step1.fullName,
+                            dateOfBirth: d.dateOfBirth ? d.dateOfBirth.split("T")[0] : prev.step1.dateOfBirth,
+                            idType: d.idType || prev.step1.idType,
+                            idNumber: d.idNumber || prev.step1.idNumber,
+                        };
+                    }
+
+                    // Restore Step 2: emergency contact + parent docs
+                    if (d.emergencyContact?.name) {
+                        merged.step2 = {
+                            ...prev.step2,
+                            emergencyName: d.emergencyContact.name || prev.step2.emergencyName,
+                            emergencyPhone: d.emergencyContact.phone || prev.step2.emergencyPhone,
+                            emergencyRelation: d.emergencyContact.relation || prev.step2.emergencyRelation,
+                            parentIdType: d.parentDocuments?.idType || prev.step2.parentIdType,
+                            parentIdNumber: d.parentDocuments?.idNumber || prev.step2.parentIdNumber,
+                        };
+                    }
+
+                    // Restore Step 3: room selection from backend
+                    if (d.selectedRoom) {
+                        // Map backend roomType to frontend room data
+                        const ROOM_TYPE_REVERSE: Record<string, { id: string; title: string; type: string; priceLabel: string }> = {
+                            "VIRAMAH Nexus": { id: "nexus-plus", title: "Nexus Plus", type: "Shared Room", priceLabel: `₹${d.selectedRoom.pricePerMonth?.toLocaleString()}` },
+                            "VIRAMAH Collective": { id: "collective-plus", title: "Collective Plus", type: "Shared Room", priceLabel: `₹${d.selectedRoom.pricePerMonth?.toLocaleString()}` },
+                            "VIRAMAH Axis": { id: "axis", title: "Axis", type: "Private Room", priceLabel: `₹${d.selectedRoom.pricePerMonth?.toLocaleString()}` },
+                            "VIRAMAH Axis+": { id: "studio", title: "Axis+", type: "Studio", priceLabel: `₹${d.selectedRoom.pricePerMonth?.toLocaleString()}` },
+                        };
+                        const roomInfo = ROOM_TYPE_REVERSE[d.selectedRoom.roomType];
+                        if (roomInfo) {
+                            merged.step3 = {
+                                ...prev.step3,
+                                selectedRoom: {
+                                    id: roomInfo.id,
+                                    title: roomInfo.title,
+                                    type: roomInfo.type,
+                                    price: d.selectedRoom.pricePerMonth,
+                                    priceLabel: roomInfo.priceLabel,
+                                },
+                            };
+                            // Restore add-on state from messPackage
+                            if (d.messPackage === "full-board") {
+                                merged.step3.addOns = merged.step3.addOns.map((a) =>
+                                    a.id === "lunch" ? { ...a, enabled: true } : a
+                                );
+                            }
+                        }
+                    }
+
+                    // Map backend status to frontend status
+                    if (d.onboardingStatus === "completed") {
+                        merged.status = "payment_submitted";
+                    }
+                    if (d.paymentStatus === "approved") {
+                        merged.status = "move_in_approved";
+                    }
+
+                    return merged;
+                });
+            } catch {
+                // Not logged in or network error — continue with localStorage data
+            } finally {
+                setHydrating(false);
+            }
+        })();
+    }, []);
+
+    // ── Persist to localStorage on every state change ────────
+    useEffect(() => {
+        if (hydrating) return;
+        saveToStorage(state);
+    }, [state, hydrating]);
+
+    // ── Step update helpers ──────────────────────────────────
 
     const updateStep1 = useCallback((data: Partial<Step1Data>) => {
         setState((prev) => ({ ...prev, step1: { ...prev.step1, ...data } }));
@@ -190,7 +354,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     const canAccessStep = useCallback(
         (step: number) => {
             if (step === 1) return true;
-            // Can access step N only if step N-1 is complete
             return state.completedSteps.includes(step - 1);
         },
         [state.completedSteps]
@@ -213,12 +376,34 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
     const resetOnboarding = useCallback(() => {
         setState(INITIAL_STATE);
+        try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
     }, []);
+
+    // ── Save step to backend (called from step pages) ────────
+    const saveStepToBackend = useCallback(
+        async (step: number, payload: Record<string, unknown>) => {
+            setSaving(true);
+            try {
+                const method = step === 0 ? "POST" : "PATCH";
+                const path =
+                    step === 0
+                        ? "/api/public/onboarding/confirm"
+                        : `/api/public/onboarding/step-${step}`;
+
+                await apiFetch(path, { method, body: payload });
+            } finally {
+                setSaving(false);
+            }
+        },
+        []
+    );
 
     return (
         <OnboardingContext.Provider
             value={{
                 state,
+                hydrating,
+                saving,
                 updateStep1,
                 updateStep2,
                 updateStep3,
@@ -231,6 +416,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 getAddOnsTotal,
                 setStatus,
                 resetOnboarding,
+                saveStepToBackend,
             }}
         >
             {children}

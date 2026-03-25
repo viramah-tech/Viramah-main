@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Shield } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { uploadFile } from "@/lib/uploadFile";
 import {
     FieldLabel, FieldHint, FieldError, FieldInput, PhotoUpload,
     NavButton, FormCard, StepBadge, StepTitle, StepSubtitle,
@@ -20,12 +21,13 @@ const ID_TYPES = [
 
 export default function Step1Page() {
     const router = useRouter();
-    const { state, updateStep1, markStepComplete } = useOnboarding();
+    const { state, updateStep1, markStepComplete, saveStepToBackend, saving } = useOnboarding();
     const { step1 } = state;
 
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [attempted, setAttempted] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     const validate = (): boolean => {
         const errs: Record<string, string> = {};
@@ -44,11 +46,40 @@ export default function Step1Page() {
         return Object.keys(errs).length === 0;
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         setAttempted(true);
-        if (validate()) {
+        if (!validate()) return;
+
+        setSubmitting(true);
+        try {
+            // Upload ID images to S3
+            const [idProofUrl, addressProofUrl] = await Promise.all([
+                step1.idFront
+                    ? uploadFile("document", step1.idFront.preview, step1.idFront.name)
+                    : Promise.resolve(""),
+                step1.idBack
+                    ? uploadFile("document", step1.idBack.preview, step1.idBack.name)
+                    : Promise.resolve(""),
+            ]);
+
+            // Save KYC data (text fields + document URLs) to backend
+            await saveStepToBackend(1, {
+                fullName: step1.fullName,
+                dateOfBirth: step1.dateOfBirth,
+                idType: step1.idType,
+                idNumber: step1.idNumber,
+                idProof: idProofUrl,
+                addressProof: addressProofUrl,
+                photo: idProofUrl, // Use front as photo fallback
+            });
+
             markStepComplete(1);
             router.push("/user-onboarding/step-2");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to save. Please try again.";
+            setErrors({ idFront: message });
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -200,9 +231,9 @@ export default function Step1Page() {
 
             {/* Navigation */}
             <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "flex-end" }}>
-                <NavButton onClick={handleContinue}>
-                    Continue to Emergency Info
-                    <ArrowRight size={16} />
+                <NavButton onClick={handleContinue} disabled={submitting || saving}>
+                    {submitting ? "Saving..." : "Continue to Emergency Info"}
+                    {!submitting && <ArrowRight size={16} />}
                 </NavButton>
             </motion.div>
         </motion.div>

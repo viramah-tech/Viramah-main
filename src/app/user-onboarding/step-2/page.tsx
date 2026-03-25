@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Phone, Users } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { uploadFile } from "@/lib/uploadFile";
 import {
     FieldLabel, FieldHint, FieldError, FieldInput, PhotoUpload,
     NavButton, SecondaryButton, FormCard, StepBadge, StepTitle,
@@ -24,12 +25,13 @@ const ID_TYPES = [
 
 export default function Step2Page() {
     const router = useRouter();
-    const { state, updateStep2, markStepComplete, canAccessStep } = useOnboarding();
+    const { state, updateStep2, markStepComplete, canAccessStep, saveStepToBackend, saving } = useOnboarding();
     const { step2 } = state;
 
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [attempted, setAttempted] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     // Enforce step order
     if (!canAccessStep(2)) {
@@ -56,11 +58,40 @@ export default function Step2Page() {
         return Object.keys(errs).length === 0;
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         setAttempted(true);
-        if (validate()) {
+        if (!validate()) return;
+
+        setSubmitting(true);
+        try {
+            // Upload parent/guardian ID photos to S3
+            const [parentIdFrontUrl, parentIdBackUrl] = await Promise.all([
+                step2.parentIdFront
+                    ? uploadFile("document", step2.parentIdFront.preview, step2.parentIdFront.name)
+                    : Promise.resolve(""),
+                step2.parentIdBack
+                    ? uploadFile("document", step2.parentIdBack.preview, step2.parentIdBack.name)
+                    : Promise.resolve(""),
+            ]);
+
+            await saveStepToBackend(2, {
+                name: step2.emergencyName,
+                phone: step2.emergencyPhone,
+                relation: step2.emergencyRelation,
+                alternatePhone: step2.alternatePhone,
+                parentIdType: step2.parentIdType,
+                parentIdNumber: step2.parentIdNumber,
+                parentIdFront: parentIdFrontUrl,
+                parentIdBack: parentIdBackUrl,
+            });
+
             markStepComplete(2);
             router.push("/user-onboarding/step-3");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to save. Please try again.";
+            setErrors({ emergencyName: message });
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -254,8 +285,9 @@ export default function Step2Page() {
                 <SecondaryButton onClick={() => router.push("/user-onboarding/step-1")}>
                     <ArrowLeft size={16} /> Back
                 </SecondaryButton>
-                <NavButton onClick={handleContinue}>
-                    Continue to Room Selection <ArrowRight size={16} />
+                <NavButton onClick={handleContinue} disabled={submitting || saving}>
+                    {submitting ? "Saving..." : "Continue to Room Selection"}
+                    {!submitting && <ArrowRight size={16} />}
                 </NavButton>
             </motion.div>
         </motion.div>

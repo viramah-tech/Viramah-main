@@ -10,11 +10,20 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { apiFetch } from "@/lib/api";
 import { ROOMS, type RoomType } from "@/data/rooms";
 import {
     NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
     containerVariants, itemVariants,
 } from "@/components/onboarding/FormComponents";
+
+// Map frontend room IDs to backend roomType enum values
+const ROOM_TYPE_MAP: Record<string, string> = {
+    "nexus-plus": "VIRAMAH Nexus",
+    "collective-plus": "VIRAMAH Collective",
+    "axis": "VIRAMAH Axis",
+    "studio": "VIRAMAH Axis+",
+};
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -398,9 +407,10 @@ function AddOnCard({
 
 export default function Step3Page() {
     const router = useRouter();
-    const { state, updateStep3, toggleAddOn, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal } = useOnboarding();
+    const { state, updateStep3, toggleAddOn, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saving } = useOnboarding();
     const { step3 } = state;
     const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
     if (!canAccessStep(3)) {
         router.replace("/user-onboarding/step-2");
@@ -421,13 +431,47 @@ export default function Step3Page() {
         setError("");
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (!step3.selectedRoom) {
             setError("Please select a room to continue");
             return;
         }
-        markStepComplete(3);
-        router.push("/user-onboarding/step-4");
+
+        setSubmitting(true);
+        setError("");
+        try {
+            // Fetch backend rooms to find the matching _id
+            const backendRoomType = ROOM_TYPE_MAP[step3.selectedRoom.id] || "";
+            const roomsRes = await apiFetch<{
+                data: { rooms: Array<{ _id: string; roomType: string; isAvailable: boolean }> };
+            }>("/api/public/onboarding/rooms");
+
+            const matchingRoom = roomsRes.data.rooms.find(
+                (r) => r.roomType === backendRoomType && r.isAvailable
+            );
+
+            if (!matchingRoom) {
+                setError("Selected room type is no longer available. Please choose another.");
+                return;
+            }
+
+            // Determine messPackage from add-ons
+            const hasLunch = step3.addOns.find((a) => a.id === "lunch")?.enabled;
+            const messPackage = hasLunch ? "full-board" : "partial-board";
+
+            await apiFetch("/api/public/onboarding/step-3", {
+                method: "PATCH",
+                body: { roomId: matchingRoom._id, messPackage },
+            });
+
+            markStepComplete(3);
+            router.push("/user-onboarding/step-4");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to save room selection.";
+            setError(message);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const totalCost = getTotalCost();
@@ -576,8 +620,9 @@ export default function Step3Page() {
                 <SecondaryButton onClick={() => router.push("/user-onboarding/step-2")}>
                     <ArrowLeft size={16} /> Back
                 </SecondaryButton>
-                <NavButton onClick={handleContinue} disabled={!step3.selectedRoom}>
-                    Continue to Review <ArrowRight size={16} />
+                <NavButton onClick={handleContinue} disabled={!step3.selectedRoom || submitting || saving}>
+                    {submitting ? "Saving..." : "Continue to Review"}
+                    {!submitting && <ArrowRight size={16} />}
                 </NavButton>
             </motion.div>
         </motion.div>

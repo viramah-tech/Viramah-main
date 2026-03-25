@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -146,8 +147,10 @@ const ID_LABELS: Record<string, string> = {
 
 export default function Step4Page() {
     const router = useRouter();
-    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal } = useOnboarding();
+    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saveStepToBackend, saving } = useOnboarding();
     const { step1, step2, step3 } = state;
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState("");
 
     if (!canAccessStep(4)) {
         router.replace("/user-onboarding/step-3");
@@ -157,9 +160,26 @@ export default function Step4Page() {
     const enabledAddOns = step3.addOns.filter((a) => a.enabled);
     const totalCost = getTotalCost();
 
-    const handleConfirm = () => {
-        markStepComplete(4);
-        router.push("/user-onboarding/confirm");
+    const handleConfirm = async () => {
+        setSubmitting(true);
+        setError("");
+        try {
+            // Save preferences to backend (step-4)
+            // Default preferences — the backend requires these fields
+            await saveStepToBackend(4, {
+                diet: "vegetarian",
+                sleepSchedule: "flexible",
+                noise: "moderate",
+            });
+
+            markStepComplete(4);
+            router.push("/user-onboarding/confirm");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to save. Please try again.";
+            setError(message);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -361,14 +381,25 @@ export default function Step4Page() {
                 </div>
             </motion.div>
 
+            {/* Error */}
+            {error && (
+                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "#c0392b", textAlign: "center" }}>
+                    {error}
+                </p>
+            )}
+
             {/* Navigation */}
             <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
                 <SecondaryButton onClick={() => router.push("/user-onboarding/step-3")}>
                     <ArrowLeft size={16} /> Back
                 </SecondaryButton>
-                <NavButton onClick={handleConfirm}>
-                    <CreditCard size={16} />
-                    Proceed to Payment
+                <NavButton onClick={handleConfirm} disabled={submitting || saving}>
+                    {submitting ? "Saving..." : (
+                        <>
+                            <CreditCard size={16} />
+                            Proceed to Payment
+                        </>
+                    )}
                 </NavButton>
             </motion.div>
         </motion.div>

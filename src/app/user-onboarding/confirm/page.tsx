@@ -10,6 +10,7 @@ import {
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
+import { uploadFile } from "@/lib/uploadFile";
 import type { UploadedFile } from "@/context/OnboardingContext";
 import {
     FieldLabel, FieldInput, FieldError, NavButton, SecondaryButton,
@@ -275,7 +276,23 @@ export default function ConfirmPage() {
 
         setSubmitting(true);
         try {
-            // Submit payment to backend
+            // Phase A: Finalize onboarding data on backend
+            await apiFetch("/api/public/onboarding/confirm", {
+                method: "POST",
+                token,
+            });
+
+            // Upload receipt to S3
+            let receiptUrl = "";
+            if (payment.screenshot) {
+                receiptUrl = await uploadFile(
+                    "receipt",
+                    payment.screenshot.preview,
+                    payment.screenshot.name
+                );
+            }
+
+            // Phase B: Submit payment
             await apiFetch("/api/public/payments/initiate", {
                 method: "POST",
                 token,
@@ -284,15 +301,16 @@ export default function ConfirmPage() {
                     paymentMethod: payment.method,
                     description: `Onboarding payment - ${step3.selectedRoom?.title || "Room"}`,
                     transactionId: payment.transactionId,
-                    receiptUrl: payment.screenshot?.preview || "",
+                    receiptUrl,
                 },
             });
 
             markStepComplete(5);
             setStatus("payment_submitted");
             router.push("/user-onboarding/payment-status");
-        } catch {
-            setErrors({ method: "Payment submission failed. Please try again." });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Submission failed. Please try again.";
+            setErrors({ method: message });
         } finally {
             setSubmitting(false);
         }
