@@ -34,6 +34,28 @@ const STATUS_MAP = {
         badgeColor: "#9a7a3a",
         badgeBorder: "rgba(216,181,106,0.3)",
     },
+    doc_verification_pending: {
+        icon: Shield,
+        iconColor: GOLD,
+        iconBg: "rgba(216,181,106,0.15)",
+        title: "Document Verification In Progress",
+        subtitle: "Payment approved! Your KYC documents are now being reviewed by our team.",
+        badge: "Documents Under Review",
+        badgeBg: "rgba(216,181,106,0.12)",
+        badgeColor: "#9a7a3a",
+        badgeBorder: "rgba(216,181,106,0.3)",
+    },
+    move_in_pending: {
+        icon: Home,
+        iconColor: GOLD,
+        iconBg: "rgba(216,181,106,0.15)",
+        title: "Awaiting Move-in Confirmation",
+        subtitle: "Documents verified! Your move-in is being processed by our team.",
+        badge: "Move-in Pending",
+        badgeBg: "rgba(216,181,106,0.12)",
+        badgeColor: "#9a7a3a",
+        badgeBorder: "rgba(216,181,106,0.3)",
+    },
     move_in_approved: {
         icon: Home,
         iconColor: GREEN,
@@ -51,14 +73,25 @@ export default function PaymentStatusPage() {
     const { state, setStatus } = useOnboarding();
     const { user, updateUser } = useAuth();
 
-    // Map backend paymentStatus to onboarding status
+    // Map backend lifecycle fields to onboarding status
     useEffect(() => {
-        if (user?.paymentStatus === "approved") {
-            setStatus("move_in_approved");
-        } else if (user?.paymentStatus === "rejected") {
+        if (!user) return;
+        const ps = user.paymentStatus;
+        const dvs = user.documentVerificationStatus;
+        const ms = user.moveInStatus;
+
+        if (ps === "rejected") {
             setStatus("pending");
+        } else if (ps === "approved" && dvs === "approved" && ms === "completed") {
+            setStatus("move_in_approved");
+        } else if (ps === "approved" && dvs === "approved" && ms === "not_started") {
+            setStatus("move_in_pending");
+        } else if (ps === "approved" && dvs === "pending") {
+            setStatus("doc_verification_pending");
+        } else if (ps === "pending") {
+            setStatus("payment_submitted");
         }
-    }, [user?.paymentStatus, setStatus]);
+    }, [user?.paymentStatus, user?.documentVerificationStatus, user?.moveInStatus, setStatus]);
 
     // Real-time: listen for user updates (payment status changes)
     const handleSocketEvent = useCallback((event: string, data: unknown) => {
@@ -69,7 +102,7 @@ export default function PaymentStatusPage() {
     useSocket(user?._id, handleSocketEvent);
 
     const statusKey = state.status === "pending" ? "payment_submitted" : state.status;
-    const status = STATUS_MAP[statusKey] || STATUS_MAP.payment_submitted;
+    const status = STATUS_MAP[statusKey as keyof typeof STATUS_MAP] || STATUS_MAP.payment_submitted;
     const StatusIcon = status.icon;
 
     const isMoveInApproved = state.status === "move_in_approved";
@@ -200,22 +233,22 @@ export default function PaymentStatusPage() {
                         step: "1",
                         title: "Payment Verification",
                         desc: "Our team verifies your payment proof (24-48 hours)",
-                        done: state.status === "move_in_approved",
+                        done: ["doc_verification_pending", "move_in_pending", "move_in_approved"].includes(state.status),
                         active: state.status === "payment_submitted" || state.status === "pending",
                     },
                     {
                         step: "2",
                         title: "Document Review",
                         desc: "KYC and identity documents are reviewed",
-                        done: state.status === "move_in_approved",
-                        active: false,
+                        done: ["move_in_pending", "move_in_approved"].includes(state.status),
+                        active: state.status === "doc_verification_pending",
                     },
                     {
                         step: "3",
                         title: "Move-in Approval",
                         desc: "Room assignment confirmed and dashboard access granted",
                         done: state.status === "move_in_approved",
-                        active: false,
+                        active: state.status === "move_in_pending",
                     },
                 ].map((item, i) => (
                     <div

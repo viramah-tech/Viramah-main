@@ -15,6 +15,8 @@ export interface AuthUser {
     roomType: string;
     onboardingStatus: string;
     paymentStatus: string;
+    documentVerificationStatus: string;
+    moveInStatus: string;
     documents: {
         idProof: string;
         addressProof: string;
@@ -115,6 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
+        // Clear user-scoped onboarding data to prevent cross-user leakage
+        if (user?._id) {
+            localStorage.removeItem(`viramah_onboarding_${user._id}`);
+        }
         localStorage.removeItem("viramah_token");
         setToken(null);
         setUser(null);

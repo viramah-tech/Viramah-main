@@ -34,9 +34,27 @@ export default function LoginPage() {
     const { login, user, isAuthenticated } = useAuth();
     const router = useRouter();
 
-    const getRedirectPath = (u: { onboardingStatus: string; paymentStatus: string }) => {
-        if (u.onboardingStatus === "completed") return "/student/dashboard";
-        if (u.paymentStatus === "pending" || u.paymentStatus === "approved") return "/user-onboarding/payment-status";
+    const getRedirectPath = (u: {
+        onboardingStatus: string;
+        paymentStatus: string;
+        documentVerificationStatus?: string;
+        moveInStatus?: string;
+    }) => {
+        // All 3 lifecycle gates passed → dashboard
+        if (
+            u.paymentStatus === "approved" &&
+            u.documentVerificationStatus === "approved" &&
+            u.moveInStatus === "completed"
+        ) {
+            return "/student/dashboard";
+        }
+        // Onboarding complete but lifecycle not done → payment status page
+        if (u.onboardingStatus === "completed") {
+            return "/user-onboarding/payment-status";
+        }
+        if (u.paymentStatus === "pending" || u.paymentStatus === "approved") {
+            return "/user-onboarding/payment-status";
+        }
         return "/user-onboarding/step-1";
     };
 

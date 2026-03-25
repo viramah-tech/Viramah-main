@@ -5,6 +5,7 @@ import {
     ReactNode,
 } from "react";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -65,7 +66,7 @@ export interface Step4Data {
     address: string;
 }
 
-export type OnboardingStatus = "pending" | "payment_submitted" | "move_in_approved";
+export type OnboardingStatus = "pending" | "payment_submitted" | "doc_verification_pending" | "move_in_pending" | "move_in_approved";
 
 export interface OnboardingState {
     step1: Step1Data;
@@ -120,13 +121,16 @@ const INITIAL_STATE: OnboardingState = {
     completedSteps: [],
 };
 
-const STORAGE_KEY = "viramah_onboarding";
+// ── localStorage helpers (user-scoped) ──────────────────────
 
-// ── localStorage helpers ─────────────────────────────────────
+function getStorageKey(userId?: string): string | null {
+    return userId ? `viramah_onboarding_${userId}` : null;
+}
 
-function loadFromStorage(): OnboardingState | null {
+function loadFromStorage(key: string | null): OnboardingState | null {
+    if (!key) return null;
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(key);
         if (!raw) return null;
         return JSON.parse(raw) as OnboardingState;
     } catch {
@@ -134,9 +138,10 @@ function loadFromStorage(): OnboardingState | null {
     }
 }
 
-function saveToStorage(state: OnboardingState) {
+function saveToStorage(key: string | null, state: OnboardingState) {
+    if (!key) return;
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(key, JSON.stringify(state));
     } catch {
         // Storage full or unavailable — silently ignore
     }
@@ -191,17 +196,30 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     const [hydrating, setHydrating] = useState(true);
     const [saving, setSaving] = useState(false);
     const didHydrate = useRef(false);
+    const { user } = useAuth();
+    const storageKeyRef = useRef<string | null>(null);
 
-    // ── Hydration: localStorage first, then backend ──────────
+    // Update storage key when user changes
+    useEffect(() => {
+        storageKeyRef.current = getStorageKey(user?._id);
+    }, [user?._id]);
+
+    // ── Hydration: wait for user, then localStorage + backend ──
     useEffect(() => {
         if (didHydrate.current) return;
+        if (!user?._id) {
+            // No user yet — skip localStorage, just finish hydrating
+            setHydrating(false);
+            return;
+        }
         didHydrate.current = true;
 
-        // 1. Immediate restore from localStorage (instant)
-        const cached = loadFromStorage();
+        const storageKey = getStorageKey(user._id);
+        storageKeyRef.current = storageKey;
+
+        // 1. Immediate restore from user-scoped localStorage (instant)
+        const cached = loadFromStorage(storageKey);
         if (cached) {
-            // Deep-merge with INITIAL_STATE to guarantee all keys exist
-            // (handles schema evolution where new keys like step4 were added later)
             setState({
                 ...INITIAL_STATE,
                 ...cached,
@@ -244,7 +262,25 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                     console.error("Failed to fetch rooms during hydration:", e);
                 }
 
-                const d = res.data;
+                const d = res.data as {
+                    onboardingStatus: string;
+                    name: string;
+                    dateOfBirth: string;
+                    idType: string;
+                    idNumber: string;
+                    documents: { idProof: string; addressProof: string; photo: string };
+                    emergencyContact: { name: string; phone: string; relation: string };
+                    parentDocuments: { idType: string; idNumber: string; idFront: string; idBack: string };
+                    selectedRoomType: string;
+                    roomNumber: string;
+                    roomType: string;
+                    messPackage: string;
+                    gender: string;
+                    address: string;
+                    paymentStatus: string;
+                    documentVerificationStatus: string;
+                    moveInStatus: string;
+                };
                 const completedSteps: number[] = [];
 
                 // Infer completed steps from backend data
@@ -336,11 +372,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                         };
                     }
 
-                    // Map backend status to frontend status
+                    // Map backend status to frontend status (full lifecycle)
                     if (d.onboardingStatus === "completed") {
                         merged.status = "payment_submitted";
                     }
-                    if (d.paymentStatus === "approved") {
+                    if (d.paymentStatus === "approved" && d.documentVerificationStatus === "pending") {
+                        merged.status = "doc_verification_pending";
+                    }
+                    if (d.paymentStatus === "approved" && d.documentVerificationStatus === "approved" && d.moveInStatus === "not_started") {
+                        merged.status = "move_in_pending";
+                    }
+                    if (d.paymentStatus === "approved" && d.documentVerificationStatus === "approved" && d.moveInStatus === "completed") {
                         merged.status = "move_in_approved";
                     }
 
@@ -352,12 +394,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 setHydrating(false);
             }
         })();
-    }, []);
+    }, [user?._id]);
 
-    // ── Persist to localStorage on every state change ────────
+    // ── Persist to user-scoped localStorage on every state change ──
     useEffect(() => {
         if (hydrating) return;
-        saveToStorage(state);
+        saveToStorage(storageKeyRef.current, state);
     }, [state, hydrating]);
 
     // ── Step update helpers ──────────────────────────────────
@@ -433,7 +475,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
     const resetOnboarding = useCallback(() => {
         setState(INITIAL_STATE);
-        try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+        const key = storageKeyRef.current;
+        if (key) {
+            try { localStorage.removeItem(key); } catch { /* ignore */ }
+        }
     }, []);
 
     // ── Save step to backend (called from step pages) ────────

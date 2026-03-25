@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
     Wallet, UtensilsCrossed, Dumbbell, Bell, Calendar,
     ArrowRight, TrendingUp, Wrench, ChevronRight,
@@ -68,7 +69,24 @@ const itemVariants = {
 
 export default function StudentDashboard() {
     const [hoveredAction, setHoveredAction] = useState<string | null>(null);
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, loading } = useAuth();
+    const router = useRouter();
+
+    // Access gate: redirect if lifecycle not complete
+    useEffect(() => {
+        if (loading) return;
+        if (!user) {
+            router.replace("/login");
+            return;
+        }
+        const canAccess =
+            user.paymentStatus === "approved" &&
+            user.documentVerificationStatus === "approved" &&
+            user.moveInStatus === "completed";
+        if (!canAccess) {
+            router.replace("/user-onboarding/payment-status");
+        }
+    }, [user, loading, router]);
 
     // Real-time sync: update user data when socket events arrive
     const handleSocketEvent = useCallback((event: string, data: unknown) => {
