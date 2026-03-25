@@ -40,12 +40,9 @@ export default function LoginPage() {
         return "/user-onboarding/step-1";
     };
 
-    // Redirect if already authenticated
-    useEffect(() => {
-        if (isAuthenticated && user) {
-            router.replace(getRedirectPath(user));
-        }
-    }, [isAuthenticated, user, router]);
+    // Removed aggressively forcing redirect on mount if already authenticated.
+    // This allows users to access the login page manually to switch accounts.
+    // Redirection now only happens explicitly inside handleSubmit after a successful login.
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

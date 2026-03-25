@@ -37,9 +37,30 @@ export default function Step1Page() {
         if (!step1.idFront) errs.idFront = "Front side of ID is required";
         if (!step1.idBack) errs.idBack = "Back side of ID is required";
 
-        // Aadhaar: 12 digits
-        if (step1.idType === "aadhaar" && step1.idNumber.replace(/\s/g, "").length !== 12) {
-            errs.idNumber = "Aadhaar must be 12 digits";
+        // Age validation
+        if (step1.dateOfBirth) {
+            const today = new Date();
+            const birthDate = new Date(step1.dateOfBirth);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            if (age < 18) {
+                errs.dateOfBirth = "You must be at least 18 years old";
+            }
+        }
+
+        // ID validation
+        const cleanId = step1.idNumber.trim();
+        if (step1.idType === "aadhaar" && !/^\d{12}$/.test(cleanId.replace(/\s/g, ""))) {
+            errs.idNumber = "Aadhaar must be exactly 12 numeric digits";
+        } else if (step1.idType === "passport" && !/^[A-Z0-9]{8,9}$/.test(cleanId)) {
+            errs.idNumber = "Passport must be 8-9 uppercase alphanumeric characters";
+        } else if (step1.idType === "driving_license" && !/^[A-Z0-9]{15,16}$/.test(cleanId)) {
+            errs.idNumber = "Driving License must be 15-16 uppercase alphanumeric characters";
+        } else if (step1.idType === "voter_id" && !/^[A-Z0-9]{10}$/.test(cleanId)) {
+            errs.idNumber = "Voter ID must be exactly 10 uppercase alphanumeric characters";
         }
 
         setErrors(errs);
@@ -159,7 +180,11 @@ export default function Step1Page() {
                             type="text"
                             placeholder={step1.idType === "aadhaar" ? "XXXX XXXX XXXX" : `Enter ${idLabel} number`}
                             value={step1.idNumber}
-                            onChange={(e) => updateStep1({ idNumber: e.target.value })}
+                            onChange={(e) => {
+                                let val = e.target.value;
+                                if (step1.idType !== "aadhaar") val = val.toUpperCase();
+                                updateStep1({ idNumber: val });
+                            }}
                             focused={focusedField === "idnum"}
                             hasError={attempted && !!errors.idNumber}
                             onFocus={() => setFocusedField("idnum")}

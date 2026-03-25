@@ -238,6 +238,31 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
         }
     }, [loading, isAuthenticated, router]);
 
+    useEffect(() => {
+        let ticking = false;
+        const handleScroll = () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const y = window.scrollY;
+                    setIsScrolled((prev) => {
+                        const isScrolledNow = prev ? y > 10 : y > 50;
+                        if (isScrolledNow && isExpanded) setIsExpanded(false);
+                        return isScrolledNow;
+                    });
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [isExpanded]);
+
+    useEffect(() => {
+        setIsExpanded(true);
+        window.scrollTo(0, 0);
+    }, [pathname]);
+
     if (loading) {
         return (
             <div style={{ minHeight: "100vh", background: "#F6F4EF", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -248,21 +273,6 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
 
     if (!isAuthenticated) return null;
 
-    useEffect(() => {
-        const handleScroll = () => {
-            const scrolled = window.scrollY > 50;
-            setIsScrolled(scrolled);
-            if (scrolled && isExpanded) setIsExpanded(false);
-        };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, [isExpanded]);
-
-    useEffect(() => {
-        setIsExpanded(true);
-        window.scrollTo(0, 0);
-    }, [pathname]);
-
     return (
         <OnboardingProvider>
         <div
@@ -271,8 +281,10 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
             {/* Header */}
             <motion.header
                 style={{
-                    position: "sticky",
+                    position: "fixed",
                     top: 0,
+                    left: 0,
+                    right: 0,
                     zIndex: 40,
                     background: "rgba(246,244,239,0.92)",
                     backdropFilter: "blur(16px)",
@@ -287,7 +299,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 transition={{ duration: 0.3, ease: "easeOut" }}
             >
                 <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between relative">
                         {/* Back link */}
                         <Link
                             href="/"
@@ -299,7 +311,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                                 textDecoration: "none",
                                 transition: "color 0.2s",
                             }}
-                            className="hover:text-[#1F3A2D]"
+                            className="hover:text-[#1F3A2D] z-10"
                         >
                             <ArrowLeft size={16} />
                             <span
@@ -316,13 +328,13 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         </Link>
 
                         {/* Compact stepper when scrolled */}
-                        <AnimatePresence mode="wait">
+                        <AnimatePresence>
                             {!isPostFlow && isScrolled && !isExpanded && (
                                 <motion.div
                                     initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    className="flex-1 flex justify-center"
+                                    animate={{ opacity: 1, y: 0, transition: { duration: 0.2, delay: 0.25 } }}
+                                    exit={{ opacity: 0, y: -10, transition: { duration: 0.15, delay: 0 } }}
+                                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
                                 >
                                     <CompactStepper steps={BOOKING_STEPS} currentStep={currentStep} />
                                 </motion.div>
@@ -330,7 +342,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         </AnimatePresence>
 
                         {/* Right: logo + toggle */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 z-10">
                             {!isPostFlow && isScrolled && (
                                 <button
                                     onClick={() => setIsExpanded(!isExpanded)}
@@ -373,10 +385,9 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         {!isPostFlow && (!isScrolled || isExpanded) && (
                             <motion.div
                                 initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                                animate={{ height: "auto", opacity: 1, marginTop: 24 }}
-                                exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                                style={{ overflow: "visible" }}
+                                animate={{ height: "auto", opacity: 1, marginTop: 24, transition: { duration: 0.35, delay: 0.15, ease: "easeOut" } }}
+                                exit={{ height: 0, opacity: 0, marginTop: 0, transition: { duration: 0.25, delay: 0, ease: "easeIn" } }}
+                                style={{ overflow: "hidden" }}
                             >
                                 <ExpandedStepper steps={BOOKING_STEPS} currentStep={currentStep} />
                             </motion.div>
@@ -386,7 +397,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
             </motion.header>
 
             {/* Main Content */}
-            <main style={{ maxWidth: 760, margin: "0 auto", padding: "40px 24px 100px" }}>
+            <main style={{ maxWidth: 760, margin: "0 auto", padding: `${isPostFlow ? 80 : 180}px 24px 100px` }}>
                 {children}
             </main>
 

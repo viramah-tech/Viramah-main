@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
@@ -11,18 +11,18 @@ import {
 import { cn } from "@/lib/utils";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { apiFetch } from "@/lib/api";
-import { ROOMS, type RoomType } from "@/data/rooms";
+import { ROOMS as STATIC_ROOMS, type RoomType } from "@/data/rooms";
 import {
     NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
     containerVariants, itemVariants,
 } from "@/components/onboarding/FormComponents";
 
-// Map frontend room IDs to backend roomType enum values
+// Map frontend room IDs to backend RoomType.name values (must match DB exactly)
 const ROOM_TYPE_MAP: Record<string, string> = {
-    "nexus-plus": "VIRAMAH Nexus",
-    "collective-plus": "VIRAMAH Collective",
-    "axis": "VIRAMAH Axis",
-    "studio": "VIRAMAH Axis+",
+    "nexus-plus": "NEXUS",
+    "collective-plus": "COLLECTIVE",
+    "axis": "AXIS",
+    "studio": "AXIS+",
 };
 
 const GREEN = "#1F3A2D";
@@ -411,13 +411,52 @@ export default function Step3Page() {
     const { step3 } = state;
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
+    const [rooms, setRooms] = useState<RoomType[]>(STATIC_ROOMS);
+    const [redirecting, setRedirecting] = useState(false);
 
-    if (!canAccessStep(3)) {
-        router.replace("/user-onboarding/step-2");
+    useEffect(() => {
+        if (!canAccessStep(3)) {
+            setRedirecting(true);
+            router.replace("/user-onboarding/step-2");
+        }
+    }, [canAccessStep, router]);
+
+    useEffect(() => {
+        const fetchRooms = async () => {
+            try {
+                const res = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string; basePrice?: number; discountedPrice?: number; pricing?: { original: number; discounted: number }; availableSeats: number; isActive: boolean }> } }>("/api/public/rooms");
+                if (res?.data?.roomTypes) {
+                    const mapped = STATIC_ROOMS.map(staticRoom => {
+                        const backendName = ROOM_TYPE_MAP[staticRoom.id];
+                        const beRoom = res.data.roomTypes.find(r => r.name === backendName);
+                        if (beRoom) {
+                            const origPrice = beRoom.pricing?.original ?? beRoom.basePrice ?? staticRoom.price;
+                            const discPrice = beRoom.pricing?.discounted ?? beRoom.discountedPrice ?? staticRoom.price;
+                            return {
+                                ...staticRoom,
+                                price: discPrice,
+                                priceLabel: `₹${discPrice.toLocaleString()}`,
+                                originalPrice: `₹${origPrice.toLocaleString()}`,
+                                tag: beRoom.availableSeats > 0 ? staticRoom.tag : 'Sold Out',
+                            };
+                        }
+                        return staticRoom;
+                    });
+                    setRooms(mapped);
+                }
+            } catch (err) {
+                console.error("Failed to fetch rooms:", err);
+            }
+        };
+        fetchRooms();
+    }, []);
+
+    if (redirecting) {
         return null;
     }
 
     const handleSelectRoom = (room: RoomType) => {
+        if (room.tag === 'Sold Out') return;
         updateStep3({
             selectedRoom: {
                 id: room.id,
@@ -441,13 +480,13 @@ export default function Step3Page() {
         setError("");
         try {
             // Fetch backend rooms to find the matching _id
-            const backendRoomType = ROOM_TYPE_MAP[step3.selectedRoom.id] || "";
+            const backendRoomName = ROOM_TYPE_MAP[step3.selectedRoom.id] || "";
             const roomsRes = await apiFetch<{
-                data: { rooms: Array<{ _id: string; roomType: string; isAvailable: boolean }> };
-            }>("/api/public/onboarding/rooms");
+                data: { roomTypes: Array<{ _id: string; name: string; availableSeats: number }> };
+            }>("/api/public/rooms");
 
-            const matchingRoom = roomsRes.data.rooms.find(
-                (r) => r.roomType === backendRoomType && r.isAvailable
+            const matchingRoom = roomsRes.data.roomTypes.find(
+                (r) => r.name === backendRoomName && r.availableSeats > 0
             );
 
             if (!matchingRoom) {
@@ -461,7 +500,7 @@ export default function Step3Page() {
 
             await apiFetch("/api/public/onboarding/step-3", {
                 method: "PATCH",
-                body: { roomId: matchingRoom._id, messPackage },
+                body: { roomTypeId: matchingRoom._id, roomTypeName: backendRoomName, messPackage },
             });
 
             markStepComplete(3);
@@ -490,7 +529,7 @@ export default function Step3Page() {
 
             {/* Room Grid */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
-                {ROOMS.map((room) => (
+                {rooms.map((room) => (
                     <motion.div key={room.id} variants={itemVariants}>
                         <SelectableRoomCard
                             room={room}

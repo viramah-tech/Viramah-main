@@ -8,67 +8,49 @@ import { RoomCard } from "@/components/ui/RoomCard";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 
-const ROOMS = [
-    {
-        title: "VIRAMAH NEXUS",
-        type: "4 Seater",
-        price: "₹9,090",
-        originalPrice: "₹15,150",
-        tag: "Limited",
-        amenities: ["650 Sq Ft", "Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals", "2 Bean Bags"],
-        images: [
-            "/room images/4 seater/room 1.webp",
-            "/room images/4 seater/room 2.webp",
-            "/room images/4 seater/study tables.webp",
-            "/room images/4 seater/toilet.webp",
-        ],
-    },
-    {
-        title: "VIRAMAH COLLECTIVE",
-        type: "3 Seater",
-        price: "₹12,490",
-        originalPrice: "₹20,817",
-        tag: "Limited",
-        amenities: ["650 Sq Ft", "Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals", "2 Bean Bags"],
-        images: [
-            "/room images/3 seater/room 1.png",
-            "/room images/3 seater/room 2.png",
-            "/room images/3 seater/study tables.webp",
-            "/room images/3 seater/toilet.webp",
-        ],
-    },
-    {
-        title: "VIRAMAH AXIS",
-        type: "2 Seater",
-        price: "₹14,490",
-        originalPrice: "₹24,150",
-        tag: "Best Value",
-        amenities: ["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals", "1 Bean Bag"],
-        images: [
-            "/room images/2 seater/bed + table.png",
-            "/room images/2 seater/cuboard + beds.png",
-            "/room images/2 seater/cuboard.png",
-            "/room images/2 seater/toilet .png.jpeg",
-        ],
-    },
-
-    {
-        title: "VIRAMAH AXIS+",
-        type: "1 Seater",
-        price: "₹16,490",
-        originalPrice: "₹27,483",
-        tag: "Limited",
-        amenities: ["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals", "1 Bean Bag"],
-        images: [
-            "/room images/1 seater/room side view.png",
-            "/room images/1 seater/bed + table .png",
-            "/room images/1 seater/cuboard.png",
-            "/room images/1 seater/toilet.jpeg",
-        ],
-    },
-];
+import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
+import { ROOMS as STATIC_ROOMS, type RoomType } from "@/data/rooms";
 
 export default function RoomsPage() {
+    const [rooms, setRooms] = useState<RoomType[]>(STATIC_ROOMS);
+
+    useEffect(() => {
+        const ROOM_NAME_MAP: Record<string, string> = {
+            "nexus-plus": "NEXUS",
+            "collective-plus": "COLLECTIVE",
+            "axis": "AXIS",
+            "studio": "AXIS+",
+        };
+        const fetchRooms = async () => {
+            try {
+                const res = await apiFetch<{ data: { roomTypes: { name: string; basePrice?: number; discountedPrice?: number; pricing?: { original: number; discounted: number }; availableSeats: number }[] } }>("/api/public/rooms");
+                if (res?.data?.roomTypes) {
+                    const mapped = STATIC_ROOMS.map(staticRoom => {
+                        const backendName = ROOM_NAME_MAP[staticRoom.id];
+                        const beRoom = res.data.roomTypes.find(r => r.name === backendName);
+                        if (beRoom) {
+                            const origPrice = beRoom.pricing?.original ?? beRoom.basePrice ?? staticRoom.price;
+                            const discPrice = beRoom.pricing?.discounted ?? beRoom.discountedPrice ?? staticRoom.price;
+                            return {
+                                ...staticRoom,
+                                price: discPrice,
+                                priceLabel: `₹${discPrice.toLocaleString()}`,
+                                originalPrice: `₹${origPrice.toLocaleString()}`,
+                                tag: beRoom.availableSeats > 0 ? staticRoom.tag : 'Sold Out',
+                            };
+                        }
+                        return staticRoom;
+                    });
+                    setRooms(mapped);
+                }
+            } catch (err) {
+                console.error("Failed to fetch rooms:", err);
+            }
+        };
+        fetchRooms();
+    }, []);
+    
     return (
         <main className="min-h-screen flex flex-col" style={{ background: "var(--luxury-green)" }}>
             <Navigation />
@@ -152,7 +134,7 @@ export default function RoomsPage() {
                             className="font-mono text-[0.7rem] uppercase tracking-[0.25em]"
                             style={{ color: "var(--gold)", opacity: 0.7 }}
                         >
-                            {ROOMS.length} spaces available
+                            {rooms.length} spaces available
                         </span>
                         <div
                             className="h-px flex-1 mx-6"
@@ -167,12 +149,12 @@ export default function RoomsPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
-                        {ROOMS.map((room) => (
+                        {rooms.map((room) => (
                             <RoomCard
                                 key={`${room.title}-${room.type}`}
                                 title={room.title}
                                 type={room.type}
-                                price={room.price}
+                                price={room.priceLabel || room.price.toString()}
                                 originalPrice={room.originalPrice}
                                 tag={room.tag}
                                 amenities={room.amenities}

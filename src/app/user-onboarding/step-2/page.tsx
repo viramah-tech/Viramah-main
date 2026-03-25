@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Phone, Users } from "lucide-react";
@@ -32,10 +32,16 @@ export default function Step2Page() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [attempted, setAttempted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [redirecting, setRedirecting] = useState(false);
 
-    // Enforce step order
-    if (!canAccessStep(2)) {
-        router.replace("/user-onboarding/step-1");
+    useEffect(() => {
+        if (!canAccessStep(2)) {
+            setRedirecting(true);
+            router.replace("/user-onboarding/step-1");
+        }
+    }, [canAccessStep, router]);
+
+    if (redirecting) {
         return null;
     }
 
@@ -49,9 +55,28 @@ export default function Step2Page() {
         if (!step2.parentIdBack) errs.parentIdBack = "Back side of guardian ID is required";
 
         // Phone validation
-        const phoneDigits = step2.emergencyPhone.replace(/\D/g, "");
-        if (step2.emergencyPhone && phoneDigits.length < 10) {
-            errs.emergencyPhone = "Please enter a valid phone number";
+        const cleanPhone = step2.emergencyPhone.replace(/\D/g, "");
+        if (!/^\d{10}$/.test(cleanPhone)) {
+            errs.emergencyPhone = "Phone number must be exactly 10 numeric digits";
+        }
+
+        if (step2.alternatePhone) {
+            const cleanAltPhone = step2.alternatePhone.replace(/\D/g, "");
+            if (!/^\d{10}$/.test(cleanAltPhone)) {
+                errs.alternatePhone = "Alternate phone must be exactly 10 numeric digits";
+            }
+        }
+
+        // Parent ID validation
+        const cleanId = step2.parentIdNumber.trim();
+        if (step2.parentIdType === "aadhaar" && !/^\d{12}$/.test(cleanId.replace(/\s/g, ""))) {
+            errs.parentIdNumber = "Aadhaar must be exactly 12 numeric digits";
+        } else if (step2.parentIdType === "passport" && !/^[A-Z0-9]{8,9}$/.test(cleanId)) {
+            errs.parentIdNumber = "Passport must be 8-9 uppercase alphanumeric characters";
+        } else if (step2.parentIdType === "driving_license" && !/^[A-Z0-9]{15,16}$/.test(cleanId)) {
+            errs.parentIdNumber = "Driving License must be 15-16 uppercase alphanumeric characters";
+        } else if (step2.parentIdType === "voter_id" && !/^[A-Z0-9]{10}$/.test(cleanId)) {
+            errs.parentIdNumber = "Voter ID must be exactly 10 uppercase alphanumeric characters";
         }
 
         setErrors(errs);
@@ -180,6 +205,7 @@ export default function Step2Page() {
                             onFocus={() => setFocusedField("alt")}
                             onBlur={() => setFocusedField(null)}
                         />
+                        {attempted && errors.alternatePhone && <FieldError>{errors.alternatePhone}</FieldError>}
                     </div>
                 </FormCard>
             </motion.div>
@@ -237,7 +263,11 @@ export default function Step2Page() {
                             type="text"
                             placeholder="Parent/Guardian ID number"
                             value={step2.parentIdNumber}
-                            onChange={(e) => updateStep2({ parentIdNumber: e.target.value })}
+                            onChange={(e) => {
+                                let val = e.target.value;
+                                if (step2.parentIdType !== "aadhaar") val = val.toUpperCase();
+                                updateStep2({ parentIdNumber: val });
+                            }}
                             focused={focusedField === "pidnum"}
                             hasError={attempted && !!errors.parentIdNumber}
                             onFocus={() => setFocusedField("pidnum")}

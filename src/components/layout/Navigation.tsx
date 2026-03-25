@@ -51,11 +51,19 @@ export function Navigation() {
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
+        let ticking = false;
         const handleScroll = () => {
-            setScrolled(window.scrollY > 50);
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    setScrolled(window.scrollY > 50);
+                    ticking = false;
+                });
+                ticking = true;
+            }
         };
 
-        window.addEventListener("scroll", handleScroll);
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        handleScroll(); // Initial check
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
@@ -64,10 +72,10 @@ export function Navigation() {
             <nav
                 className={cn(
                     "pointer-events-auto relative flex items-center justify-between px-2 pl-4 md:px-3 md:pl-6 md:pr-3 h-[60px] md:h-[70px] gap-2 md:gap-6",
-                    "bg-luxury-green border border-white/10 rounded-full",
+                    "border border-white/10 rounded-full",
                     "shadow-[0_12px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]",
-                    "transition-all duration-500 mx-4 md:mx-0",
-                    scrolled && "bg-luxury-green/90 backdrop-blur-md h-[55px] md:h-[60px]"
+                    "transition-all duration-300 mx-4 md:mx-0",
+                    scrolled ? "bg-luxury-green/90 backdrop-blur-md" : "bg-luxury-green"
                 )}
             >
                 {/* Brand */}

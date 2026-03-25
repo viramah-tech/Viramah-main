@@ -44,15 +44,9 @@ export default function SignUpPage() {
     const { signup, user, isAuthenticated } = useAuth();
     const router = useRouter();
 
-    // Redirect if already authenticated
-    useEffect(() => {
-        if (!isAuthenticated || !user) return;
-        if (user.onboardingStatus === "completed") {
-            router.push("/student/dashboard");
-        } else {
-            router.push("/user-onboarding/step-1");
-        }
-    }, [isAuthenticated, user, router]);
+    // Removed aggressively forcing redirect on mount if already authenticated.
+    // This allows users to access the signup page manually to create new accounts.
+    // Redirection now only happens explicitly inside handleSubmit after a successful signup.
 
     const passwordsMatch = password && confirmPassword && password === confirmPassword;
 

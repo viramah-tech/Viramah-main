@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -10,7 +10,7 @@ import {
 import { useOnboarding } from "@/context/OnboardingContext";
 import {
     NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
-    containerVariants, itemVariants,
+    containerVariants, itemVariants, FormCard, FieldLabel, FieldInput, FieldError, SelectionButton
 } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
@@ -147,29 +147,46 @@ const ID_LABELS: Record<string, string> = {
 
 export default function Step4Page() {
     const router = useRouter();
-    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saveStepToBackend, saving } = useOnboarding();
-    const { step1, step2, step3 } = state;
+    const { state, updateStep4, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saveStepToBackend, saving } = useOnboarding();
+    const { step1, step2, step3, step4 = { gender: "", address: "" } } = state;
     const [submitting, setSubmitting] = useState(false);
+    const [attempted, setAttempted] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [error, setError] = useState("");
+    const [redirecting, setRedirecting] = useState(false);
 
-    if (!canAccessStep(4)) {
-        router.replace("/user-onboarding/step-3");
+    useEffect(() => {
+        if (!canAccessStep(4)) {
+            setRedirecting(true);
+            router.replace("/user-onboarding/step-3");
+        }
+    }, [canAccessStep, router]);
+
+    if (redirecting) {
         return null;
     }
 
     const enabledAddOns = step3.addOns.filter((a) => a.enabled);
     const totalCost = getTotalCost();
 
+    const validate = (): boolean => {
+        const errs: Record<string, string> = {};
+        if (!step4.gender) errs.gender = "Gender is required";
+        if (!step4.address.trim()) errs.address = "Address is required";
+        setErrors(errs);
+        return Object.keys(errs).length === 0;
+    };
+
     const handleConfirm = async () => {
+        setAttempted(true);
+        if (!validate()) return;
+        
         setSubmitting(true);
         setError("");
         try {
-            // Save preferences to backend (step-4)
-            // Default preferences — the backend requires these fields
             await saveStepToBackend(4, {
-                diet: "vegetarian",
-                sleepSchedule: "flexible",
-                noise: "moderate",
+                gender: step4.gender,
+                address: step4.address,
             });
 
             markStepComplete(4);
@@ -186,11 +203,69 @@ export default function Step4Page() {
         <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
-                <StepBadge icon={Check} label="Almost Done" />
+                <StepBadge icon={Check} label="Final Details & Review" />
                 <StepTitle>Review &amp; Confirm</StepTitle>
                 <StepSubtitle>
-                    Please review your information before proceeding to payment.
+                    Please provide a few more details and review your information before proceeding to payment.
                 </StepSubtitle>
+            </motion.div>
+
+            {/* Additional Details Form */}
+            <motion.div variants={itemVariants}>
+                <FormCard>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        <h3 style={{ margin: 0, fontFamily: "var(--font-body, sans-serif)", fontSize: "1rem", color: GREEN }}>Additional Details</h3>
+                        
+                        {/* Gender */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            <FieldLabel>Gender</FieldLabel>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                                <SelectionButton
+                                    label="Male"
+                                    selected={step4.gender === "male"}
+                                    onClick={() => updateStep4({ gender: "male" })}
+                                />
+                                <SelectionButton
+                                    label="Female"
+                                    selected={step4.gender === "female"}
+                                    onClick={() => updateStep4({ gender: "female" })}
+                                />
+                                <SelectionButton
+                                    label="Other"
+                                    selected={step4.gender === "other"}
+                                    onClick={() => updateStep4({ gender: "other" })}
+                                />
+                            </div>
+                            {attempted && errors.gender && <FieldError>{errors.gender}</FieldError>}
+                        </div>
+
+                        {/* Address */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <FieldLabel htmlFor="s4-address">Permanent Address</FieldLabel>
+                            <textarea
+                                id="s4-address"
+                                placeholder="Enter your full permanent address"
+                                value={step4.address}
+                                onChange={(e) => updateStep4({ address: e.target.value })}
+                                rows={3}
+                                style={{
+                                    width: "100%",
+                                    padding: "12px 14px",
+                                    borderRadius: 10,
+                                    border: `1px solid ${attempted && errors.address ? "#e74c3c" : "rgba(31,58,45,0.15)"}`,
+                                    background: "#fff",
+                                    fontFamily: "var(--font-body, sans-serif)",
+                                    fontSize: "0.85rem",
+                                    color: GREEN,
+                                    resize: "none",
+                                    outline: "none",
+                                    transition: "all 0.2s ease"
+                                }}
+                            />
+                            {attempted && errors.address && <FieldError>{errors.address}</FieldError>}
+                        </div>
+                    </div>
+                </FormCard>
             </motion.div>
 
             {/* Personal Details */}

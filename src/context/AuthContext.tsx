@@ -25,13 +25,8 @@ export interface AuthUser {
         phone: string;
         relation: string;
     };
-    preferences: {
-        diet: string;
-        sleepSchedule: string;
-        noise: string;
-    };
     messPackage: string;
-    selectedRoom: unknown;
+    selectedRoomType: string;
     dateOfBirth: string;
     gender: string;
     address: string;

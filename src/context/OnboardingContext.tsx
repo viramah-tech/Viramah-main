@@ -60,12 +60,18 @@ export interface PaymentData {
     screenshot: UploadedFile | null;
 }
 
+export interface Step4Data {
+    gender: string;
+    address: string;
+}
+
 export type OnboardingStatus = "pending" | "payment_submitted" | "move_in_approved";
 
 export interface OnboardingState {
     step1: Step1Data;
     step2: Step2Data;
     step3: Step3Data;
+    step4: Step4Data;
     payment: PaymentData;
     status: OnboardingStatus;
     completedSteps: number[];
@@ -100,6 +106,10 @@ const INITIAL_STATE: OnboardingState = {
     step3: {
         selectedRoom: null,
         addOns: DEFAULT_ADD_ONS,
+    },
+    step4: {
+        gender: "",
+        address: "",
     },
     payment: {
         method: "",
@@ -141,6 +151,7 @@ interface OnboardingContextType {
     updateStep1: (data: Partial<Step1Data>) => void;
     updateStep2: (data: Partial<Step2Data>) => void;
     updateStep3: (data: Partial<Step3Data>) => void;
+    updateStep4: (data: Partial<Step4Data>) => void;
     updatePayment: (data: Partial<PaymentData>) => void;
     toggleAddOn: (id: string) => void;
     markStepComplete: (step: number) => void;
@@ -160,6 +171,7 @@ const OnboardingContext = createContext<OnboardingContextType>({
     updateStep1: () => {},
     updateStep2: () => {},
     updateStep3: () => {},
+    updateStep4: () => {},
     updatePayment: () => {},
     toggleAddOn: () => {},
     markStepComplete: () => {},
@@ -188,7 +200,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         // 1. Immediate restore from localStorage (instant)
         const cached = loadFromStorage();
         if (cached) {
-            setState(cached);
+            // Deep-merge with INITIAL_STATE to guarantee all keys exist
+            // (handles schema evolution where new keys like step4 were added later)
+            setState({
+                ...INITIAL_STATE,
+                ...cached,
+                step1: { ...INITIAL_STATE.step1, ...cached.step1 },
+                step2: { ...INITIAL_STATE.step2, ...cached.step2 },
+                step3: { ...INITIAL_STATE.step3, ...cached.step3 },
+                step4: { ...INITIAL_STATE.step4, ...cached.step4 },
+                payment: { ...INITIAL_STATE.payment, ...cached.payment },
+            });
         }
 
         // 2. Attempt backend hydration (async, best-effort)
@@ -204,14 +226,23 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                         documents: { idProof: string; addressProof: string; photo: string };
                         emergencyContact: { name: string; phone: string; relation: string };
                         parentDocuments: { idType: string; idNumber: string; idFront: string; idBack: string };
-                        selectedRoom: { _id: string; roomNumber: string; roomType: string; pricePerMonth: number } | null;
+                        selectedRoomType: string;
                         roomNumber: string;
                         roomType: string;
                         messPackage: string;
-                        preferences: { diet: string; sleepSchedule: string; noise: string };
+                        gender: string;
+                        address: string;
                         paymentStatus: string;
                     };
                 }>("/api/public/onboarding/status");
+
+                let fetchedRooms: { name: string; basePrice?: number; discountedPrice?: number; pricing?: { discounted: number } }[] = [];
+                try {
+                    const roomsRes = await apiFetch<{ data: { roomTypes: { name: string; basePrice?: number; discountedPrice?: number; pricing?: { discounted: number } }[] } }>("/api/public/rooms");
+                    fetchedRooms = roomsRes.data.roomTypes || [];
+                } catch (e) {
+                    console.error("Failed to fetch rooms during hydration:", e);
+                }
 
                 const d = res.data;
                 const completedSteps: number[] = [];
@@ -219,8 +250,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 // Infer completed steps from backend data
                 if (d.documents?.idProof) completedSteps.push(1);
                 if (d.emergencyContact?.name && d.emergencyContact?.phone) completedSteps.push(2);
-                if (d.selectedRoom) completedSteps.push(3);
-                if (d.preferences?.diet) completedSteps.push(4);
+                if (d.selectedRoomType) completedSteps.push(3);
+                if (d.gender && d.address) completedSteps.push(4);
 
                 setState((prev) => {
                     const merged: OnboardingState = {
@@ -254,23 +285,35 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                     }
 
                     // Restore Step 3: room selection from backend
-                    if (d.selectedRoom) {
-                        // Map backend roomType to frontend room data
-                        const ROOM_TYPE_REVERSE: Record<string, { id: string; title: string; type: string; priceLabel: string }> = {
-                            "VIRAMAH Nexus": { id: "nexus-plus", title: "Nexus Plus", type: "Shared Room", priceLabel: `₹${d.selectedRoom.pricePerMonth?.toLocaleString()}` },
-                            "VIRAMAH Collective": { id: "collective-plus", title: "Collective Plus", type: "Shared Room", priceLabel: `₹${d.selectedRoom.pricePerMonth?.toLocaleString()}` },
-                            "VIRAMAH Axis": { id: "axis", title: "Axis", type: "Private Room", priceLabel: `₹${d.selectedRoom.pricePerMonth?.toLocaleString()}` },
-                            "VIRAMAH Axis+": { id: "studio", title: "Axis+", type: "Studio", priceLabel: `₹${d.selectedRoom.pricePerMonth?.toLocaleString()}` },
-                        };
-                        const roomInfo = ROOM_TYPE_REVERSE[d.selectedRoom.roomType];
-                        if (roomInfo) {
+                    if (d.selectedRoomType) {
+                        try {
+                            const backendRoom = fetchedRooms.find(r => r.name === d.selectedRoomType);
+                            // Reverse-map backend name to frontend room ID
+                            const REVERSE_ROOM_MAP: Record<string, string> = {
+                                "NEXUS": "nexus-plus",
+                                "COLLECTIVE": "collective-plus",
+                                "AXIS": "axis",
+                                "AXIS+": "studio",
+                                "VIRAMAH Nexus": "nexus-plus",
+                                "VIRAMAH Collective": "collective-plus",
+                                "VIRAMAH Axis": "axis",
+                                "VIRAMAH Axis+": "studio",
+                            };
+                            const discPrice = backendRoom?.pricing?.discounted ?? backendRoom?.discountedPrice ?? 0;
+                            const frontendId = REVERSE_ROOM_MAP[d.selectedRoomType] || d.selectedRoomType.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                            const roomInfo = {
+                                id: frontendId,
+                                title: backendRoom?.name || d.selectedRoomType,
+                                type: backendRoom?.name || d.selectedRoomType,
+                                priceLabel: `₹${discPrice.toLocaleString()}`,
+                            };
                             merged.step3 = {
                                 ...prev.step3,
                                 selectedRoom: {
                                     id: roomInfo.id,
                                     title: roomInfo.title,
                                     type: roomInfo.type,
-                                    price: d.selectedRoom.pricePerMonth,
+                                    price: discPrice,
                                     priceLabel: roomInfo.priceLabel,
                                 },
                             };
@@ -280,7 +323,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                                     a.id === "lunch" ? { ...a, enabled: true } : a
                                 );
                             }
+                        } catch (e) {
+                            console.error("Error processing room info:", e);
                         }
+                    }
+
+                    // Restore Step 4: Gender & Address
+                    if (d.gender || d.address) {
+                        merged.step4 = {
+                            gender: d.gender || prev.step4?.gender || "",
+                            address: d.address || prev.step4?.address || "",
+                        };
                     }
 
                     // Map backend status to frontend status
@@ -319,6 +372,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
     const updateStep3 = useCallback((data: Partial<Step3Data>) => {
         setState((prev) => ({ ...prev, step3: { ...prev.step3, ...data } }));
+    }, []);
+
+    const updateStep4 = useCallback((data: Partial<Step4Data>) => {
+        setState((prev) => ({ ...prev, step4: { ...prev.step4, ...data } }));
     }, []);
 
     const updatePayment = useCallback((data: Partial<PaymentData>) => {
@@ -407,6 +464,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 updateStep1,
                 updateStep2,
                 updateStep3,
+                updateStep4,
                 updatePayment,
                 toggleAddOn,
                 markStepComplete,

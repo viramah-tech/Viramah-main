@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -246,15 +246,22 @@ export default function ConfirmPage() {
     const router = useRouter();
     const { state, updatePayment, markStepComplete, canAccessStep, setStatus, getTotalCost } = useOnboarding();
     const { token } = useAuth();
-    const { payment, step3 } = state;
+    const { payment = { method: "" as const, transactionId: "", screenshot: null }, step3 = { selectedRoom: null, addOns: [] } } = state;
 
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [attempted, setAttempted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [redirecting, setRedirecting] = useState(false);
 
-    if (!canAccessStep(5)) {
-        router.replace("/user-onboarding/step-4");
+    useEffect(() => {
+        if (!canAccessStep(5)) {
+            setRedirecting(true);
+            router.replace("/user-onboarding/step-4");
+        }
+    }, [canAccessStep, router]);
+
+    if (redirecting) {
         return null;
     }
 
@@ -275,12 +282,22 @@ export default function ConfirmPage() {
         if (!validate()) return;
 
         setSubmitting(true);
+        setErrors({});
         try {
-            // Phase A: Finalize onboarding data on backend
-            await apiFetch("/api/public/onboarding/confirm", {
-                method: "POST",
-                token,
-            });
+            // Phase A: Finalize onboarding data on backend (skip if already completed)
+            try {
+                await apiFetch("/api/public/onboarding/confirm", {
+                    method: "POST",
+                    token,
+                });
+            } catch (confirmErr) {
+                // If onboarding was already completed, that's OK — continue to payment
+                const msg = confirmErr instanceof Error ? confirmErr.message : "";
+                if (!msg.toLowerCase().includes("already") && !msg.toLowerCase().includes("completed")) {
+                    throw confirmErr; // Re-throw if it's a real error
+                }
+                console.warn("Onboarding confirm skipped (likely already completed):", msg);
+            }
 
             // Upload receipt to S3
             let receiptUrl = "";
@@ -309,6 +326,7 @@ export default function ConfirmPage() {
             setStatus("payment_submitted");
             router.push("/user-onboarding/payment-status");
         } catch (err) {
+            console.error("Payment submission error:", err);
             const message = err instanceof Error ? err.message : "Submission failed. Please try again.";
             setErrors({ method: message });
         } finally {
@@ -326,6 +344,38 @@ export default function ConfirmPage() {
                     Choose a payment method and upload your payment proof to confirm your booking.
                 </StepSubtitle>
             </motion.div>
+
+            {/* Global Error Banner */}
+            <AnimatePresence>
+                {errors.method && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: "auto" }}
+                        exit={{ opacity: 0, y: -10, height: 0 }}
+                        style={{
+                            background: "rgba(220, 38, 38, 0.08)",
+                            border: "1px solid rgba(220, 38, 38, 0.25)",
+                            borderRadius: 12,
+                            padding: "14px 18px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                        }}
+                    >
+                        <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0 }} />
+                        <span
+                            style={{
+                                fontFamily: "var(--font-body, sans-serif)",
+                                fontSize: "0.85rem",
+                                color: "#dc2626",
+                                lineHeight: 1.4,
+                            }}
+                        >
+                            {errors.method}
+                        </span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Amount Due */}
             <motion.div
