@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, Check } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/Toast";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -41,33 +42,77 @@ export default function SignUpPage() {
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
     const { signup, user, isAuthenticated } = useAuth();
+    const { showToast } = useToast();
     const router = useRouter();
 
-    // Removed aggressively forcing redirect on mount if already authenticated.
-    // This allows users to access the signup page manually to create new accounts.
-    // Redirection now only happens explicitly inside handleSubmit after a successful signup.
+    const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
+
+    // ── Validation helpers ──────────────────────────────────
+    const nameError = touched.name && name.trim().length > 0 && name.trim().length < 2
+        ? "Name must be at least 2 characters" : "";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailError = touched.email && email.length > 0 && !emailRegex.test(email)
+        ? "Enter a valid email address" : "";
+
+    const passwordChecks = {
+        minLength: password.length >= 8,
+        hasUpper: /[A-Z]/.test(password),
+        hasLower: /[a-z]/.test(password),
+        hasNumber: /[0-9]/.test(password),
+        notName: !name.trim() || password.toLowerCase() !== name.trim().toLowerCase(),
+        notEmail: !email.trim() || password.toLowerCase() !== email.trim().toLowerCase(),
+    };
+    const passedChecks = Object.values(passwordChecks).filter(Boolean).length;
+    const passwordStrength = password.length === 0 ? 0 : Math.min(passedChecks, 6);
+    const strengthLabel = passwordStrength <= 2 ? "Weak" : passwordStrength <= 4 ? "Fair" : "Strong";
+    const strengthColor = passwordStrength <= 2 ? "#c0392b" : passwordStrength <= 4 ? "#D9B44A" : "#2E6B4F";
+
+    const passwordError = touched.password && password.length > 0
+        ? (!passwordChecks.minLength ? "Password must be at least 8 characters"
+            : !passwordChecks.notName ? "Password must not be the same as your name"
+                : !passwordChecks.notEmail ? "Password must not be the same as your email"
+                    : "")
+        : "";
 
     const passwordsMatch = password && confirmPassword && password === confirmPassword;
+    const confirmError = touched.confirm && confirmPassword.length > 0 && !passwordsMatch
+        ? "Passwords don't match" : "";
+
+    const canSubmit = name.trim().length >= 2
+        && emailRegex.test(email)
+        && passwordChecks.minLength && passwordChecks.notName && passwordChecks.notEmail
+        && passwordsMatch
+        && !submitting;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!passwordsMatch) {
-            setError("Passwords don't match");
-            return;
-        }
-        if (password.length < 8) {
-            setError("Password must be at least 8 characters");
+        // Mark all fields as touched to show any remaining errors
+        setTouched({ name: true, email: true, password: true, confirm: true });
+        if (!canSubmit) {
+            let msg = "";
+            if (name.trim().length < 2) msg = "Name must be at least 2 characters";
+            else if (!emailRegex.test(email)) msg = "Enter a valid email address";
+            else if (!passwordChecks.minLength) msg = "Password must be at least 8 characters";
+            else if (!passwordChecks.notName) msg = "Password must not be the same as your name";
+            else if (!passwordChecks.notEmail) msg = "Password must not be the same as your email";
+            else if (!passwordsMatch) msg = "Passwords don't match";
+            setError(msg);
+            showToast(msg, "error");
             return;
         }
         setError("");
         setSubmitting(true);
         try {
             await signup(name, email, password);
+            showToast("Account created successfully! Redirecting...", "success");
             router.push("/user-onboarding/step-1");
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
             setError(message);
+            showToast(message, "error");
         } finally {
             setSubmitting(false);
         }
@@ -213,9 +258,11 @@ export default function SignUpPage() {
                                 onChange={(e) => setName(e.target.value)}
                                 focused={focusedField === "name"}
                                 onFocus={() => setFocusedField("name")}
-                                onBlur={() => setFocusedField(null)}
+                                onBlur={() => { setFocusedField(null); markTouched("name"); }}
                                 required
+                                style={nameError ? { borderColor: "#c07a5a" } : undefined}
                             />
+                            {nameError && <FieldHint text={nameError} type="error" />}
                         </motion.div>
 
                         {/* Email */}
@@ -229,9 +276,11 @@ export default function SignUpPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 focused={focusedField === "email"}
                                 onFocus={() => setFocusedField("email")}
-                                onBlur={() => setFocusedField(null)}
+                                onBlur={() => { setFocusedField(null); markTouched("email"); }}
                                 required
+                                style={emailError ? { borderColor: "#c07a5a" } : undefined}
                             />
+                            {emailError && <FieldHint text={emailError} type="error" />}
                         </motion.div>
 
                         {/* Password */}
@@ -246,9 +295,9 @@ export default function SignUpPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     focused={focusedField === "password"}
                                     onFocus={() => setFocusedField("password")}
-                                    onBlur={() => setFocusedField(null)}
+                                    onBlur={() => { setFocusedField(null); markTouched("password"); }}
                                     required
-                                    style={{ paddingRight: 44 }}
+                                    style={{ paddingRight: 44, ...(passwordError ? { borderColor: "#c07a5a" } : {}) }}
                                 />
                                 <button
                                     type="button"
@@ -259,6 +308,32 @@ export default function SignUpPage() {
                                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                             </div>
+                            {/* Password strength meter */}
+                            {password.length > 0 && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    <div style={{ display: "flex", gap: 4, height: 4 }}>
+                                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                                            <div key={i} style={{
+                                                flex: 1,
+                                                borderRadius: 2,
+                                                background: passwordStrength >= i ? strengthColor : "rgba(46,42,38,0.1)",
+                                                transition: "background 0.3s ease",
+                                            }} />
+                                        ))}
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: strengthColor, fontWeight: 600, letterSpacing: "0.05em" }}>
+                                            {strengthLabel}
+                                        </span>
+                                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                            <PasswordRule passed={passwordChecks.minLength} text="8+ chars" />
+                                            <PasswordRule passed={passwordChecks.hasUpper} text="A-Z" />
+                                            <PasswordRule passed={passwordChecks.hasNumber} text="0-9" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {passwordError && <FieldHint text={passwordError} type="error" />}
                         </motion.div>
 
                         {/* Confirm Password */}
@@ -273,7 +348,7 @@ export default function SignUpPage() {
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     focused={focusedField === "confirm"}
                                     onFocus={() => setFocusedField("confirm")}
-                                    onBlur={() => setFocusedField(null)}
+                                    onBlur={() => { setFocusedField(null); markTouched("confirm"); }}
                                     required
                                     style={{
                                         paddingRight: 44,
@@ -293,11 +368,8 @@ export default function SignUpPage() {
                                     {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                             </div>
-                            {confirmPassword && !passwordsMatch && (
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#c07a5a", letterSpacing: "0.05em" }}>
-                                    Passwords don't match
-                                </span>
-                            )}
+                            {confirmError && <FieldHint text={confirmError} type="error" />}
+                            {passwordsMatch && <FieldHint text="Passwords match" type="success" />}
                         </motion.div>
 
                         {/* Submit */}
@@ -349,6 +421,38 @@ export default function SignUpPage() {
 }
 
 // ── Sub-components ───────────────────────────────────────────
+
+function FieldHint({ text, type }: { text: string; type: "error" | "success" }) {
+    const color = type === "error" ? "#c07a5a" : "#4a7c59";
+    return (
+        <span style={{
+            fontFamily: "var(--font-mono, monospace)",
+            fontSize: "0.6rem",
+            color,
+            letterSpacing: "0.05em",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+        }}>
+            {type === "success" && <Check size={10} strokeWidth={3} />}
+            {text}
+        </span>
+    );
+}
+
+function PasswordRule({ passed, text }: { passed: boolean; text: string }) {
+    return (
+        <span style={{
+            fontFamily: "var(--font-mono, monospace)",
+            fontSize: "0.55rem",
+            color: passed ? "#4a7c59" : "rgba(46,42,38,0.35)",
+            letterSpacing: "0.03em",
+            transition: "color 0.2s ease",
+        }}>
+            {passed ? "✓" : "○"} {text}
+        </span>
+    );
+}
 
 function AuthLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
     return (

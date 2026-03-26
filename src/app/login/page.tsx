@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/Toast";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -31,8 +32,19 @@ export default function LoginPage() {
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
     const { login, user, isAuthenticated } = useAuth();
+    const { showToast } = useToast();
     const router = useRouter();
+
+    const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
+
+    // ── Field validation ──────────────────────────────────
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailError = touched.email && email.length > 0 && !emailRegex.test(email)
+        ? "Enter a valid email address" : "";
+    const passwordError = touched.password && password.length === 0
+        ? "Password is required" : "";
 
     const getRedirectPath = (u: {
         onboardingStatus: string;
@@ -40,7 +52,6 @@ export default function LoginPage() {
         documentVerificationStatus?: string;
         moveInStatus?: string;
     }) => {
-        // All 3 lifecycle gates passed → dashboard
         if (
             u.paymentStatus === "approved" &&
             u.documentVerificationStatus === "approved" &&
@@ -48,7 +59,6 @@ export default function LoginPage() {
         ) {
             return "/student/dashboard";
         }
-        // Onboarding complete but lifecycle not done → payment status page
         if (u.onboardingStatus === "completed") {
             return "/user-onboarding/payment-status";
         }
@@ -58,20 +68,31 @@ export default function LoginPage() {
         return "/user-onboarding/step-1";
     };
 
-    // Removed aggressively forcing redirect on mount if already authenticated.
-    // This allows users to access the login page manually to switch accounts.
-    // Redirection now only happens explicitly inside handleSubmit after a successful login.
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setTouched({ email: true, password: true });
+        if (!emailRegex.test(email)) {
+            const msg = "Enter a valid email address";
+            setError(msg);
+            showToast(msg, "error");
+            return;
+        }
+        if (!password) {
+            const msg = "Password is required";
+            setError(msg);
+            showToast(msg, "error");
+            return;
+        }
         setError("");
         setSubmitting(true);
         try {
             const loggedInUser = await login(email, password);
+            showToast("Login successful! Redirecting...", "success");
             router.replace(getRedirectPath(loggedInUser));
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Login failed. Please try again.";
             setError(message);
+            showToast(message, "error");
         } finally {
             setSubmitting(false);
         }
@@ -321,9 +342,11 @@ export default function LoginPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 focused={focusedField === "email"}
                                 onFocus={() => setFocusedField("email")}
-                                onBlur={() => setFocusedField(null)}
+                                onBlur={() => { setFocusedField(null); markTouched("email"); }}
                                 required
+                                style={emailError ? { borderColor: "#c07a5a" } : undefined}
                             />
+                            {emailError && <LoginFieldHint text={emailError} />}
                         </motion.div>
 
                         {/* Password */}
@@ -352,9 +375,9 @@ export default function LoginPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     focused={focusedField === "password"}
                                     onFocus={() => setFocusedField("password")}
-                                    onBlur={() => setFocusedField(null)}
+                                    onBlur={() => { setFocusedField(null); markTouched("password"); }}
                                     required
-                                    style={{ paddingRight: 44 }}
+                                    style={{ paddingRight: 44, ...(passwordError ? { borderColor: "#c07a5a" } : {}) }}
                                 />
                                 <button
                                     type="button"
@@ -376,6 +399,7 @@ export default function LoginPage() {
                                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                             </div>
+                            {passwordError && <LoginFieldHint text={passwordError} />}
                         </motion.div>
 
                         {/* Submit */}
@@ -440,6 +464,23 @@ export default function LoginPage() {
 
 // ── Sub-components ───────────────────────────────────────────
 
+function LoginFieldHint({ text }: { text: string }) {
+    return (
+        <span style={{
+            fontFamily: "var(--font-mono, monospace)",
+            fontSize: "0.6rem",
+            color: "#c07a5a",
+            letterSpacing: "0.05em",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+        }}>
+            <AlertCircle size={10} strokeWidth={2.5} />
+            {text}
+        </span>
+    );
+}
+
 function AuthLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
     return (
         <label
@@ -469,9 +510,9 @@ function AuthInput({ focused, style, ...props }: AuthInputProps) {
             style={{
                 width: "100%",
                 background: focused ? "#fff" : "rgba(255,255,255,0.6)",
-                border: focused
-                    ? "1.5px solid #1F3A2D"
-                    : "1.5px solid rgba(46,42,38,0.15)",
+                borderWidth: "1.5px",
+                borderStyle: "solid",
+                borderColor: focused ? "#1F3A2D" : "rgba(46,42,38,0.15)",
                 borderRadius: 10,
                 padding: "13px 16px",
                 fontFamily: "var(--font-body, sans-serif)",

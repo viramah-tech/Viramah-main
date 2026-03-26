@@ -7,6 +7,7 @@ import { EnquiryProvider } from "@/context/EnquiryContext";
 import { ScheduleVisitProvider } from "@/context/ScheduleVisitContext";
 import { LazyScheduleVisitModal } from "@/components/ui/LazyScheduleVisitModal";
 import { AuthProvider } from "@/context/AuthContext";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -175,13 +176,15 @@ export default function RootLayout({
           }}
         />
         <AuthProvider>
-          <EnquiryProvider>
-            <ScheduleVisitProvider>
-              {children}
-              <LazyEnquiryModal />
-              <LazyScheduleVisitModal />
-            </ScheduleVisitProvider>
-          </EnquiryProvider>
+          <ToastProvider>
+            <EnquiryProvider>
+              <ScheduleVisitProvider>
+                {children}
+                <LazyEnquiryModal />
+                <LazyScheduleVisitModal />
+              </ScheduleVisitProvider>
+            </EnquiryProvider>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

@@ -40,7 +40,14 @@ export async function uploadFile(
         credentials: "include",
     });
 
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch (parseError) {
+        console.error(`[uploadFile] JSON Parse Error for ${API_BASE}/api/public/upload/${type}:`, text.substring(0, 100));
+        throw new Error(`Upload failed to parse JSON from ${API_BASE}...`);
+    }
 
     if (!res.ok) {
         throw new Error(data?.message || `Upload failed (${res.status})`);

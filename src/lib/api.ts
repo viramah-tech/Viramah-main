@@ -27,7 +27,16 @@ export async function apiFetch<T = unknown>(path: string, options: ApiOptions = 
     credentials: 'include',
   });
 
-  const data = await res.json();
+  const text = await res.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (parseError) {
+    console.error(`[apiFetch] JSON Parse Error for ${API_BASE}${path}:`, text.substring(0, 500));
+    const err = new Error(`Failed to parse JSON from ${API_BASE}${path}: ${text.substring(0, 100)}...`) as Error & { status: number };
+    err.status = res.status;
+    throw err;
+  }
 
   if (!res.ok) {
     const message = data?.message || `Request failed with status ${res.status}`;
