@@ -203,6 +203,19 @@ export default function PaymentStatusPage() {
                 </p>
             </motion.div>
 
+            {/* Deposit Credit Summary — shown if the full payment had deposit applied */}
+            {(user as any)?.depositCredited > 0 && (
+                <motion.div
+                    variants={itemVariants}
+                    style={{ background: "rgba(22,163,74,0.07)", border: "1px solid rgba(22,163,74,0.2)", borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 10 }}
+                >
+                    <Shield size={16} color="#16a34a" style={{ flexShrink: 0 }} />
+                    <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", color: "#14532d", margin: 0, fontWeight: 500 }}>
+                        ₹{((user as any).depositCredited as number).toLocaleString()} security deposit was credited against your payment.
+                    </p>
+                </motion.div>
+            )}
+
             {/* Timeline Steps */}
             <motion.div
                 variants={itemVariants}

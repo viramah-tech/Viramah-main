@@ -17,12 +17,14 @@ const BOOKING_STEPS = [
 ];
 
 function getStepFromPath(pathname: string): number {
+    if (pathname.includes("terms")) return 0;        // pre-step: terms & pricing
+    if (pathname.includes("deposit")) return 6;       // deposit sub-flow (post-stepper)
     if (pathname.includes("step-1")) return 1;
     if (pathname.includes("step-2")) return 2;
     if (pathname.includes("step-3")) return 3;
     if (pathname.includes("step-4")) return 4;
     if (pathname.includes("confirm")) return 5;
-    if (pathname.includes("payment-status")) return 6; // post-flow
+    if (pathname.includes("payment-status")) return 7; // post-flow
     return 1;
 }
 
@@ -227,7 +229,8 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
     const router = useRouter();
     const { loading, isAuthenticated } = useAuth();
     const currentStep = getStepFromPath(pathname);
-    const isPostFlow = currentStep > 5;
+    const isTermsPage  = currentStep === 0;
+    const isPostFlow   = currentStep >= 6; // deposit-status, payment-status
     const [isScrolled, setIsScrolled] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
 
@@ -237,6 +240,35 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
             router.push("/login");
         }
     }, [loading, isAuthenticated, router]);
+
+    // Active-hold redirect guard:
+    // If the user has an active RoomHold (room is reserved, payment pending),
+    // force them to the deposit-status page before they can access any other step.
+    useEffect(() => {
+        if (loading || !isAuthenticated) return;
+        if (pathname.includes("deposit-status")) return; // already there
+
+        const checkActiveHold = async () => {
+            try {
+                const token = typeof window !== "undefined" ? localStorage.getItem("viramah_token") : null;
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/public/deposits/status`,
+                    { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+                );
+                if (!res.ok) return; // Non-200 means no hold — let flow continue
+                const data = await res.json();
+                const hold = data?.data?.hold;
+                if (hold?.status === "active") {
+                    router.replace("/user-onboarding/deposit-status");
+                }
+            } catch {
+                // Non-critical: if this check fails, don't block the user
+            }
+        };
+
+        checkActiveHold();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading, isAuthenticated, pathname]);
 
     useEffect(() => {
         let ticking = false;
@@ -380,7 +412,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         </div>
                     </div>
 
-                    {/* Expanded stepper */}
+                    {/* Expanded stepper (terms pre-step + main 5 steps) */}
                     <AnimatePresence>
                         {!isPostFlow && (!isScrolled || isExpanded) && (
                             <motion.div
@@ -389,7 +421,23 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                                 exit={{ height: 0, opacity: 0, marginTop: 0, transition: { duration: 0.25, delay: 0, ease: "easeIn" } }}
                                 style={{ overflow: "hidden" }}
                             >
-                                <ExpandedStepper steps={BOOKING_STEPS} currentStep={currentStep} />
+                                {/* Terms pre-step indicator */}
+                                {isTermsPage && (
+                                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, padding: "8px 12px", borderRadius: 10, background: "rgba(31,58,45,0.05)", border: "1px solid rgba(31,58,45,0.1)" }}>
+                                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#1F3A2D", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", fontWeight: 700, color: "#D8B56A" }}>T</span>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.75rem", fontWeight: 700, color: "#1F3A2D", display: "block" }}>Terms & Pricing</span>
+                                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.4)" }}>Read before booking</span>
+                                        </div>
+                                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+                                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#D8B56A" }} />
+                                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "#9a7a3a", textTransform: "uppercase", letterSpacing: "0.15em" }}>Step 0 of 5</span>
+                                        </div>
+                                    </div>
+                                )}
+                                <ExpandedStepper steps={BOOKING_STEPS} currentStep={isTermsPage ? 0 : currentStep} />
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -440,7 +488,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         letterSpacing: "0.1em",
                     }}
                 >
-                    {isPostFlow ? "Booking Submitted" : `Step ${currentStep} of 5`}
+                    {isPostFlow ? "Booking Submitted" : isTermsPage ? "Step 0 · Terms & Pricing" : `Step ${currentStep} of 5`}
                 </span>
             </footer>
         </div>
