@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     CreditCard, ArrowLeft, Upload, X, Building2, Banknote,
     Check, AlertCircle, Camera, Shield, Tag, Lock, Info,
+    KeyRound,
 } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
@@ -24,6 +25,8 @@ const inr = (n: number | null | undefined) =>
     n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+
+type PaymentModeType = "full" | "half" | "deposit";
 
 /**
  * Real shape returned by GET /api/public/payments/calculate-preview
@@ -152,6 +155,128 @@ function SkeletonRow({ wide }: { wide?: boolean }) {
             <span style={{ display: "inline-block", width: wide ? 160 : 120, height: 10, borderRadius: 3, background: "rgba(255,255,255,0.08)", animation: "pulse 1.5s infinite" }} />
             <span style={{ display: "inline-block", width: 72, height: 10, borderRadius: 3, background: "rgba(255,255,255,0.08)", animation: "pulse 1.5s infinite" }} />
         </div>
+    );
+}
+
+// ── Deposit-Only Invoice Panel ─────────────────────────────────────────────────
+
+function DepositInvoicePanel() {
+    const row = (label: string, value: string, opts?: { faint?: boolean; green?: boolean; amber?: boolean }) => (
+        <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: opts?.faint ? "rgba(246,244,239,0.3)" : "rgba(246,244,239,0.55)", flex: 1, lineHeight: 1.5 }}>{label}</span>
+            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", fontWeight: opts?.green ? 700 : 400, color: opts?.green ? "#86efac" : opts?.amber ? GOLD : "rgba(246,244,239,0.75)", whiteSpace: "nowrap" }}>{value}</span>
+        </div>
+    );
+    return (
+        <div style={{ background: "linear-gradient(135deg, #1F3A2D 0%, #162b1e 100%)", borderRadius: 16, padding: "24px 28px", boxShadow: "0 8px 32px rgba(31,58,45,0.25)" }}>
+            <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(216,181,106,0.6)", margin: "0 0 4px" }}>
+                Payment Summary — Room Reservation
+            </p>
+            <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.4rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>₹16,000</p>
+
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(216,181,106,0.4)", marginBottom: 2 }}>Breakdown</div>
+                {row("Security Deposit", "₹15,000")}
+                {row("  └ Refundable within 7 days of approval", "", { faint: true })}
+                {row("  └ Non-refundable after 7 days", "", { faint: true })}
+                {row("Registration Fee", "₹1,000")}
+                {row("  └ Non-refundable under any circumstances", "", { faint: true })}
+
+                <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4 }}>
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: GOLD, fontWeight: 700, letterSpacing: "0.05em" }}>Total Due Now</span>
+                    <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.2rem", color: GOLD }}>₹16,000</span>
+                </div>
+            </div>
+
+            {/* Amber policy notice */}
+            <div style={{ marginTop: 18, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 12, padding: "14px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+                    <AlertCircle size={13} color="#d97706" />
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.15em", color: "#d97706", fontWeight: 700 }}>Please Read Before Proceeding</span>
+                </div>
+                {[
+                    "Your room will be HELD for 21 days.",
+                    "You must complete full payment within 21 days.",
+                    "Days 1–7: ₹15,000 refundable if you cancel.",
+                    "After day 7: ₹15,000 is NON-REFUNDABLE.",
+                    "After day 21: Room released. No refund.",
+                    "₹1,000 registration fee: NEVER refundable.",
+                    "After paying now, you will return here to choose Full Tenure or Half Yearly.",
+                ].map((line, i) => (
+                    <div key={i} style={{ display: "flex", gap: 7, marginTop: 4 }}>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#d97706", flexShrink: 0, marginTop: 1 }}>•</span>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#92400e", lineHeight: 1.5 }}>{line}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ── Deposit Confirmation Modal ─────────────────────────────────────────────────
+
+function DepositConfirmModal({ onConfirm, onClose, loading }: { onConfirm: () => void; onClose: () => void; loading: boolean }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(15,25,20,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+            onClick={onClose}
+        >
+            <motion.div
+                initial={{ scale: 0.92, opacity: 0, y: 16 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 16 }}
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                style={{ background: "#fff", borderRadius: 20, maxWidth: 440, width: "100%", padding: 28, boxShadow: "0 24px 64px rgba(0,0,0,0.18)", position: "relative" }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 8, display: "flex" }}>
+                    <X size={18} color="rgba(31,58,45,0.4)" />
+                </button>
+                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                    <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(31,58,45,0.08)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                        <KeyRound size={26} color={GREEN} />
+                    </div>
+                    <h2 style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.5rem", color: GREEN, fontWeight: 400, margin: "0 0 12px" }}>Confirm Room Reservation</h2>
+                    <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "rgba(31,58,45,0.65)", lineHeight: 1.6, margin: 0 }}>
+                        You are about to pay <strong>₹16,000</strong> to reserve this room.
+                    </p>
+                </div>
+                <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: "14px 16px", marginBottom: 20 }}>
+                    {[
+                        ["Security Deposit", "₹15,000", "Refundable within 7 days of admin approval"],
+                        ["Registration Fee", "₹1,000", "Non-refundable under any circumstances"],
+                    ].map(([label, amount, note]) => (
+                        <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                            <div>
+                                <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", fontWeight: 600, color: GREEN, display: "block" }}>{label}</span>
+                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.45)" }}>{note}</span>
+                            </div>
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, flexShrink: 0, marginLeft: 12 }}>{amount}</span>
+                        </div>
+                    ))}
+                    <div style={{ borderTop: "1px solid rgba(31,58,45,0.1)", paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN }}>Total</span>
+                        <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.1rem", color: GREEN }}>₹16,000</span>
+                    </div>
+                </div>
+                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.5)", textAlign: "center", marginBottom: 16, lineHeight: 1.5 }}>
+                    You will have 21 days to complete your full payment. Do you confirm?
+                </p>
+                <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={onClose} style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: "1.5px solid rgba(31,58,45,0.15)", background: "#fff", fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 600, color: "rgba(31,58,45,0.6)", cursor: "pointer" }}>
+                        Go Back
+                    </button>
+                    <button
+                        onClick={onConfirm} disabled={loading}
+                        style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: "none", background: loading ? "rgba(31,58,45,0.4)" : GREEN, fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", fontWeight: 700, color: GOLD, cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                    >
+                        {loading ? (
+                            <><motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(216,181,106,0.3)", borderTopColor: GOLD }} />Reserving…</>
+                        ) : "Yes, Reserve My Room"}
+                    </button>
+                </div>
+            </motion.div>
+        </motion.div>
     );
 }
 
@@ -309,10 +434,12 @@ export default function ConfirmPage() {
     const [previewLoading, setPreviewLoading] = useState(false);
     const [previewError, setPreviewError] = useState(false);
 
-    // Payment mode — initially from deposit status (locked), falls back to user choice
-    const [paymentMode, setPaymentMode] = useState<"full" | "half">("full");
+    const [paymentMode, setPaymentMode] = useState<PaymentModeType>("full");
     const [modeLockedFromDeposit, setModeLockedFromDeposit] = useState(false);
     const [holdPaymentMode, setHoldPaymentMode] = useState<"full" | "half" | null>(null);
+    const [hasActiveHold, setHasActiveHold] = useState(false);
+    const [showDepositConfirmModal, setShowDepositConfirmModal] = useState(false);
+    const [depositSubmitting, setDepositSubmitting] = useState(false);
 
     const [referralCode, setReferralCode] = useState("");
     const [referralFocused, setReferralFocused] = useState(false);
@@ -336,7 +463,6 @@ export default function ConfirmPage() {
         }
     }, [canAccessStep, router]);
 
-    // Fetch deposit status on mount → lock payment mode if active hold exists
     useEffect(() => {
         const fetchHold = async () => {
             try {
@@ -344,11 +470,19 @@ export default function ConfirmPage() {
                     "/api/public/deposits/status"
                 );
                 const hold = res?.data?.hold;
-                if (hold?.paymentMode && (hold.status === "active" || hold.status === "pending_approval")) {
-                    const savedMode = hold.paymentMode as "full" | "half";
-                    setPaymentMode(savedMode);
-                    setHoldPaymentMode(savedMode);
-                    setModeLockedFromDeposit(true);
+                if (hold?.status === "active" || hold?.status === "pending_approval") {
+                    setHasActiveHold(true);
+                    if (hold?.paymentMode && (hold.paymentMode === "full" || hold.paymentMode === "half")) {
+                        const savedMode = hold.paymentMode as "full" | "half";
+                        setPaymentMode(savedMode);
+                        setHoldPaymentMode(savedMode);
+                        setModeLockedFromDeposit(true);
+                    } else if (hold.paymentMode === "deposit") {
+                        // User used deposit-only mode — they need to choose full/half now
+                        setHasActiveHold(true);
+                        setPaymentMode("full"); // default to full
+                        setModeLockedFromDeposit(false); // allow selection
+                    }
                 }
             } catch {
                 // No deposit — user hasn't done a holds flow, mode stays user-selectable
@@ -401,7 +535,11 @@ export default function ConfirmPage() {
         }
     }, [step3.selectedRoom, resolvedRoomTypeId]);
 
-    useEffect(() => { fetchPreview(paymentMode); }, [paymentMode, fetchPreview]);
+    useEffect(() => {
+        // Only fetch preview for full/half modes — deposit mode uses static DepositInvoicePanel
+        if (paymentMode === "deposit") return;
+        fetchPreview(paymentMode);
+    }, [paymentMode, fetchPreview]);
 
     if (redirecting) return null;
 
@@ -417,9 +555,58 @@ export default function ConfirmPage() {
         return Object.keys(errs).length === 0;
     };
 
+    // Called when Deposit mode confirm modal is confirmed
+    const handleDepositSubmit = async () => {
+        setDepositSubmitting(true);
+        setErrors({});
+        try {
+            let receiptUrl = "";
+            if (payment.screenshot) {
+                receiptUrl = await uploadFile("receipt", payment.screenshot.preview, payment.screenshot.name);
+            }
+            await apiFetch("/api/public/deposits/initiate", {
+                method: "POST",
+                token,
+                body: {
+                    roomTypeId: resolvedRoomTypeId,
+                    paymentMode: "deposit",
+                    transactionId: payment.transactionId,
+                    receiptUrl,
+                },
+            });
+            router.push("/user-onboarding/deposit-status");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Deposit submission failed. Please try again.";
+            setErrors({ method: message });
+            setShowDepositConfirmModal(false);
+        } finally {
+            setDepositSubmitting(false);
+        }
+    };
+
     const handleSubmit = async () => {
         setAttempted(true);
         if (!validate()) return;
+
+        // Deposit-only mode: show confirmation modal first
+        if (paymentMode === "deposit") {
+            // Need resolvedRoomTypeId for the API call — resolve it now if not yet done
+            if (!resolvedRoomTypeId) {
+                const frontendId = (step3.selectedRoom as Record<string, any>)?.id;
+                if (frontendId) {
+                    const backendName = ROOM_TYPE_MAP[frontendId];
+                    if (backendName) {
+                        try {
+                            const roomsRes = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string }> } }>("/api/public/rooms");
+                            const match = roomsRes.data.roomTypes.find((r) => r.name === backendName);
+                            if (match) setResolvedRoomTypeId(match._id);
+                        } catch { /* ignore */ }
+                    }
+                }
+            }
+            setShowDepositConfirmModal(true);
+            return;
+        }
 
         setSubmitting(true);
         setErrors({});
@@ -460,6 +647,7 @@ export default function ConfirmPage() {
         }
     };
 
+
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
             {/* Header */}
@@ -468,8 +656,27 @@ export default function ConfirmPage() {
                 <StepTitle>Complete your payment</StepTitle>
                 <StepSubtitle>Review your invoice, upload payment proof, and confirm your booking.</StepSubtitle>
             </motion.div>
+            {/* Active Hold Banner — shown when returning user has already done deposit-only */}
+            <AnimatePresence>
+                {hasActiveHold && (
+                    <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }} style={{ overflow: "hidden" }}>
+                        <div style={{ background: "rgba(22,163,74,0.08)", border: "1.5px solid rgba(22,163,74,0.22)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(22,163,74,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <Shield size={18} color="#16a34a" />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.88rem", fontWeight: 700, color: "#15803d", margin: 0 }}>
+                                    ✅ Your ₹16,000 deposit is confirmed
+                                </p>
+                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "#16a34a", margin: "3px 0 0", opacity: 0.8 }}>
+                                    Your ₹15,000 security deposit will be applied to your payment below. Choose how you want to pay the balance.
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-            {/* Deposit Credit Banner */}
             <AnimatePresence>
                 {hasDepositCredit && (
                     <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }} style={{ overflow: "hidden" }}>
@@ -507,32 +714,61 @@ export default function ConfirmPage() {
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(31,58,45,0.4)", fontWeight: 700, margin: "0 0 12px" }}>
                         Payment Plan
                     </p>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-                        {(["full", "half"] as const).map((mode) => (
+
+                    {/* 3-card grid — hide Deposit card when user already has an active hold */}
+                    <div style={{ display: "grid", gridTemplateColumns: hasActiveHold ? "1fr 1fr" : "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 14 }}>
+                        {/* Full Payment */}
+                        <button
+                            key="full"
+                            onClick={() => !modeLockedFromDeposit && setPaymentMode("full")}
+                            disabled={modeLockedFromDeposit}
+                            style={{ padding: "14px 16px", borderRadius: 12, border: `2px solid ${paymentMode === "full" ? GREEN : "rgba(31,58,45,0.12)"}`, background: paymentMode === "full" ? "rgba(31,58,45,0.04)" : "#fff", cursor: modeLockedFromDeposit ? "not-allowed" : "pointer", textAlign: "left", transition: "all 0.2s", opacity: modeLockedFromDeposit && paymentMode !== "full" ? 0.4 : 1 }}
+                        >
+                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: paymentMode === "full" ? GREEN : "rgba(31,58,45,0.5)", display: "block" }}>Full Payment</span>
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)" }}>Pay all 11 months now (40% off)</span>
+                        </button>
+
+                        {/* Half / Split Pay */}
+                        <button
+                            key="half"
+                            onClick={() => !modeLockedFromDeposit && setPaymentMode("half")}
+                            disabled={modeLockedFromDeposit}
+                            style={{ padding: "14px 16px", borderRadius: 12, border: `2px solid ${paymentMode === "half" ? GREEN : "rgba(31,58,45,0.12)"}`, background: paymentMode === "half" ? "rgba(31,58,45,0.04)" : "#fff", cursor: modeLockedFromDeposit ? "not-allowed" : "pointer", textAlign: "left", transition: "all 0.2s", opacity: modeLockedFromDeposit && paymentMode !== "half" ? 0.4 : 1 }}
+                        >
+                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: paymentMode === "half" ? GREEN : "rgba(31,58,45,0.5)", display: "block" }}>Split Pay</span>
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)" }}>Pay 6 months now, 5 later (25% off)</span>
+                        </button>
+
+                        {/* Deposit-Only Card — only shown when user has NO active hold */}
+                        {!hasActiveHold && (
                             <button
-                                key={mode}
-                                onClick={() => !modeLockedFromDeposit && setPaymentMode(mode)}
-                                disabled={modeLockedFromDeposit}
-                                style={{
-                                    padding: "14px 16px", borderRadius: 12,
-                                    border: `2px solid ${paymentMode === mode ? GREEN : "rgba(31,58,45,0.12)"}`,
-                                    background: paymentMode === mode ? "rgba(31,58,45,0.04)" : "#fff",
-                                    cursor: modeLockedFromDeposit ? "not-allowed" : "pointer",
-                                    textAlign: "left", transition: "all 0.2s",
-                                    opacity: modeLockedFromDeposit && paymentMode !== mode ? 0.4 : 1,
-                                }}
+                                key="deposit"
+                                onClick={() => setPaymentMode("deposit")}
+                                style={{ padding: "14px 16px", borderRadius: 12, border: `2px solid ${paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.12)"}`, background: paymentMode === "deposit" ? "rgba(245,158,11,0.04)" : "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
                             >
-                                <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: paymentMode === mode ? GREEN : "rgba(31,58,45,0.5)", display: "block" }}>
-                                    {mode === "full" ? "Full Payment" : "Split Pay"}
-                                </span>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)" }}>
-                                    {mode === "full" ? "Pay all 11 months now (40% off)" : "Pay 6 months now, 5 later (25% off)"}
-                                </span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                                    <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.5)" }}>🔒 Secure Room Now</span>
+                                </div>
+                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)", display: "block", marginBottom: 8 }}>Pay ₹16,000 deposit now, choose plan later</span>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.5)" }}>✅ Room held for 21 days</span>
+                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.5)" }}>✅ ₹15,000 refundable within 7 days</span>
+                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(220,38,38,0.65)" }}>❌ ₹1,000 reg fee non-refundable</span>
+                                </div>
                             </button>
-                        ))}
+                        )}
                     </div>
 
-                    {/* Locked notice */}
+                    {/* Deposit mode policy reminder */}
+                    {paymentMode === "deposit" && !hasActiveHold && (
+                        <div style={{ padding: "10px 12px", background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 10, marginBottom: 12 }}>
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#92400e", lineHeight: 1.5, display: "block" }}>
+                                You will choose your full payment plan (Full Tenure or Half Yearly) when you return to complete payment. Your room rent will be calculated then.
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Locked notice (for full/half locked from prior deposit) */}
                     {modeLockedFromDeposit && (
                         <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 12px", background: "rgba(31,58,45,0.04)", borderRadius: 10, marginBottom: 12 }}>
                             <Lock size={13} color="rgba(31,58,45,0.45)" />
@@ -542,8 +778,8 @@ export default function ConfirmPage() {
                         </div>
                     )}
 
-                    {/* Referral Code */}
-                    {!modeLockedFromDeposit && (
+                    {/* Referral Code — hidden when deposit mode selected */}
+                    {!modeLockedFromDeposit && paymentMode !== "deposit" && (
                         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                             <Tag size={14} color="rgba(31,58,45,0.4)" style={{ flexShrink: 0 }} />
                             <FieldInput
@@ -568,17 +804,21 @@ export default function ConfirmPage() {
                 </FormCard>
             </motion.div>
 
-            {/* Invoice Panel — fully server-sourced */}
+            {/* Invoice Panel — deposit mode gets static panel; full/half get live server-sourced panel */}
             <motion.div variants={itemVariants}>
-                <InvoicePanel
-                    paymentMode={paymentMode}
-                    breakdown={breakdown}
-                    breakdown2={breakdown2}
-                    installment1={installment1}
-                    installment2={installment2}
-                    loading={previewLoading}
-                    apiError={previewError}
-                />
+                {paymentMode === "deposit" ? (
+                    <DepositInvoicePanel />
+                ) : (
+                    <InvoicePanel
+                        paymentMode={paymentMode as "full" | "half"}
+                        breakdown={breakdown}
+                        breakdown2={breakdown2}
+                        installment1={installment1}
+                        installment2={installment2}
+                        loading={previewLoading}
+                        apiError={previewError}
+                    />
+                )}
             </motion.div>
 
             {/* Payment Method */}
@@ -658,6 +898,18 @@ export default function ConfirmPage() {
                     )}
                 </NavButton>
             </motion.div>
+            {/* Referral fetch on blur fix for paymentMode type */}
+
+            {/* Deposit Confirm Modal */}
+            <AnimatePresence>
+                {showDepositConfirmModal && (
+                    <DepositConfirmModal
+                        onConfirm={handleDepositSubmit}
+                        onClose={() => setShowDepositConfirmModal(false)}
+                        loading={depositSubmitting}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }

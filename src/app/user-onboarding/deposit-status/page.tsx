@@ -213,8 +213,13 @@ function RefundModal({ onConfirm, onClose, loading }: { onConfirm: () => void; o
                         Confirm Refund Request
                     </h2>
                     <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "rgba(31,58,45,0.6)", lineHeight: 1.55, margin: 0 }}>
-                        Are you sure you want to cancel your room booking? Your <strong>₹15,000 deposit</strong> will be refunded after admin approval. This action cannot be undone.
+                        Are you sure you want to cancel your room booking? You will receive <strong>₹15,000 (Security Deposit)</strong> back after admin approval.
                     </p>
+                    <div style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
+                        <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "#92400e", margin: 0, lineHeight: 1.5 }}>
+                            ⚠️ Note: The ₹1,000 registration fee is <strong>non-refundable</strong> and will not be returned.
+                        </p>
+                    </div>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
                     <button onClick={onClose} style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: "1.5px solid rgba(31,58,45,0.15)", background: "#fff", fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 600, color: "rgba(31,58,45,0.6)", cursor: "pointer" }}>
@@ -381,7 +386,7 @@ export default function DepositStatusPage() {
                             <LiveCountdown
                                 deadline={hold.refundDeadline}
                                 colorFn={getRefundTimerColor}
-                                helperText="You can cancel and get a full ₹15,000 refund while this timer runs."
+                                helperText="You can request a refund of ₹15,000 (Security Deposit) while this timer runs. Note: ₹1,000 registration fee is non-refundable."
                                 action={
                                     isRefundEligible && !hold.refundRequestedAt ? (
                                         <button
@@ -437,7 +442,7 @@ export default function DepositStatusPage() {
                     style={{ background: "rgba(216,181,106,0.07)", border: "1px solid rgba(216,181,106,0.18)", borderRadius: 12, padding: "12px 18px", textAlign: "center" }}
                 >
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "#9a7a3a", margin: 0, lineHeight: 1.6 }}>
-                        <strong>Policy:</strong> Full refund within 7 days · No refund after 7 days · Room released after 21 days
+                        <strong>Policy:</strong> ₹15,000 refundable within 7 days · ₹15,000 non-refundable after 7 days · ₹1,000 registration fee never refundable · Room released after 21 days
                     </p>
                 </motion.div>
             </motion.div>

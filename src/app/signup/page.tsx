@@ -43,11 +43,21 @@ export default function SignUpPage() {
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [touched, setTouched] = useState<Record<string, boolean>>({});
-    const { signup, user, isAuthenticated } = useAuth();
+    const { signup, user, isAuthenticated, loading } = useAuth();
     const { showToast } = useToast();
     const router = useRouter();
 
+    // Redirect already-authenticated users away from signup
+    useEffect(() => {
+        if (!loading && isAuthenticated && user) {
+            router.replace("/user-onboarding/terms");
+        }
+    }, [isAuthenticated, user, loading, router]);
+
     const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
+
+    // Don't render form while auth is loading or if user is already authenticated
+    if (loading || (isAuthenticated && user)) return null;
 
     // ── Validation helpers ──────────────────────────────────
     const nameError = touched.name && name.trim().length > 0 && name.trim().length < 2
