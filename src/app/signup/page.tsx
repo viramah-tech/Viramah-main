@@ -108,7 +108,7 @@ export default function SignUpPage() {
         try {
             await signup(name, email, password);
             showToast("Account created successfully! Redirecting...", "success");
-            router.push("/user-onboarding/step-1");
+            router.push("/user-onboarding/terms");
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
             setError(message);

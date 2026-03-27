@@ -270,6 +270,35 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading, isAuthenticated, pathname]);
 
+    // Terms acceptance guard:
+    // If the user hasn't accepted T&C, redirect to /user-onboarding/terms.
+    // This prevents skipping the acceptance step by navigating directly to step-2 etc.
+    useEffect(() => {
+        if (loading || !isAuthenticated) return;
+        if (pathname.includes("/user-onboarding/terms")) return; // already there — don't loop
+
+        const checkTermsAccepted = async () => {
+            try {
+                const token = typeof window !== "undefined" ? localStorage.getItem("viramah_token") : null;
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/public/auth/me`,
+                    { headers: token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : {} }
+                );
+                if (!res.ok) return; // If auth fails, the auth guard above handles it
+                const data = await res.json();
+                const agreed = data?.data?.agreements?.termsAccepted;
+                if (agreed === false) {
+                    router.replace("/user-onboarding/terms");
+                }
+            } catch {
+                // Non-critical: if check fails, don't block the user
+            }
+        };
+
+        checkTermsAccepted();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading, isAuthenticated, pathname]);
+
     useEffect(() => {
         let ticking = false;
         const handleScroll = () => {

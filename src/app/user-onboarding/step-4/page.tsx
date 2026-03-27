@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
     ArrowLeft, ArrowRight, Shield, Phone, Home, Check, Pencil,
-    Plus, CreditCard,
+    Plus, CreditCard, FileText, Lock, AlertTriangle,
 } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { apiFetch } from "@/lib/api";
 import {
     NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
     containerVariants, itemVariants, FormCard, FieldLabel, FieldInput, FieldError, SelectionButton
@@ -154,6 +155,23 @@ export default function Step4Page() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [error, setError] = useState("");
     const [redirecting, setRedirecting] = useState(false);
+    const [agreements, setAgreements] = useState<{
+        termsAccepted: boolean;
+        termsAcceptedAt: string | null;
+        termsVersion: string | null;
+        privacyPolicyAccepted: boolean;
+        privacyPolicyAcceptedAt: string | null;
+        privacyPolicyVersion: string | null;
+    } | null>(null);
+
+    const fetchAgreements = useCallback(async () => {
+        try {
+            const res = await apiFetch<{ data: { agreements: typeof agreements } }>("/api/public/auth/me");
+            if (res?.data?.agreements) setAgreements(res.data.agreements);
+        } catch { /* non-critical */ }
+    }, []);
+
+    useEffect(() => { fetchAgreements(); }, [fetchAgreements]);
 
     useEffect(() => {
         if (!canAccessStep(4)) {
@@ -462,6 +480,52 @@ export default function Step4Page() {
                     {error}
                 </p>
             )}
+
+            {/* Agreements */}
+            <motion.div variants={itemVariants}>
+                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.1)", padding: 24, boxShadow: "0 2px 16px rgba(31,58,45,0.05)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(22,163,74,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <Shield size={18} color="#16a34a" />
+                        </div>
+                        <div>
+                            <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 600, color: GREEN, margin: 0 }}>Agreements &amp; Consents</p>
+                            <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.4)", margin: 0 }}>Recorded at onboarding</p>
+                        </div>
+                    </div>
+                    <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 8 }}>
+                        {agreements ? (
+                            agreements.termsAccepted && agreements.privacyPolicyAccepted ? (
+                                <>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <Check size={14} color="#16a34a" />
+                                        <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", color: "rgba(31,58,45,0.8)" }}>
+                                            <strong>Terms &amp; Conditions</strong> accepted
+                                            {agreements.termsAcceptedAt && <> on <em>{new Date(agreements.termsAcceptedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</em></>}
+                                            {agreements.termsVersion && <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.4)", marginLeft: 6 }}>({agreements.termsVersion})</span>}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <Check size={14} color="#16a34a" />
+                                        <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", color: "rgba(31,58,45,0.8)" }}>
+                                            <strong>Privacy Policy</strong> accepted
+                                            {agreements.privacyPolicyAcceptedAt && <> on <em>{new Date(agreements.privacyPolicyAcceptedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</em></>}
+                                            {agreements.privacyPolicyVersion && <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.4)", marginLeft: 6 }}>({agreements.privacyPolicyVersion})</span>}
+                                        </span>
+                                    </div>
+                                </>
+                            ) : (
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "rgba(217,119,6,0.06)", borderRadius: 8, border: "1px solid rgba(217,119,6,0.18)" }}>
+                                    <AlertTriangle size={14} color="#d97706" />
+                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "#92400e" }}>Agreement record not available for this account.</span>
+                                </div>
+                            )
+                        ) : (
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.35)" }}>Loading agreements…</span>
+                        )}
+                    </div>
+                </div>
+            </motion.div>
 
             {/* Navigation */}
             <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>

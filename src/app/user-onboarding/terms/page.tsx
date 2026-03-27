@@ -1,286 +1,444 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-    Shield, Clock, CheckCircle, XCircle, AlertTriangle, ArrowRight,
-    CreditCard, FileText, RefreshCw,
-} from "lucide-react";
-import BookingTimeline from "@/components/BookingTimeline";
+import { Shield, FileText, Lock, AlertTriangle, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import { useToast } from "@/components/ui/Toast";
 import {
     StepBadge, StepTitle, StepSubtitle, FormCard,
     containerVariants, itemVariants,
 } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
-const GOLD = "#D8B56A";
+const GOLD  = "#D8B56A";
 
-// ── Static Pricing Data (matches PricingConfig + known tariff) ──────────────
+const TERMS_VERSION   = "v1.0";
+const PRIVACY_VERSION = "v1.0";
 
-const ROOM_TYPES = [
-    {
-        name: "Studio",
-        fullTotal: "₹1,97,390",
-        halfInst1: "₹1,09,450",
-        halfInst2: "₹83,780",
-    },
-    {
-        name: "Axis Plus Studio",
-        fullTotal: "₹1,97,390",
-        halfInst1: "₹1,09,450",
-        halfInst2: "₹83,780",
-    },
-    {
-        name: "Double Occupancy",
-        fullTotal: "₹1,47,520",
-        halfInst1: "₹82,520",
-        halfInst2: "₹62,500",
-    },
-    {
-        name: "Triple Occupancy",
-        fullTotal: "₹1,14,290",
-        halfInst1: "₹64,200",
-        halfInst2: "₹48,380",
-    },
-];
+// ── Scrollable Document Box ───────────────────────────────────────────────────
 
-const ADD_ONS = [
-    { label: "Transport", amount: "₹2,000/month", note: "Both modes" },
-    { label: "Mess — Monthly", amount: "₹2,200/month", note: "Both modes" },
-    { label: "Mess — Lump Sum", amount: "₹19,000 total", note: "Full pay only" },
-];
+function ScrollableDoc({
+    title,
+    icon: Icon,
+    children,
+    onScrollProgress,
+}: {
+    title: string;
+    icon: React.ElementType;
+    children: React.ReactNode;
+    onScrollProgress: (pct: number) => void;
+}) {
+    const boxRef         = useRef<HTMLDivElement>(null);
+    const [scrolled, setScrolled] = useState(false);
 
-const POLICY_POINTS = [
-    {
-        icon: CheckCircle,
-        iconColor: "#16a34a",
-        text: "Full ₹15,000 refund if you cancel within 7 days of deposit approval.",
-        bold: true,
-    },
-    {
-        icon: XCircle,
-        iconColor: "#dc2626",
-        text: "No refund after 7 days — deposit becomes non-refundable.",
-        bold: false,
-    },
-    {
-        icon: Clock,
-        iconColor: "#d97706",
-        text: "You have 21 days from approval to complete your payment. After this, your room is released and deposit is forfeited.",
-        bold: false,
-    },
-    {
-        icon: Shield,
-        iconColor: GREEN,
-        text: "Your room is held exclusively for you during this 21-day window.",
-        bold: false,
-    },
-];
-
-// ── Countdown CTA ─────────────────────────────────────────────────────────────
-const COUNTDOWN_SECONDS = 5;
-
-function ProceedButton({ onClick }: { onClick: () => void }) {
-    const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
-    const [ready, setReady] = useState(false);
-
-    useEffect(() => {
-        if (secondsLeft <= 0) { setReady(true); return; }
-        const t = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
-        return () => clearTimeout(t);
-    }, [secondsLeft]);
+    const handleScroll = useCallback(() => {
+        const el = boxRef.current;
+        if (!el) return;
+        const pct = el.scrollTop / Math.max(el.scrollHeight - el.clientHeight, 1);
+        onScrollProgress(pct * 100);
+        if (pct >= 0.1) setScrolled(true);
+    }, [onScrollProgress]);
 
     return (
-        <button
-            onClick={ready ? onClick : undefined}
-            aria-disabled={!ready}
-            style={{
-                width: "100%",
-                padding: "18px 28px",
-                borderRadius: 14,
-                border: "none",
-                background: ready
-                    ? `linear-gradient(135deg, ${GREEN} 0%, #162b1e 100%)`
-                    : "rgba(31,58,45,0.1)",
-                color: ready ? GOLD : "rgba(31,58,45,0.35)",
-                fontFamily: "var(--font-mono, monospace)",
-                fontWeight: 700,
-                fontSize: "0.72rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.18em",
-                cursor: ready ? "pointer" : "not-allowed",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                transition: "all 0.4s ease",
-                boxShadow: ready ? "0 8px 28px rgba(31,58,45,0.22)" : "none",
-            }}
-        >
-            {ready ? (
-                <>
-                    I Understand — Proceed to Deposit ₹15,000
-                    <ArrowRight size={16} />
-                </>
-            ) : (
-                <>
-                    <Clock size={14} />
-                    Please read — proceeding in {secondsLeft}s…
-                </>
-            )}
-        </button>
+        <div>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <Icon size={16} color={GREEN} />
+                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.2em", fontWeight: 700, color: GREEN }}>{title}</span>
+                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.4)", marginLeft: "auto" }}>
+                    {TERMS_VERSION}
+                </span>
+            </div>
+
+            {/* Scrollable box */}
+            <div style={{ position: "relative" }}>
+                <div
+                    ref={boxRef}
+                    onScroll={handleScroll}
+                    style={{
+                        maxHeight: 280,
+                        overflowY: "scroll",
+                        border: "1px solid rgba(31,58,45,0.12)",
+                        borderRadius: 10,
+                        padding: "16px 18px",
+                        background: "rgba(31,58,45,0.02)",
+                        fontFamily: "var(--font-body, sans-serif)",
+                        fontSize: "0.82rem",
+                        color: "rgba(31,58,45,0.75)",
+                        lineHeight: 1.65,
+                    }}
+                >
+                    {children}
+                </div>
+
+                {/* Scroll-to-read fader — fades once user has scrolled at all */}
+                {!scrolled && (
+                    <motion.div
+                        initial={{ opacity: 1 }}
+                        animate={{ opacity: scrolled ? 0 : 1 }}
+                        style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: 56,
+                            background: "linear-gradient(transparent, rgba(247,241,232,0.96))",
+                            display: "flex",
+                            alignItems: "flex-end",
+                            justifyContent: "center",
+                            paddingBottom: 8,
+                            borderRadius: "0 0 10px 10px",
+                            pointerEvents: "none",
+                        }}
+                    >
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.4)", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                            ↓ Scroll to read
+                        </span>
+                    </motion.div>
+                )}
+            </div>
+        </div>
     );
 }
 
-// ── Main Page ────────────────────────────────────────────────────────────────
+// ── Checkbox with scroll warning ──────────────────────────────────────────────
 
-export default function TermsPage() {
-    const router = useRouter();
+function ConsentCheckbox({
+    id,
+    label,
+    checked,
+    onChange,
+    scrollPct,
+}: {
+    id: string;
+    label: React.ReactNode;
+    checked: boolean;
+    onChange: (v: boolean) => void;
+    scrollPct: number;
+}) {
+    const [warnShown, setWarnShown] = useState(false);
+    const hasScrolledEnough = scrollPct >= 80;
+
+    const handleChange = () => {
+        if (!hasScrolledEnough && !checked) {
+            setWarnShown(true);
+            setTimeout(() => setWarnShown(false), 3000);
+        }
+        onChange(!checked);
+    };
+
+    return (
+        <div>
+            <div
+                onClick={handleChange}
+                style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", userSelect: "none" }}
+            >
+                <div
+                    style={{
+                        width: 20, height: 20, borderRadius: 5, flexShrink: 0, marginTop: 1,
+                        border: `2px solid ${checked ? GREEN : "rgba(31,58,45,0.25)"}`,
+                        background: checked ? GREEN : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.2s",
+                    }}
+                >
+                    {checked && <CheckCircle size={12} color={GOLD} strokeWidth={3} />}
+                </div>
+                <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", color: "rgba(31,58,45,0.8)", lineHeight: 1.5 }}>{label}</span>
+            </div>
+            {warnShown && (
+                <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "rgba(217,119,6,0.08)", borderRadius: 6, border: "1px solid rgba(217,119,6,0.2)" }}
+                >
+                    <AlertTriangle size={12} color="#d97706" />
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "#92400e" }}>
+                        Please scroll through the document before accepting — you can still check this.
+                    </span>
+                </motion.div>
+            )}
+        </div>
+    );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+
+export default function TermsAndConditionsPage() {
+    const router     = useRouter();
+    const { showToast } = useToast();
+
+    const [termsChecked,   setTermsChecked]   = useState(false);
+    const [privacyChecked, setPrivacyChecked] = useState(false);
+    const [termsScroll,    setTermsScroll]    = useState(0);
+    const [privacyScroll,  setPrivacyScroll]  = useState(0);
+    const [submitting,     setSubmitting]     = useState(false);
+
+    const bothChecked = termsChecked && privacyChecked;
+
+    const handleAccept = async () => {
+        if (!bothChecked || submitting) return;
+        setSubmitting(true);
+        try {
+            await apiFetch("/api/public/auth/accept-terms", {
+                method: "POST",
+                body: { termsVersion: TERMS_VERSION, privacyPolicyVersion: PRIVACY_VERSION },
+            });
+            // Store acceptance in localStorage for UX (source of truth is backend)
+            localStorage.setItem("viramah_terms", JSON.stringify({
+                termsAccepted: true,
+                acceptedAt: new Date().toISOString(),
+            }));
+            showToast("Terms accepted. Welcome to Viramah!", "success");
+            router.push("/user-onboarding/step-1");
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : "Failed to record acceptance. Please try again.";
+            showToast(msg, "error");
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     return (
         <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 40 }}
+            style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 48 }}
         >
-            {/* Step Header — same pattern as other onboarding steps */}
+            {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
-                <StepBadge icon={FileText} label="Before You Book" />
-                <StepTitle>Pricing & Booking Terms</StepTitle>
+                <StepBadge icon={Shield} label="Legal Agreements" />
+                <StepTitle>Before we continue — please review our policies</StepTitle>
                 <StepSubtitle>
-                    Please review the room pricing and our deposit policy carefully. Your ₹15,000 security deposit comes before the full payment.
+                    You must accept both documents to proceed with your registration.
                 </StepSubtitle>
             </motion.div>
 
-            {/* How it works — Booking Timeline */}
+            {/* Terms & Conditions */}
             <motion.div variants={itemVariants}>
                 <FormCard>
-                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(31,58,45,0.4)", fontWeight: 700, margin: "0 0 4px" }}>
-                        How the Booking Works
-                    </p>
-                    <BookingTimeline currentStatus="idle" />
-                </FormCard>
-            </motion.div>
-
-            {/* Pricing Table */}
-            <motion.div variants={itemVariants}>
-                <FormCard>
-                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(31,58,45,0.4)", fontWeight: 700, margin: "0 0 16px" }}>
-                        Room Pricing — 11-Month Tenure (incl. GST)
-                    </p>
-
-                    {/* Column Headers */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: 8, padding: "8px 12px", background: "rgba(31,58,45,0.04)", borderRadius: 8, marginBottom: 4 }}>
-                        {["Room Type", "Full Pay", "Half-Pay Inst. 1", "Half-Pay Inst. 2"].map((h) => (
-                            <span key={h} style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(31,58,45,0.45)", fontWeight: 700 }}>
-                                {h}
-                            </span>
-                        ))}
-                    </div>
-
-                    {/* Rows */}
-                    {ROOM_TYPES.map((rt, i) => (
-                        <div
-                            key={rt.name}
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
-                                gap: 8,
-                                padding: "12px 12px",
-                                borderBottom: i < ROOM_TYPES.length - 1 ? "1px solid rgba(31,58,45,0.06)" : "none",
-                                alignItems: "center",
-                            }}
-                        >
-                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", fontWeight: 600, color: GREEN }}>
-                                {rt.name}
-                            </span>
-                            <div>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.8rem", fontWeight: 700, color: GREEN }}>
-                                    {rt.fullTotal}
-                                </span>
-                                <span style={{ display: "block", fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.4)", marginTop: 2 }}>
-                                    40% discount
-                                </span>
-                            </div>
-                            <div>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.78rem", color: "rgba(31,58,45,0.75)" }}>
-                                    {rt.halfInst1}
-                                </span>
-                                <span style={{ display: "block", fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.4)", marginTop: 2 }}>
-                                    25% off · Months 1–6
-                                </span>
-                            </div>
-                            <div>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.78rem", color: "rgba(31,58,45,0.75)" }}>
-                                    {rt.halfInst2}
-                                </span>
-                                <span style={{ display: "block", fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.4)", marginTop: 2 }}>
-                                    Months 7–11
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-
-                    <div style={{ height: 1, background: "rgba(31,58,45,0.06)", margin: "4px 0" }} />
-
-                    {/* Footnote */}
-                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.38)", margin: "8px 0 0", lineHeight: 1.5 }}>
-                        * Security deposit (₹15,000) is paid separately and credited against your first payment. All totals include registration fee (₹1,000) + GST.
-                    </p>
-                </FormCard>
-            </motion.div>
-
-            {/* Add-ons */}
-            <motion.div variants={itemVariants}>
-                <FormCard>
-                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(31,58,45,0.4)", fontWeight: 700, margin: "0 0 14px" }}>
-                        Optional Add-ons
-                    </p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {ADD_ONS.map((ao) => (
-                            <div key={ao.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "rgba(31,58,45,0.03)", borderRadius: 8, border: "1px solid rgba(31,58,45,0.07)" }}>
-                                <div>
-                                    <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", fontWeight: 600, color: GREEN }}>{ao.label}</span>
-                                    <span style={{ display: "block", fontFamily: "var(--font-mono, monospace)", fontSize: "0.57rem", color: "rgba(31,58,45,0.38)", marginTop: 2 }}>{ao.note}</span>
-                                </div>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.78rem", fontWeight: 700, color: GREEN }}>{ao.amount}</span>
-                            </div>
-                        ))}
+                    <ScrollableDoc title="Terms & Conditions" icon={FileText} onScrollProgress={setTermsScroll}>
+                        <TermsContent />
+                    </ScrollableDoc>
+                    <div style={{ borderTop: "1px solid rgba(31,58,45,0.07)", paddingTop: 14, marginTop: 14 }}>
+                        <ConsentCheckbox
+                            id="terms-cb"
+                            label={<>I have read and agree to the <strong>Terms &amp; Conditions</strong> ({TERMS_VERSION})</>}
+                            checked={termsChecked}
+                            onChange={setTermsChecked}
+                            scrollPct={termsScroll}
+                        />
                     </div>
                 </FormCard>
             </motion.div>
 
-            {/* Cancellation & Refund Policy */}
+            {/* Privacy Policy */}
             <motion.div variants={itemVariants}>
                 <FormCard>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                        <AlertTriangle size={16} color="#d97706" style={{ flexShrink: 0 }} />
-                        <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 700, color: "#92400e", margin: 0 }}>
-                            Cancellation & Refund Policy
-                        </p>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        {POLICY_POINTS.map(({ icon: Icon, iconColor, text, bold }, i) => (
-                            <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "10px 12px", background: i === 0 ? "rgba(22,163,74,0.04)" : i === 1 ? "rgba(220,38,38,0.04)" : "rgba(31,58,45,0.02)", borderRadius: 8, border: `1px solid ${i === 0 ? "rgba(22,163,74,0.12)" : i === 1 ? "rgba(220,38,38,0.1)" : "rgba(31,58,45,0.06)"}` }}>
-                                <Icon size={15} color={iconColor} style={{ flexShrink: 0, marginTop: 2 }} />
-                                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", color: bold ? "#14532d" : "rgba(31,58,45,0.75)", fontWeight: bold ? 600 : 400, margin: 0, lineHeight: 1.5 }}>
-                                    {text}
-                                </p>
-                            </div>
-                        ))}
+                    <ScrollableDoc title="Privacy Policy" icon={Lock} onScrollProgress={setPrivacyScroll}>
+                        <PrivacyContent />
+                    </ScrollableDoc>
+                    <div style={{ borderTop: "1px solid rgba(31,58,45,0.07)", paddingTop: 14, marginTop: 14 }}>
+                        <ConsentCheckbox
+                            id="privacy-cb"
+                            label={<>I have read and agree to the <strong>Privacy Policy</strong> ({PRIVACY_VERSION})</>}
+                            checked={privacyChecked}
+                            onChange={setPrivacyChecked}
+                            scrollPct={privacyScroll}
+                        />
                     </div>
                 </FormCard>
             </motion.div>
 
-            {/* CTA */}
-            <motion.div variants={itemVariants} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <ProceedButton onClick={() => router.push("/user-onboarding/deposit")} />
-                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.57rem", color: "rgba(31,58,45,0.32)", textAlign: "center", letterSpacing: "0.04em", margin: 0 }}>
-                    By proceeding, you acknowledge that you have read and understood the above terms.
-                </p>
+            {/* Accept Button */}
+            <motion.div variants={itemVariants} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <button
+                    onClick={handleAccept}
+                    disabled={!bothChecked || submitting}
+                    style={{
+                        width: "100%",
+                        padding: "18px 28px",
+                        borderRadius: 14,
+                        border: "none",
+                        background: bothChecked && !submitting
+                            ? `linear-gradient(135deg, ${GREEN} 0%, #162b1e 100%)`
+                            : "rgba(31,58,45,0.1)",
+                        color: bothChecked && !submitting ? GOLD : "rgba(31,58,45,0.3)",
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontWeight: 700,
+                        fontSize: "0.72rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.18em",
+                        cursor: bothChecked && !submitting ? "pointer" : "not-allowed",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 10,
+                        transition: "all 0.35s ease",
+                        boxShadow: bothChecked && !submitting ? "0 8px 28px rgba(31,58,45,0.22)" : "none",
+                    }}
+                >
+                    {submitting ? (
+                        <>
+                            <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
+                            Recording acceptance…
+                        </>
+                    ) : (
+                        <>
+                            Accept &amp; Continue to Registration
+                            <ArrowRight size={16} />
+                        </>
+                    )}
+                </button>
+                {!bothChecked && (
+                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.57rem", color: "rgba(31,58,45,0.35)", textAlign: "center", margin: 0 }}>
+                        Both checkboxes must be checked to proceed
+                    </p>
+                )}
+                <button
+                    onClick={() => router.push("/signup")}
+                    style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem",
+                        color: "rgba(31,58,45,0.4)", textDecoration: "underline",
+                        textAlign: "center", letterSpacing: "0.05em",
+                    }}
+                >
+                    <ArrowLeft size={11} style={{ display: "inline", verticalAlign: "middle", marginRight: 4 }} />
+                    Back to Sign Up
+                </button>
             </motion.div>
         </motion.div>
+    );
+}
+
+// ── Terms & Conditions Content ────────────────────────────────────────────────
+
+function TermsContent() {
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <p><strong>Last updated:</strong> March 2026 &nbsp;·&nbsp; <strong>Version:</strong> v1.0</p>
+
+            <Section title="1. Acceptance of Terms">
+                By creating a Viramah account and proceeding through onboarding, you agree to be bound by these Terms & Conditions. If you do not agree, do not proceed with registration.
+            </Section>
+
+            <Section title="2. Eligibility">
+                You must be at least 18 years old to register. By registering you confirm you meet this requirement and that all information provided is accurate.
+            </Section>
+
+            <Section title="3. Booking & Deposit Policy">
+                <ul style={{ paddingLeft: 16, margin: 0, lineHeight: 1.8 }}>
+                    <li>A ₹15,000 security deposit is required to hold your room.</li>
+                    <li>The deposit is refundable in full within 7 days of admin approval.</li>
+                    <li>After 7 days the deposit is non-refundable.</li>
+                    <li>You must complete full payment within 21 days of approval or your room is released and the deposit is forfeited.</li>
+                    <li>Viramah reserves the right to reject any reservation without liability.</li>
+                </ul>
+            </Section>
+
+            <Section title="4. Payment">
+                All payments are processed in Indian Rupees (INR). Published prices include 12% GST. Viramah reserves the right to update pricing with 30 days' notice.
+            </Section>
+
+            <Section title="5. Room Allocation">
+                Room numbers are assigned by management after full payment is confirmed. A specific room number is not guaranteed at the time of booking.
+            </Section>
+
+            <Section title="6. House Rules">
+                Residents must comply with Viramah's house rules communicated at move-in. Violation may result in immediate termination of residency without refund of any remaining tenure amount.
+            </Section>
+
+            <Section title="7. Intellectual Property">
+                All content on the Viramah platform is owned by Viramah Student Living Pvt Ltd. Unauthorised reproduction is prohibited.
+            </Section>
+
+            <Section title="8. Limitation of Liability">
+                To the maximum extent permitted by law, Viramah is not liable for indirect, incidental, or consequential damages arising from use of our services.
+            </Section>
+
+            <Section title="9. Governing Law">
+                These terms are governed by the laws of India. Disputes shall be subject to the exclusive jurisdiction of courts in Mathura, Uttar Pradesh.
+            </Section>
+
+            <Section title="10. Contact">
+                For any questions regarding these terms, contact us at <strong>legal@viramah.com</strong>.
+            </Section>
+        </div>
+    );
+}
+
+// ── Privacy Policy Content ─────────────────────────────────────────────────────
+
+function PrivacyContent() {
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <p><strong>Last updated:</strong> March 2026 &nbsp;·&nbsp; <strong>Version:</strong> v1.0</p>
+
+            <Section title="1. Data We Collect">
+                <ul style={{ paddingLeft: 16, margin: 0, lineHeight: 1.8 }}>
+                    <li>Personal information: name, email, phone, date of birth, gender, address.</li>
+                    <li>Identity documents: Aadhaar, Passport, or other government ID.</li>
+                    <li>Emergency contact information.</li>
+                    <li>Payment information: transaction IDs and receipt images (no card numbers stored).</li>
+                    <li>Technical data: IP address, browser type, device information.</li>
+                    <li>Acceptance records: timestamp and IP at time of T&C/Privacy Policy acceptance.</li>
+                </ul>
+            </Section>
+
+            <Section title="2. How We Use Your Data">
+                <ul style={{ paddingLeft: 16, margin: 0, lineHeight: 1.8 }}>
+                    <li>Processing your room booking and onboarding.</li>
+                    <li>Identity verification and fraud prevention.</li>
+                    <li>Communication regarding your residency.</li>
+                    <li>Compliance with legal and regulatory obligations.</li>
+                    <li>Improving our services through anonymised analytics.</li>
+                </ul>
+            </Section>
+
+            <Section title="3. Data Sharing">
+                We do not sell your personal data. We may share data with: (a) trusted payment processors to verify transactions; (b) government authorities when required by law; (c) service providers operating on our behalf under strict confidentiality agreements.
+            </Section>
+
+            <Section title="4. Data Retention">
+                We retain your personal data for the duration of your residency and for up to 5 years thereafter for legal and accounting purposes.
+            </Section>
+
+            <Section title="5. Your Rights">
+                You have the right to access, correct, or request deletion of your personal data. Contact <strong>privacy@viramah.com</strong>. Note that some data may be retained for legal compliance even after deletion requests.
+            </Section>
+
+            <Section title="6. Security">
+                We implement industry-standard security measures including HTTPS, encrypted storage, and access controls. No system is fully secure; we encourage you to use a strong, unique password.
+            </Section>
+
+            <Section title="7. Cookies">
+                We use cookies for session management and analytics. You may disable cookies in your browser settings, which may affect some functionality.
+            </Section>
+
+            <Section title="8. Children's Privacy">
+                Our service is not directed to persons under 18. We do not knowingly collect data from minors.
+            </Section>
+
+            <Section title="9. Changes to This Policy">
+                We will notify you of material changes to this Privacy Policy by email and by updating the version number on this page.
+            </Section>
+
+            <Section title="10. Contact">
+                Data Controller: Viramah Student Living Pvt Ltd. Email: <strong>privacy@viramah.com</strong>.
+            </Section>
+        </div>
+    );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div>
+            <p style={{ fontFamily: "var(--font-body, sans-serif)", fontWeight: 700, fontSize: "0.85rem", color: "#1F3A2D", marginBottom: 4 }}>{title}</p>
+            <div style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", color: "rgba(31,58,45,0.72)", lineHeight: 1.65 }}>{children}</div>
+        </div>
     );
 }

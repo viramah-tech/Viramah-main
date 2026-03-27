@@ -245,21 +245,42 @@ function SelectableRoomCard({
                         </div>
                     )}
 
+                    {/* Pricing Mini-Panel */}
+                    {(() => {
+                        // room.price = Full Tenure monthly (40% off + 12% GST, e.g. Nexus = ₹9,090)
+                        // Back-derive base: fullMonthly = base × 0.60 × 1.12 → base = price / 0.672
+                        const fullMonthly = room.price ?? 0;
+                        const base = Math.round(fullMonthly / (0.60 * 1.12));
+                        // Half Yearly: 25% off → monthly = base × 0.75 × 1.12
+                        const halfMonthly = Math.round(base * 0.75 * 1.12);
+                        const savings = (halfMonthly * 11) - (fullMonthly * 11);
+                        return (
+                            <div className="mt-2 rounded-[8px] overflow-hidden border border-black/8">
+                                <div className="grid grid-cols-2">
+                                    <div className="px-3 py-2.5 border-r border-black/8 bg-black/2">
+                                        <p className="font-mono text-[0.52rem] uppercase tracking-[0.15em] text-charcoal/40 mb-1">Half Yearly · 25% off</p>
+                                        <p className="font-display text-[1.15rem] text-charcoal leading-none">₹{halfMonthly.toLocaleString("en-IN")}</p>
+                                        <p className="font-mono text-[0.52rem] text-charcoal/35 mt-0.5">/month</p>
+                                    </div>
+                                    <div className="px-3 py-2.5 bg-luxury-green/5">
+                                        <p className="font-mono text-[0.52rem] uppercase tracking-[0.15em] text-green-sage/60 mb-1">Full Tenure · 40% off</p>
+                                        <p className="font-display text-[1.15rem] leading-none" style={{ color: GREEN }}>₹{fullMonthly.toLocaleString("en-IN")}</p>
+                                        <p className="font-mono text-[0.52rem] text-charcoal/35 mt-0.5">/month</p>
+                                    </div>
+                                </div>
+                                <div className="px-3 py-1.5 bg-amber-50/80 border-t border-amber-200/40">
+                                    <p className="font-mono text-[0.52rem] text-amber-700/70">
+                                        ✨ Save ₹{savings.toLocaleString("en-IN")} with full tenure vs half yearly
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     {/* Footer */}
-                    <div className="flex justify-between items-end pt-1 border-t border-black/6 mt-auto">
+                    <div className="flex justify-between items-end pt-1 border-t border-black/6 mt-2">
                         <div className="flex flex-col gap-0.5">
                             <span className="font-mono text-[0.58rem] text-charcoal/35 uppercase tracking-widest">Krishna Valley, Vrindavan</span>
-                            <span className="font-mono text-[0.58rem] text-charcoal/40">Starting from</span>
-                            {room.originalPrice && (
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="font-mono text-[0.78rem] line-through" style={{ color: "#b94040", opacity: 0.75 }}>{room.originalPrice}</span>
-                                    <span className="font-mono text-[0.55rem] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm" style={{ background: "#2e7d4f", color: "#fff" }}>{room.discount}</span>
-                                </div>
-                            )}
-                            <span className="font-display text-[1.7rem] text-charcoal leading-tight">
-                                {room.priceLabel}
-                                <span className="font-mono text-[0.58rem] text-charcoal/40 ml-1">/mo</span>
-                            </span>
                         </div>
                         <div
                             className="px-4 py-2.5 rounded-[4px] font-mono text-[0.62rem] uppercase tracking-[0.15em] font-bold transition-all"
