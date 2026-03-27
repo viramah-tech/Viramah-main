@@ -32,6 +32,32 @@ const PERKS = [
     "All-inclusive pricing",
 ];
 
+/**
+ * Determine the correct post-auth landing page based on user lifecycle stage.
+ * Mirrors the login page's logic for consistency across all auth entry points.
+ */
+function getRedirectPath(u: {
+    onboardingStatus: string;
+    paymentStatus: string;
+    documentVerificationStatus?: string;
+    moveInStatus?: string;
+}) {
+    if (
+        u.paymentStatus === "approved" &&
+        u.documentVerificationStatus === "approved" &&
+        u.moveInStatus === "completed"
+    ) {
+        return "/student/dashboard";
+    }
+    if (u.onboardingStatus === "completed") {
+        return "/user-onboarding/payment-status";
+    }
+    if (u.paymentStatus === "pending" || u.paymentStatus === "approved") {
+        return "/user-onboarding/payment-status";
+    }
+    return "/user-onboarding/terms";
+}
+
 export default function SignUpPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -47,10 +73,10 @@ export default function SignUpPage() {
     const { showToast } = useToast();
     const router = useRouter();
 
-    // Redirect already-authenticated users away from signup
+    // ── Production redirect: route authenticated users to the correct stage ──
     useEffect(() => {
         if (!loading && isAuthenticated && user) {
-            router.replace("/user-onboarding/terms");
+            router.replace(getRedirectPath(user));
         }
     }, [isAuthenticated, user, loading, router]);
 

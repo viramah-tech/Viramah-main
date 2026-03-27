@@ -148,8 +148,8 @@ const ID_LABELS: Record<string, string> = {
 
 export default function Step4Page() {
     const router = useRouter();
-    const { state, updateStep4, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saveStepToBackend, saving } = useOnboarding();
-    const { step1, step2, step3, step4 = { gender: "", address: "" } } = state;
+    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saveStepToBackend, saving } = useOnboarding();
+    const { step1, step2, step3 } = state;
     const [submitting, setSubmitting] = useState(false);
     const [attempted, setAttempted] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -188,11 +188,9 @@ export default function Step4Page() {
     const totalCost = getTotalCost();
 
     const validate = (): boolean => {
-        const errs: Record<string, string> = {};
-        if (!step4.gender) errs.gender = "Gender is required";
-        if (!step4.address.trim()) errs.address = "Address is required";
-        setErrors(errs);
-        return Object.keys(errs).length === 0;
+        // Step 4 is a review step — gender/address are now collected in step 1.
+        // No additional validation needed here.
+        return true;
     };
 
     const handleConfirm = async () => {
@@ -202,15 +200,10 @@ export default function Step4Page() {
         setSubmitting(true);
         setError("");
         try {
-            await saveStepToBackend(4, {
-                gender: step4.gender,
-                address: step4.address,
-            });
-
             markStepComplete(4);
             router.push("/user-onboarding/confirm");
         } catch (err) {
-            const message = err instanceof Error ? err.message : "Failed to save. Please try again.";
+            const message = err instanceof Error ? err.message : "Failed to proceed. Please try again.";
             setError(message);
         } finally {
             setSubmitting(false);
@@ -221,69 +214,11 @@ export default function Step4Page() {
         <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
-                <StepBadge icon={Check} label="Final Details & Review" />
+                <StepBadge icon={Check} label="Review &amp; Confirm" />
                 <StepTitle>Review &amp; Confirm</StepTitle>
                 <StepSubtitle>
-                    Please provide a few more details and review your information before proceeding to payment.
+                    Review your information before proceeding to payment.
                 </StepSubtitle>
-            </motion.div>
-
-            {/* Additional Details Form */}
-            <motion.div variants={itemVariants}>
-                <FormCard>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                        <h3 style={{ margin: 0, fontFamily: "var(--font-body, sans-serif)", fontSize: "1rem", color: GREEN }}>Additional Details</h3>
-                        
-                        {/* Gender */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                            <FieldLabel>Gender</FieldLabel>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-                                <SelectionButton
-                                    label="Male"
-                                    selected={step4.gender === "male"}
-                                    onClick={() => updateStep4({ gender: "male" })}
-                                />
-                                <SelectionButton
-                                    label="Female"
-                                    selected={step4.gender === "female"}
-                                    onClick={() => updateStep4({ gender: "female" })}
-                                />
-                                <SelectionButton
-                                    label="Other"
-                                    selected={step4.gender === "other"}
-                                    onClick={() => updateStep4({ gender: "other" })}
-                                />
-                            </div>
-                            {attempted && errors.gender && <FieldError>{errors.gender}</FieldError>}
-                        </div>
-
-                        {/* Address */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            <FieldLabel htmlFor="s4-address">Permanent Address</FieldLabel>
-                            <textarea
-                                id="s4-address"
-                                placeholder="Enter your full permanent address"
-                                value={step4.address}
-                                onChange={(e) => updateStep4({ address: e.target.value })}
-                                rows={3}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 14px",
-                                    borderRadius: 10,
-                                    border: `1px solid ${attempted && errors.address ? "#e74c3c" : "rgba(31,58,45,0.15)"}`,
-                                    background: "#fff",
-                                    fontFamily: "var(--font-body, sans-serif)",
-                                    fontSize: "0.85rem",
-                                    color: GREEN,
-                                    resize: "none",
-                                    outline: "none",
-                                    transition: "all 0.2s ease"
-                                }}
-                            />
-                            {attempted && errors.address && <FieldError>{errors.address}</FieldError>}
-                        </div>
-                    </div>
-                </FormCard>
             </motion.div>
 
             {/* Personal Details */}

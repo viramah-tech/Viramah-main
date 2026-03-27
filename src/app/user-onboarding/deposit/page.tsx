@@ -10,6 +10,7 @@ import {
 import { apiFetch } from "@/lib/api";
 import { uploadFile } from "@/lib/uploadFile";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { usePricingConfig } from "@/hooks/usePricingConfig";
 import {
   FieldLabel, FieldInput, FieldError, NavButton,
   StepBadge, StepTitle, StepSubtitle, FormCard,
@@ -239,6 +240,8 @@ function MiniTimeline() {
 export default function DepositPage() {
   const router = useRouter();
   const { state } = useOnboarding();
+  const { config: pricingConfig, loading: pricingLoading } = usePricingConfig();
+  const depositAmount = pricingConfig.securityDeposit;
   const roomTypeName = (state as Record<string, any>)?.step3?.selectedRoom?.title || "Your Selected Room";
   const frontendRoomId = (state as Record<string, any>)?.step3?.selectedRoom?.id;
 
@@ -361,7 +364,7 @@ export default function DepositPage() {
         <StepBadge icon={CreditCard} label="Security Deposit" />
         <StepTitle>Reserve your room</StepTitle>
         <StepSubtitle>
-          Pay a ₹15,000 security deposit to hold your room. Choose your payment plan first — it's locked in at this stage.
+          Pay a {inr(depositAmount)} security deposit to hold your room. Choose your payment plan first — it's locked in at this stage.
         </StepSubtitle>
       </motion.div>
 
@@ -427,7 +430,7 @@ export default function DepositPage() {
                   Security Deposit
                 </p>
                 <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.8rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>
-                  ₹15,000
+                  {inr(depositAmount)}
                 </p>
                 <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(246,244,239,0.5)", margin: "6px 0 0" }}>
                   {roomTypeName} · Refundable within 7 days of approval
@@ -462,7 +465,7 @@ export default function DepositPage() {
                     {paymentMode === "full" ? "Total payable (after deposit)" : "Inst. 1 payable (after deposit)"}
                   </span>
                   <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.2rem", color: GOLD }}>
-                    {inr(activePreview.installment1 - 15000 > 0 ? activePreview.installment1 - 15000 : activePreview.installment1)}
+                    {inr(activePreview.installment1 - depositAmount > 0 ? activePreview.installment1 - depositAmount : activePreview.installment1)}
                   </span>
                 </div>
               )}
@@ -506,7 +509,7 @@ export default function DepositPage() {
             {/* Bank Details */}
             <FormCard>
               <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, margin: "0 0 14px" }}>
-                Step 2 — Transfer ₹15,000 to:
+                Step 2 — Transfer {inr(depositAmount)} to:
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {[

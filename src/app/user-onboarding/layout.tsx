@@ -241,32 +241,95 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
         }
     }, [loading, isAuthenticated, router]);
 
-    // Active-hold redirect guard:
-    // If the user has an active RoomHold (room is reserved, payment pending),
-    // force them to the deposit-status page before they can access any other step.
+    // ── AUDIT FIX L-1: Unified lifecycle + hold guard (single useEffect) ────
+    // Replaces two separate async guards that could race and redirect to
+    // different pages simultaneously. Priority chain (highest first):
+    //   1. Active deposit hold → /deposit-status
+    //   2. Payment/onboarding lifecycle → /payment-status or /student/dashboard
+    //   3. Default → stay on current page
     useEffect(() => {
         if (loading || !isAuthenticated) return;
-        if (pathname.includes("deposit-status")) return; // already there
 
-        const checkActiveHold = async () => {
+        let cancelled = false;
+
+        const runLifecycleGuard = async () => {
             try {
                 const token = typeof window !== "undefined" ? localStorage.getItem("viramah_token") : null;
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/public/deposits/status`,
-                    { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-                );
-                if (!res.ok) return; // Non-200 means no hold — let flow continue
-                const data = await res.json();
-                const hold = data?.data?.hold;
-                if (hold?.status === "active") {
-                    router.replace("/user-onboarding/deposit-status");
+                const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+                const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+                // Fetch BOTH data sources in parallel (single network round-trip)
+                const [meRes, holdRes] = await Promise.allSettled([
+                    fetch(`${apiBase}/api/public/auth/me`, { headers }),
+                    fetch(`${apiBase}/api/public/deposits/status`, { headers }),
+                ]);
+
+                if (cancelled) return;
+
+                // Parse responses safely
+                let userData = null;
+                let holdData = null;
+
+                if (meRes.status === "fulfilled" && meRes.value.ok) {
+                    const meJson = await meRes.value.json();
+                    userData = meJson?.data;
                 }
-            } catch {
-                // Non-critical: if this check fails, don't block the user
+                if (holdRes.status === "fulfilled" && holdRes.value.ok) {
+                    const holdJson = await holdRes.value.json();
+                    holdData = holdJson?.data?.hold;
+                }
+
+                if (cancelled) return;
+
+                const currentPath = pathname;
+
+                // Pages excluded from guards (terminal pages where user should stay)
+                const HOLD_EXCLUDED = ["/deposit-status", "/payment-status", "/confirm"];
+                const LIFECYCLE_EXCLUDED = ["/deposit-status", "/payment-status"];
+
+                const isExcludedFrom = (exclusions: string[]) =>
+                    exclusions.some((p) => currentPath.includes(p.replace("/user-onboarding", "")));
+
+                // PRIORITY 1 (HIGHEST): Active deposit hold → deposit-status
+                if (
+                    holdData?.status === "active" &&
+                    !isExcludedFrom(HOLD_EXCLUDED)
+                ) {
+                    router.replace("/user-onboarding/deposit-status");
+                    return; // Stop — do not evaluate further guards
+                }
+
+                // PRIORITY 2: Payment/onboarding lifecycle redirect
+                if (userData && !isExcludedFrom(LIFECYCLE_EXCLUDED)) {
+                    const ps = userData.paymentStatus;
+                    const os = userData.onboardingStatus;
+                    const dvs = userData.documentVerificationStatus;
+                    const ms = userData.moveInStatus;
+
+                    // Fully onboarded resident → student dashboard
+                    if (ps === "approved" && dvs === "approved" && ms === "completed") {
+                        router.replace("/student/dashboard");
+                        return;
+                    }
+                    // Payment submitted/approved or onboarding complete → payment-status
+                    if (ps === "pending" || ps === "approved" || os === "completed") {
+                        router.replace("/user-onboarding/payment-status");
+                        return;
+                    }
+                }
+
+                // PRIORITY 3: Default — no redirect needed, stay on current page
+            } catch (err) {
+                // Guard fetch failed — do NOT redirect, let user stay on page.
+                // Silent fail is correct: better to show the page than redirect
+                // incorrectly due to a network error.
+                console.error("[Layout Guard] Failed to run lifecycle check:", err);
             }
         };
 
-        checkActiveHold();
+        runLifecycleGuard();
+
+        return () => { cancelled = true; }; // Cleanup — prevent stale redirects
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading, isAuthenticated, pathname]);
 

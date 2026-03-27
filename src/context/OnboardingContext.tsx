@@ -21,6 +21,8 @@ export interface Step1Data {
     idNumber: string;
     idFront: UploadedFile | null;
     idBack: UploadedFile | null;
+    gender: string;
+    address: string;
 }
 
 export interface Step2Data {
@@ -62,8 +64,8 @@ export interface PaymentData {
 }
 
 export interface Step4Data {
-    gender: string;
-    address: string;
+    // Gender and address moved to Step1Data.
+    // Interface kept for backward compatibility with state shape.
 }
 
 export type OnboardingStatus = "pending" | "payment_submitted" | "doc_verification_pending" | "move_in_pending" | "move_in_approved";
@@ -93,6 +95,8 @@ const INITIAL_STATE: OnboardingState = {
         idNumber: "",
         idFront: null,
         idBack: null,
+        gender: "",
+        address: "",
     },
     step2: {
         emergencyName: "",
@@ -108,10 +112,8 @@ const INITIAL_STATE: OnboardingState = {
         selectedRoom: null,
         addOns: DEFAULT_ADD_ONS,
     },
-    step4: {
-        gender: "",
-        address: "",
-    },
+    step4: {},
+
     payment: {
         method: "",
         transactionId: "",
@@ -284,10 +286,21 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 const completedSteps: number[] = [];
 
                 // Infer completed steps from backend data
+                // Step 1 includes: KYC docs, gender, address
                 if (d.documents?.idProof) completedSteps.push(1);
                 if (d.emergencyContact?.name && d.emergencyContact?.phone) completedSteps.push(2);
                 if (d.selectedRoomType) completedSteps.push(3);
-                if (d.gender && d.address) completedSteps.push(4);
+                // Step 4 is the review/summary step — it doesn't create new data.
+                // It's considered complete if:
+                //   (a) The user has filled gender + address (now saved in step 1), OR
+                //   (b) Steps 1-3 are all done (review prerequisites met), OR
+                //   (c) The user has already submitted a payment/deposit (onboarding progressed past step 4)
+                const steps123Done = completedSteps.includes(1) && completedSteps.includes(2) && completedSteps.includes(3);
+                const paymentProgressed = d.paymentStatus === "pending" || d.paymentStatus === "approved"
+                    || d.onboardingStatus === "completed" || d.onboardingStatus === "in-progress";
+                if ((d.gender && d.address) || steps123Done || paymentProgressed) {
+                    completedSteps.push(4);
+                }
 
                 setState((prev) => {
                     const merged: OnboardingState = {
@@ -364,13 +377,15 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                         }
                     }
 
-                    // Restore Step 4: Gender & Address
-                    if (d.gender || d.address) {
-                        merged.step4 = {
-                            gender: d.gender || prev.step4?.gender || "",
-                            address: d.address || prev.step4?.address || "",
-                        };
-                    }
+                    // AUDIT FIX S1-1: Unconditional gender & address restoration.
+                    // Pre-migration users may have empty values — we MUST still initialize
+                    // step1.gender and step1.address so the form fields render correctly
+                    // and validation can catch missing data before confirmOnboarding.
+                    merged.step1 = {
+                        ...merged.step1,
+                        gender: d.gender || merged.step1?.gender || "",
+                        address: d.address || merged.step1?.address || "",
+                    };
 
                     // Map backend status to frontend status (full lifecycle)
                     if (d.onboardingStatus === "completed") {

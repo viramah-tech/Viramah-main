@@ -455,41 +455,58 @@ export default function ConfirmPage() {
     };
 
 
-    // Access guard
-    useEffect(() => {
-        if (!canAccessStep(5)) {
-            setRedirecting(true);
-            router.replace("/user-onboarding/step-4");
-        }
-    }, [canAccessStep, router]);
+    // Access guard + hold detection (combined to avoid race conditions).
+    // If user has an active deposit hold, they're returning to complete payment
+    // and should bypass the local step-completion check.
+    const [holdChecked, setHoldChecked] = useState(false);
 
     useEffect(() => {
-        const fetchHold = async () => {
+        let cancelled = false;
+
+        const checkAccessAndHold = async () => {
             try {
                 const res = await apiFetch<{ data: { hold: { paymentMode?: string; status?: string } | null } }>(
                     "/api/public/deposits/status"
                 );
+                if (cancelled) return;
                 const hold = res?.data?.hold;
                 if (hold?.status === "active" || hold?.status === "pending_approval") {
+                    // User has an active hold — they're a returning deposit user.
+                    // Grant access to confirm page and lock mode if needed.
                     setHasActiveHold(true);
                     if (hold?.paymentMode && (hold.paymentMode === "full" || hold.paymentMode === "half")) {
                         const savedMode = hold.paymentMode as "full" | "half";
                         setPaymentMode(savedMode);
                         setHoldPaymentMode(savedMode);
                         setModeLockedFromDeposit(true);
-                    } else if (hold.paymentMode === "deposit") {
-                        // User used deposit-only mode — they need to choose full/half now
+                    } else if (hold?.paymentMode === "deposit") {
                         setHasActiveHold(true);
-                        setPaymentMode("full"); // default to full
-                        setModeLockedFromDeposit(false); // allow selection
+                        setPaymentMode("full");
+                        setModeLockedFromDeposit(false);
+                    }
+                } else {
+                    // No active hold — enforce the normal step-completion access guard
+                    if (!canAccessStep(5)) {
+                        setRedirecting(true);
+                        router.replace("/user-onboarding/step-4");
+                        return;
                     }
                 }
             } catch {
-                // No deposit — user hasn't done a holds flow, mode stays user-selectable
+                // Deposit API failed — fall back to normal access guard
+                if (!cancelled && !canAccessStep(5)) {
+                    setRedirecting(true);
+                    router.replace("/user-onboarding/step-4");
+                    return;
+                }
+            } finally {
+                if (!cancelled) setHoldChecked(true);
             }
         };
-        fetchHold();
-    }, []);
+
+        checkAccessAndHold();
+        return () => { cancelled = true; };
+    }, [canAccessStep, router]);
 
     // Fetch live price preview whenever paymentMode or referralCode changes
     const fetchPreview = useCallback(async (mode: "full" | "half", code?: string) => {

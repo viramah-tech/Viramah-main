@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Shield } from "lucide-react";
+import { ArrowRight, Shield, User } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { uploadFile } from "@/lib/uploadFile";
 import {
     FieldLabel, FieldHint, FieldError, FieldInput, PhotoUpload,
     NavButton, FormCard, StepBadge, StepTitle, StepSubtitle,
-    SelectionButton, containerVariants, itemVariants,
+    SelectionButton, containerVariants, itemVariants, FieldTextarea,
 } from "@/components/onboarding/FormComponents";
 
 const ID_TYPES = [
@@ -17,6 +17,12 @@ const ID_TYPES = [
     { value: "passport", label: "Passport" },
     { value: "driving_license", label: "Driving License" },
     { value: "voter_id", label: "Voter ID" },
+];
+
+const GENDER_OPTIONS = [
+    { value: "male", label: "Male" },
+    { value: "female", label: "Female" },
+    { value: "other", label: "Other" },
 ];
 
 export default function Step1Page() {
@@ -33,6 +39,9 @@ export default function Step1Page() {
         const errs: Record<string, string> = {};
         if (!step1.fullName.trim()) errs.fullName = "Full name is required";
         if (!step1.dateOfBirth) errs.dateOfBirth = "Date of birth is required";
+        if (!step1.gender) errs.gender = "Please select your gender";
+        if (!step1.address.trim()) errs.address = "Current address is required";
+        if (step1.address.trim().length > 0 && step1.address.trim().length < 10) errs.address = "Address must be at least 10 characters";
         if (!step1.idNumber.trim()) errs.idNumber = "ID number is required";
         if (!step1.idFront) errs.idFront = "Front side of ID is required";
         if (!step1.idBack) errs.idBack = "Back side of ID is required";
@@ -87,6 +96,8 @@ export default function Step1Page() {
             await saveStepToBackend(1, {
                 fullName: step1.fullName,
                 dateOfBirth: step1.dateOfBirth,
+                gender: step1.gender,
+                address: step1.address,
                 idType: step1.idType,
                 idNumber: step1.idNumber,
                 idProof: idProofUrl,
@@ -155,6 +166,43 @@ export default function Step1Page() {
                             onBlur={() => setFocusedField(null)}
                         />
                         {attempted && errors.dateOfBirth && <FieldError>{errors.dateOfBirth}</FieldError>}
+                    </div>
+
+                    {/* Gender */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <FieldLabel>Gender</FieldLabel>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                            {GENDER_OPTIONS.map((g) => (
+                                <SelectionButton
+                                    key={g.value}
+                                    label={g.label}
+                                    selected={step1.gender === g.value}
+                                    onClick={() => updateStep1({ gender: g.value })}
+                                />
+                            ))}
+                        </div>
+                        {attempted && errors.gender && <FieldError>{errors.gender}</FieldError>}
+                    </div>
+
+                    {/* Address */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <FieldLabel htmlFor="s1-address">Current Address</FieldLabel>
+                        <FieldTextarea
+                            id="s1-address"
+                            placeholder="Full address including city, state, and PIN code"
+                            value={step1.address}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateStep1({ address: e.target.value })}
+                            focused={focusedField === "address"}
+                            hasError={attempted && !!errors.address}
+                            onFocus={() => setFocusedField("address")}
+                            onBlur={() => setFocusedField(null)}
+                            rows={3}
+                        />
+                        {attempted && errors.address ? (
+                            <FieldError>{errors.address}</FieldError>
+                        ) : (
+                            <FieldHint>Include flat/house number, street, city, state, and PIN code</FieldHint>
+                        )}
                     </div>
 
                     {/* ID Type */}

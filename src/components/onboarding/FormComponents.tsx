@@ -94,6 +94,40 @@ export function FieldInput({ focused, hasError, style, ...props }: FieldInputPro
 
 // ── PhotoUpload ──────────────────────────────────────────────
 
+// ── FieldTextarea ────────────────────────────────────────────
+
+interface FieldTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+    focused?: boolean;
+    hasError?: boolean;
+}
+
+export function FieldTextarea({ focused, hasError, style, ...props }: FieldTextareaProps) {
+    return (
+        <textarea
+            {...props}
+            style={{
+                width: "100%",
+                background: focused ? "#fff" : "rgba(246,244,239,0.7)",
+                border: `1.5px solid ${hasError ? "#c0392b" : focused ? GREEN : "rgba(31,58,45,0.15)"}`,
+                borderRadius: 10,
+                padding: "12px 14px",
+                fontFamily: "var(--font-body, sans-serif)",
+                fontSize: "0.9rem",
+                color: "#1a2e1f",
+                outline: "none",
+                transition: "all 0.25s ease",
+                boxShadow: focused ? `0 0 0 4px ${hasError ? "rgba(192,57,43,0.07)" : "rgba(31,58,45,0.07)"}` : "none",
+                boxSizing: "border-box",
+                resize: "vertical",
+                minHeight: 60,
+                lineHeight: 1.6,
+                ...style,
+            }}
+        />
+    );
+}
+
+
 export function PhotoUpload({
     label,
     file,
