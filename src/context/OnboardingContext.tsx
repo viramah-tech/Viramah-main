@@ -83,8 +83,8 @@ export interface OnboardingState {
 // ── Defaults ─────────────────────────────────────────────────
 
 const DEFAULT_ADD_ONS: AddOnService[] = [
-    { id: "transport", name: "Daily Transport", price: 2500, enabled: false },
-    { id: "lunch", name: "Lunch Add-on", price: 1500, enabled: false },
+    { id: "transport", name: "Daily Transport", price: 2000, enabled: false },
+    { id: "lunch", name: "Lunch Add-on", price: 2000, enabled: false },
 ];
 
 const INITIAL_STATE: OnboardingState = {
@@ -250,6 +250,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                         roomNumber: string;
                         roomType: string;
                         messPackage: string;
+                        selectedAddOns: { transport: boolean; mess: boolean; messLumpSum: boolean };
                         gender: string;
                         address: string;
                         paymentStatus: string;
@@ -277,6 +278,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                     roomNumber: string;
                     roomType: string;
                     messPackage: string;
+                    selectedAddOns: { transport: boolean; mess: boolean; messLumpSum: boolean };
                     gender: string;
                     address: string;
                     paymentStatus: string;
@@ -370,6 +372,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                             if (d.messPackage === "full-board") {
                                 merged.step3.addOns = merged.step3.addOns.map((a) =>
                                     a.id === "lunch" ? { ...a, enabled: true } : a
+                                );
+                            }
+                            // Restore transport add-on from backend selectedAddOns
+                            if (d.selectedAddOns?.transport) {
+                                merged.step3.addOns = merged.step3.addOns.map((a) =>
+                                    a.id === "transport" ? { ...a, enabled: true } : a
                                 );
                             }
                         } catch (e) {

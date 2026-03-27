@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { apiFetch } from "@/lib/api";
+import { usePricingConfig } from "@/hooks/usePricingConfig";
 import { ROOMS as STATIC_ROOMS, type RoomType } from "@/data/rooms";
 import {
     NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
@@ -429,6 +430,7 @@ function AddOnCard({
 export default function Step3Page() {
     const router = useRouter();
     const { state, updateStep3, toggleAddOn, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saving } = useOnboarding();
+    const { config: pricingCfg } = usePricingConfig();
     const { step3 } = state;
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -515,13 +517,14 @@ export default function Step3Page() {
                 return;
             }
 
-            // Determine messPackage from add-ons
+            // Determine messPackage and transport from add-ons
             const hasLunch = step3.addOns.find((a) => a.id === "lunch")?.enabled;
             const messPackage = hasLunch ? "full-board" : "partial-board";
+            const hasTransport = step3.addOns.find((a) => a.id === "transport")?.enabled;
 
             await apiFetch("/api/public/onboarding/step-3", {
                 method: "PATCH",
-                body: { roomTypeId: matchingRoom._id, roomTypeName: backendRoomName, messPackage },
+                body: { roomTypeId: matchingRoom._id, roomTypeName: backendRoomName, messPackage, transportEnabled: !!hasTransport },
             });
 
             markStepComplete(3);
@@ -597,7 +600,7 @@ export default function Step3Page() {
                         <AddOnCard
                             icon={Bus}
                             name="Daily Transport"
-                            price={2500}
+                            price={pricingCfg.transportMonthly}
                             description="Campus shuttle service"
                             enabled={step3.addOns.find((a) => a.id === "transport")?.enabled ?? false}
                             onToggle={() => toggleAddOn("transport")}
@@ -605,7 +608,7 @@ export default function Step3Page() {
                         <AddOnCard
                             icon={UtensilsCrossed}
                             name="Lunch Add-on"
-                            price={1500}
+                            price={pricingCfg.messMonthly}
                             description="Packed lunch delivery"
                             enabled={step3.addOns.find((a) => a.id === "lunch")?.enabled ?? false}
                             onToggle={() => toggleAddOn("lunch")}

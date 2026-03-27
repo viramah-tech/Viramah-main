@@ -8,6 +8,9 @@ export interface RoomHold {
   userId: string;
   roomTypeId: { _id: string; name: string; displayName?: string } | string;
   depositAmount: number;
+  registrationFeePaid?: number;
+  advanceAmount?: number;
+  totalPaidAtDeposit?: number;
   status: "pending_approval" | "active" | "converted" | "refunded" | "expired";
   depositPaidAt?: string;
   refundDeadline?: string;

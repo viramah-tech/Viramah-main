@@ -11,6 +11,10 @@ interface BookingTimelineProps {
   currentStatus?: HoldStatus;
   /** Pass true for compact inline display (e.g. on deposit page) */
   compact?: boolean;
+  /** Actual total deposit paid (security + registration + advance) from DB */
+  depositTotal?: number;
+  /** Advance amount (if any) */
+  advanceAmount?: number;
 }
 
 interface Step {
@@ -20,11 +24,19 @@ interface Step {
   emoji: string;
 }
 
-const STEPS: Step[] = [
-  { id: 1, label: "Pay ₹15,000 Deposit", sublabel: "Security Deposit", emoji: "💳" },
-  { id: 2, label: "Room Held for You", sublabel: "Up to 21 days", emoji: "🔒" },
-  { id: 3, label: "Complete Payment", sublabel: "Room Confirmed", emoji: "✅" },
-];
+function buildSteps(depositTotal?: number, advanceAmount?: number): Step[] {
+  const amt = depositTotal && depositTotal > 0
+    ? `₹${Math.round(depositTotal).toLocaleString("en-IN")}`
+    : "₹16,000";
+  const sub = advanceAmount && advanceAmount > 0
+    ? "Security + Registration + Advance"
+    : "Security + Registration Fee";
+  return [
+    { id: 1, label: `Pay ${amt} Deposit`, sublabel: sub, emoji: "💳" },
+    { id: 2, label: "Room Held for You", sublabel: "Up to 21 days", emoji: "🔒" },
+    { id: 3, label: "Complete Payment", sublabel: "Room Confirmed", emoji: "✅" },
+  ];
+}
 
 function getActiveStep(status: HoldStatus): number {
   switch (status) {
@@ -43,9 +55,10 @@ function getActiveStep(status: HoldStatus): number {
   }
 }
 
-export default function BookingTimeline({ currentStatus = "idle", compact = false }: BookingTimelineProps) {
+export default function BookingTimeline({ currentStatus = "idle", compact = false, depositTotal, advanceAmount }: BookingTimelineProps) {
   const activeStep = getActiveStep(currentStatus);
   const isCancelled = currentStatus === "refunded" || currentStatus === "expired";
+  const STEPS = buildSteps(depositTotal, advanceAmount);
 
   return (
     <div

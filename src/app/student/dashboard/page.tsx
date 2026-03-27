@@ -84,7 +84,32 @@ export default function StudentDashboard() {
             user.documentVerificationStatus === "approved" &&
             user.moveInStatus === "completed";
         if (!canAccess) {
-            router.replace("/user-onboarding/payment-status");
+            // Check deposit hold status before deciding where to redirect
+            const checkAndRedirect = async () => {
+                try {
+                    const token = typeof window !== "undefined" ? localStorage.getItem("viramah_token") : null;
+                    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                    const res = await fetch(`${apiBase}/api/public/deposits/status`, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const hold = data?.data?.hold;
+                        if (hold?.status === "active") {
+                            router.replace("/user-onboarding/deposit-status");
+                            return;
+                        }
+                        if (hold?.status === "pending_approval") {
+                            router.replace("/user-onboarding/deposit-status");
+                            return;
+                        }
+                    }
+                } catch {
+                    // Fall through to default
+                }
+                router.replace("/user-onboarding/payment-status");
+            };
+            checkAndRedirect();
         }
     }, [user, loading, router]);
 

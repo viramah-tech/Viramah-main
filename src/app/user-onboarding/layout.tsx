@@ -290,12 +290,12 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 const isExcludedFrom = (exclusions: string[]) =>
                     exclusions.some((p) => currentPath.includes(p.replace("/user-onboarding", "")));
 
-                // PRIORITY 1 (HIGHEST): Active deposit hold → confirm page (to complete payment)
+                // PRIORITY 1 (HIGHEST): Active deposit hold → deposit-status
                 if (
                     holdData?.status === "active" &&
                     !isExcludedFrom(HOLD_EXCLUDED)
                 ) {
-                    router.replace("/user-onboarding/confirm");
+                    router.replace("/user-onboarding/deposit-status");
                     return; // Stop — do not evaluate further guards
                 }
 
@@ -321,11 +321,14 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         return;
                     }
                     // Payment submitted/approved → payment-status
-                    // NOTE: Do NOT redirect on `os === 'completed'` alone — that would
-                    // block users who finished onboarding but haven't submitted payment yet.
+                    // BUT only if user does NOT have an active/pending deposit hold
+                    // (those are handled by priority 1 above — user needs to complete payment on /confirm)
                     if (ps === "pending" || ps === "approved") {
-                        router.replace("/user-onboarding/payment-status");
-                        return;
+                        const holdIsActiveOrPending = holdData?.status === "active" || holdData?.status === "pending_approval";
+                        if (!holdIsActiveOrPending) {
+                            router.replace("/user-onboarding/payment-status");
+                            return;
+                        }
                     }
                 }
 

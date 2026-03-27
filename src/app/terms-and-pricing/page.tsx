@@ -33,8 +33,7 @@ const ROOM_TYPES = [
 const ADD_ONS = [
   { name: "Transport", monthly: 2_000, annual: 22_000, note: "Campus shuttle — 11 months" },
   { name: "Mess (monthly)", monthly: 2_200, annual: 24_200, note: "Per month × 11" },
-  { name: "Mess (lump sum)", monthly: null, annual: 19_900, note: "Full tenure only — saves ₹4,300" },
-  { name: "Lunch add-on", monthly: 2_000, annual: 19_900, note: "₹2,000/mo or ₹19,900 flat" },
+  { name: "Mess (lump sum)", monthly: null, annual: 19_000, note: "Full tenure only — saves ₹5,200" },
 ];
 
 function calcRoom(baseMonthly: number, mode: "full" | "half") {

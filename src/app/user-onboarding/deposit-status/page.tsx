@@ -15,6 +15,8 @@ import { containerVariants, itemVariants } from "@/components/onboarding/FormCom
 
 const GREEN = "#1F3A2D";
 const GOLD  = "#D8B56A";
+const inr = (n: number | null | undefined) =>
+    n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`;
 
 // ── Status Banner Config ──────────────────────────────────────────────────────
 
@@ -45,7 +47,7 @@ const STATUS_CONFIG = {
         badge: "Refunded", badgeColor: "#9a7a3a",
         badgeBg: "rgba(216,181,106,0.1)", badgeBorder: "rgba(216,181,106,0.2)",
         title: "Deposit refunded — booking cancelled",
-        subtitle: "Your ₹15,000 deposit has been refunded. Room reservation has been cancelled.",
+        subtitle: "Your refundable deposit has been refunded. Room reservation has been cancelled.",
     },
     expired: {
         icon: XCircle, iconColor: "#dc2626", iconBg: "rgba(220,38,38,0.08)",
@@ -189,7 +191,7 @@ const pulseStyle = `
 
 // ── Refund Confirmation Modal ─────────────────────────────────────────────────
 
-function RefundModal({ onConfirm, onClose, loading }: { onConfirm: () => void; onClose: () => void; loading: boolean }) {
+function RefundModal({ onConfirm, onClose, loading, refundableAmount }: { onConfirm: () => void; onClose: () => void; loading: boolean; refundableAmount: number }) {
     return (
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -213,7 +215,7 @@ function RefundModal({ onConfirm, onClose, loading }: { onConfirm: () => void; o
                         Confirm Refund Request
                     </h2>
                     <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "rgba(31,58,45,0.6)", lineHeight: 1.55, margin: 0 }}>
-                        Are you sure you want to cancel your room booking? You will receive <strong>₹15,000 (Security Deposit)</strong> back after admin approval.
+                        Are you sure you want to cancel your room booking? You will receive <strong>{inr(refundableAmount)}</strong> back after admin approval.
                     </p>
                     <div style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
                         <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "#92400e", margin: 0, lineHeight: 1.5 }}>
@@ -302,6 +304,9 @@ export default function DepositStatusPage() {
     const isActive = hold.status === "active";
     const holdStatus = hold.status as "pending_approval" | "active" | "converted" | "refunded" | "expired" | "idle";
 
+    const holdAdvance = (hold as any).advanceAmount || 0;
+    const holdRefundable = (hold as any).refundableAmount ?? (15000 + holdAdvance);
+
     return (
         <>
             {/* Pulse keyframe */}
@@ -349,7 +354,11 @@ export default function DepositStatusPage() {
 
                 {/* Timeline */}
                 <motion.div variants={itemVariants} style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.08)", padding: "20px 16px", boxShadow: "0 2px 12px rgba(31,58,45,0.05)" }}>
-                    <BookingTimeline currentStatus={holdStatus} />
+                    <BookingTimeline
+                        currentStatus={holdStatus}
+                        depositTotal={hold?.totalPaidAtDeposit}
+                        advanceAmount={hold?.advanceAmount}
+                    />
                 </motion.div>
 
                 {/* Refund Success Banner */}
@@ -386,7 +395,7 @@ export default function DepositStatusPage() {
                             <LiveCountdown
                                 deadline={hold.refundDeadline}
                                 colorFn={getRefundTimerColor}
-                                helperText="You can request a refund of ₹15,000 (Security Deposit) while this timer runs. Note: ₹1,000 registration fee is non-refundable."
+                                helperText={`You can request a refund of ${inr(holdRefundable)} (Security Deposit${holdAdvance > 0 ? ' + Advance' : ''}) while this timer runs. Note: ₹1,000 registration fee is non-refundable.`}
                                 action={
                                     isRefundEligible && !hold.refundRequestedAt ? (
                                         <button
@@ -442,7 +451,7 @@ export default function DepositStatusPage() {
                     style={{ background: "rgba(216,181,106,0.07)", border: "1px solid rgba(216,181,106,0.18)", borderRadius: 12, padding: "12px 18px", textAlign: "center" }}
                 >
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "#9a7a3a", margin: 0, lineHeight: 1.6 }}>
-                        <strong>Policy:</strong> ₹15,000 refundable within 7 days · ₹15,000 non-refundable after 7 days · ₹1,000 registration fee never refundable · Room released after 21 days
+                        <strong>Policy:</strong> Security deposit (₹15,000) refundable within 7 days · Non-refundable after 7 days{holdAdvance > 0 ? ` · Advance (${inr(holdAdvance)}) always refundable` : ''} · ₹1,000 registration fee never refundable · Room released after 21 days
                     </p>
                 </motion.div>
             </motion.div>
@@ -454,6 +463,7 @@ export default function DepositStatusPage() {
                         onConfirm={handleRequestRefund}
                         onClose={() => setShowRefundModal(false)}
                         loading={refundLoading}
+                        refundableAmount={holdRefundable}
                     />
                 )}
             </AnimatePresence>

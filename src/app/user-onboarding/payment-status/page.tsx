@@ -103,6 +103,7 @@ interface PaymentBreakdown {
     flatFees?: number | null;
     referralDeduction?: number | null;
     depositCredited?: number;
+    advanceAmount?: number;
     finalAmount?: number | null;
     installmentMonths?: number | null;
     tenureMonths?: number | null;
@@ -153,7 +154,7 @@ function PaymentStatusBadge({ status }: { status: string }) {
 
 // ── Payment Record Card ────────────────────────────────────────────────────────
 
-function PaymentCard({ payment }: { payment: PaymentRecord }) {
+function PaymentCard({ payment, hasAdvance }: { payment: PaymentRecord; hasAdvance: boolean }) {
     const [expanded, setExpanded] = useState(false);
     const b = payment.breakdown;
     const isLegacy = !b || (b as PaymentBreakdown)?._isLegacy;
@@ -249,7 +250,7 @@ function PaymentCard({ payment }: { payment: PaymentRecord }) {
                         fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem",
                         color: "#14532d",
                     }}>
-                        {inr(payment.depositCredited)} deposit credited against this payment
+                        {inr(payment.depositCredited)} deposit{(payment.breakdown?.advanceAmount ?? 0) > 0 || hasAdvance ? " (security + advance)" : ""} credited against this payment
                     </span>
                 </div>
             )}
@@ -332,7 +333,7 @@ function PaymentCard({ payment }: { payment: PaymentRecord }) {
                             )}
                             {(b.depositCredited ?? 0) > 0 && (
                                 <BreakdownRow
-                                    label="Deposit Credit"
+                                    label={`Deposit Credit${(b.advanceAmount ?? 0) > 0 || hasAdvance ? " (security + advance)" : ""}`}
                                     value={`−${inr(b.depositCredited)}`}
                                     isDeduction
                                 />
@@ -461,13 +462,23 @@ export default function PaymentStatusPage() {
     const [paymentsLoading, setPaymentsLoading] = useState(true);
     const [paymentsError, setPaymentsError] = useState<string | null>(null);
 
+    // ── Fetch deposit hold data for real advance/deposit amounts ──────────────
+    const [depositHold, setDepositHold] = useState<{
+        depositAmount: number;
+        registrationFeePaid: number;
+        advanceAmount: number;
+        totalPaidAtDeposit: number;
+        refundableAmount: number;
+    } | null>(null);
+
     const fetchPayments = useCallback(async () => {
         try {
             setPaymentsLoading(true);
             setPaymentsError(null);
-            const [paymentsRes, upcomingRes] = await Promise.allSettled([
+            const [paymentsRes, upcomingRes, depositRes] = await Promise.allSettled([
                 apiFetch<{ data: { payments: PaymentRecord[] } }>("/api/public/payments/my-payments?limit=50"),
                 apiFetch<{ data: { installments: PaymentRecord[] } }>("/api/public/payments/upcoming"),
+                apiFetch<{ data: { hold: { depositAmount: number; registrationFeePaid: number; advanceAmount: number; totalPaidAtDeposit: number; refundableAmount: number } | null } }>("/api/public/deposits/status"),
             ]);
 
             if (paymentsRes.status === "fulfilled") {
@@ -475,6 +486,16 @@ export default function PaymentStatusPage() {
             }
             if (upcomingRes.status === "fulfilled") {
                 setUpcoming(upcomingRes.value?.data?.installments ?? []);
+            }
+            if (depositRes.status === "fulfilled" && depositRes.value?.data?.hold) {
+                const h = depositRes.value.data.hold;
+                setDepositHold({
+                    depositAmount: h.depositAmount ?? 0,
+                    registrationFeePaid: h.registrationFeePaid ?? 0,
+                    advanceAmount: h.advanceAmount ?? 0,
+                    totalPaidAtDeposit: h.totalPaidAtDeposit ?? 0,
+                    refundableAmount: h.refundableAmount ?? 0,
+                });
             }
         } catch {
             setPaymentsError("Could not load payment history.");
@@ -498,6 +519,10 @@ export default function PaymentStatusPage() {
     const totalPending = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
     const totalUpcoming = upcoming.reduce((sum, p) => sum + p.amount, 0);
     const hasPayments = payments.length > 0;
+
+    // Advance amount from actual database hold — no hardcoded thresholds
+    const dbAdvanceAmount = depositHold?.advanceAmount ?? 0;
+    const hasAdvance = dbAdvanceAmount > 0;
 
     return (
         <motion.div
@@ -556,24 +581,38 @@ export default function PaymentStatusPage() {
                 </p>
             </motion.div>
 
-            {/* Deposit Credit Summary */}
-            {effectiveUser && "depositCredited" in effectiveUser &&
-             Number((effectiveUser as unknown as Record<string, unknown>).depositCredited) > 0 && (
+            {/* Deposit Credit Summary — sourced from database hold */}
+            {depositHold && depositHold.totalPaidAtDeposit > 0 && (
                 <motion.div
                     variants={itemVariants}
                     style={{
                         background: "rgba(22,163,74,0.07)", border: "1px solid rgba(22,163,74,0.2)",
                         borderRadius: 12, padding: "12px 18px",
-                        display: "flex", alignItems: "center", gap: 10,
+                        display: "flex", flexDirection: "column", gap: 8,
                     }}
                 >
-                    <Shield size={16} color="#16a34a" style={{ flexShrink: 0 }} />
-                    <p style={{
-                        fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem",
-                        color: "#14532d", margin: 0, fontWeight: 500,
-                    }}>
-                        {inr(Number((effectiveUser as unknown as Record<string, unknown>).depositCredited))} security deposit was credited against your payment.
-                    </p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Shield size={16} color="#16a34a" style={{ flexShrink: 0 }} />
+                        <p style={{
+                            fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem",
+                            color: "#14532d", margin: 0, fontWeight: 500,
+                        }}>
+                            {inr(depositHold.totalPaidAtDeposit)} paid at booking
+                        </p>
+                    </div>
+                    <div style={{ marginLeft: 26, display: "flex", flexDirection: "column", gap: 3 }}>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(20,83,45,0.6)" }}>
+                            Security Deposit: {inr(depositHold.depositAmount)} · Credited against payment
+                        </span>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(20,83,45,0.6)" }}>
+                            Registration Fee: {inr(depositHold.registrationFeePaid)} · Non-refundable
+                        </span>
+                        {hasAdvance && (
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(20,83,45,0.6)" }}>
+                                Advance Payment: {inr(depositHold.advanceAmount)} · Credited against payment
+                            </span>
+                        )}
+                    </div>
                 </motion.div>
             )}
 
@@ -712,7 +751,7 @@ export default function PaymentStatusPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {payments
                             .filter(p => p.status !== "upcoming") // upcoming shown separately
-                            .map(p => <PaymentCard key={p._id} payment={p} />)
+                            .map(p => <PaymentCard key={p._id} payment={p} hasAdvance={hasAdvance} />)
                         }
                     </div>
                 )}

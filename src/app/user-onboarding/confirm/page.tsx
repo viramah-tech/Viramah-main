@@ -41,8 +41,10 @@ interface LiveBreakdown {
     registrationFee: number;
     securityDeposit: number;
     transportMonthly: number;
+    discountedMonthlyTransport: number;
     transportTotal: number;
     messMonthly: number;
+    discountedMonthlyMess: number;
     messTotal: number;
     messIsLumpSum: boolean;
     discountRate: number;
@@ -160,7 +162,8 @@ function SkeletonRow({ wide }: { wide?: boolean }) {
 
 // ── Deposit-Only Invoice Panel ─────────────────────────────────────────────────
 
-function DepositInvoicePanel() {
+function DepositInvoicePanel({ advanceAmount, onAdvanceChange }: { advanceAmount: number; onAdvanceChange: (v: number) => void }) {
+    const totalDue = 16000 + advanceAmount;
     const row = (label: string, value: string, opts?: { faint?: boolean; green?: boolean; amber?: boolean }) => (
         <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
             <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: opts?.faint ? "rgba(246,244,239,0.3)" : "rgba(246,244,239,0.55)", flex: 1, lineHeight: 1.5 }}>{label}</span>
@@ -172,7 +175,7 @@ function DepositInvoicePanel() {
             <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(216,181,106,0.6)", margin: "0 0 4px" }}>
                 Payment Summary — Room Reservation
             </p>
-            <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.4rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>₹16,000</p>
+            <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.4rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>{inr(totalDue)}</p>
 
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(216,181,106,0.4)", marginBottom: 2 }}>Breakdown</div>
@@ -181,11 +184,43 @@ function DepositInvoicePanel() {
                 {row("  └ Non-refundable after 7 days", "", { faint: true })}
                 {row("Registration Fee", "₹1,000")}
                 {row("  └ Non-refundable under any circumstances", "", { faint: true })}
+                {advanceAmount > 0 && (
+                    <>
+                        {row("Advance Payment", inr(advanceAmount), { green: true })}
+                        {row("  └ Credited against final payment · Always refundable", "", { faint: true })}
+                    </>
+                )}
+
+                {/* Advance amount input */}
+                <div style={{ marginTop: 8, padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <label style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(246,244,239,0.4)", display: "block", marginBottom: 8 }}>
+                        Want to pay more now? (optional advance)
+                    </label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.85rem", color: "rgba(246,244,239,0.5)" }}>₹</span>
+                        <input
+                            type="number"
+                            min={0}
+                            step={1000}
+                            placeholder="0"
+                            value={advanceAmount || ""}
+                            onChange={(e) => onAdvanceChange(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                            style={{
+                                flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+                                borderRadius: 8, padding: "10px 12px", fontFamily: "var(--font-mono, monospace)",
+                                fontSize: "0.85rem", color: "#F6F4EF", outline: "none",
+                            }}
+                        />
+                    </div>
+                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.52rem", color: "rgba(246,244,239,0.3)", margin: "6px 0 0", lineHeight: 1.4 }}>
+                        This amount will be adjusted against your total payment when you complete booking.
+                    </p>
+                </div>
 
                 <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
                 <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4 }}>
                     <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: GOLD, fontWeight: 700, letterSpacing: "0.05em" }}>Total Due Now</span>
-                    <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.2rem", color: GOLD }}>₹16,000</span>
+                    <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.2rem", color: GOLD }}>{inr(totalDue)}</span>
                 </div>
             </div>
 
@@ -198,12 +233,13 @@ function DepositInvoicePanel() {
                 {[
                     "Your room will be HELD for 21 days.",
                     "You must complete full payment within 21 days.",
-                    "Days 1–7: ₹15,000 refundable if you cancel.",
-                    "After day 7: ₹15,000 is NON-REFUNDABLE.",
+                    "Days 1–7: Security deposit (₹15,000) refundable if you cancel.",
+                    "After day 7: Security deposit is NON-REFUNDABLE.",
+                    advanceAmount > 0 ? `Your ₹${advanceAmount.toLocaleString("en-IN")} advance is ALWAYS refundable.` : null,
                     "After day 21: Room released. No refund.",
                     "₹1,000 registration fee: NEVER refundable.",
                     "After paying now, you will return here to choose Full Tenure or Half Yearly.",
-                ].map((line, i) => (
+                ].filter(Boolean).map((line, i) => (
                     <div key={i} style={{ display: "flex", gap: 7, marginTop: 4 }}>
                         <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#d97706", flexShrink: 0, marginTop: 1 }}>•</span>
                         <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#92400e", lineHeight: 1.5 }}>{line}</span>
@@ -216,7 +252,8 @@ function DepositInvoicePanel() {
 
 // ── Deposit Confirmation Modal ─────────────────────────────────────────────────
 
-function DepositConfirmModal({ onConfirm, onClose, loading }: { onConfirm: () => void; onClose: () => void; loading: boolean }) {
+function DepositConfirmModal({ onConfirm, onClose, loading, advanceAmount }: { onConfirm: () => void; onClose: () => void; loading: boolean; advanceAmount: number }) {
+    const totalDue = 16000 + advanceAmount;
     return (
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -238,13 +275,14 @@ function DepositConfirmModal({ onConfirm, onClose, loading }: { onConfirm: () =>
                     </div>
                     <h2 style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.5rem", color: GREEN, fontWeight: 400, margin: "0 0 12px" }}>Confirm Room Reservation</h2>
                     <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "rgba(31,58,45,0.65)", lineHeight: 1.6, margin: 0 }}>
-                        You are about to pay <strong>₹16,000</strong> to reserve this room.
+                        You are about to pay <strong>{inr(totalDue)}</strong> to reserve this room.
                     </p>
                 </div>
                 <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: "14px 16px", marginBottom: 20 }}>
                     {[
                         ["Security Deposit", "₹15,000", "Refundable within 7 days of admin approval"],
                         ["Registration Fee", "₹1,000", "Non-refundable under any circumstances"],
+                        ...(advanceAmount > 0 ? [["Advance Payment", inr(advanceAmount), "Credited against final payment · Always refundable"]] : []),
                     ].map(([label, amount, note]) => (
                         <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                             <div>
@@ -256,7 +294,7 @@ function DepositConfirmModal({ onConfirm, onClose, loading }: { onConfirm: () =>
                     ))}
                     <div style={{ borderTop: "1px solid rgba(31,58,45,0.1)", paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
                         <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN }}>Total</span>
-                        <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.1rem", color: GREEN }}>₹16,000</span>
+                        <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.1rem", color: GREEN }}>{inr(totalDue)}</span>
                     </div>
                 </div>
                 <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.5)", textAlign: "center", marginBottom: 16, lineHeight: 1.5 }}>
@@ -349,15 +387,11 @@ function InvoicePanel({
                             Tenure Total
                         </div>
                         {row(`Room rent × ${breakdown.installmentMonths} months`, inr(breakdown.roomRentTotal))}
-                        {breakdown.securityDeposit > 0 && (breakdown.depositCredited ?? 0) > 0
-                            ? row(`Security deposit (already paid separately)`, inr(breakdown.securityDeposit), { faint: true })
-                            : breakdown.securityDeposit > 0
-                                ? row(`Security deposit (one-time)`, inr(breakdown.securityDeposit))
-                                : null}
-                        {row(`Registration / Admin fee`, inr(breakdown.registrationFee))}
-                        {breakdown.transportTotal > 0 && row(`Transport (₹${inr(breakdown.transportMonthly)}/mo × ${breakdown.installmentMonths})`, inr(breakdown.transportTotal))}
+                        {breakdown.securityDeposit > 0 && row(`Security deposit (one-time)`, inr(breakdown.securityDeposit))}
+                        {breakdown.registrationFee > 0 && row(`Registration / Admin fee`, inr(breakdown.registrationFee))}
+                        {breakdown.transportTotal > 0 && row(`Transport (${inr(breakdown.discountedMonthlyTransport)}/mo × ${breakdown.installmentMonths})`, inr(breakdown.transportTotal))}
                         {breakdown.messTotal > 0 && row(
-                            breakdown.messIsLumpSum ? `Mess fee (lump sum)` : `Mess fee (₹${inr(breakdown.messMonthly)}/mo × ${breakdown.installmentMonths})`,
+                            breakdown.messIsLumpSum ? `Mess fee (lump sum)` : `Mess fee (${inr(breakdown.discountedMonthlyMess)}/mo × ${breakdown.installmentMonths})`,
                             inr(breakdown.messTotal)
                         )}
 
@@ -370,7 +404,11 @@ function InvoicePanel({
                                     Deductions
                                 </div>
                                 {breakdown.referralDeduction > 0 && row(`Referral bonus`, inr(breakdown.referralDeduction), { deduct: true, highlight: true })}
-                                {breakdown.depositCredited > 0 && row(`Deposit already paid`, inr(breakdown.depositCredited), { deduct: true, highlight: true })}
+                                {breakdown.depositCredited > 0 && row(
+                                    `Deposit credited (security${breakdown.depositCredited > breakdown.securityDeposit || breakdown.securityDeposit === 0 ? " + advance" : ""})`,
+                                    inr(breakdown.depositCredited),
+                                    { deduct: true, highlight: true }
+                                )}
                                 <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
                             </>
                         )}
@@ -440,6 +478,7 @@ export default function ConfirmPage() {
     const [hasActiveHold, setHasActiveHold] = useState(false);
     const [showDepositConfirmModal, setShowDepositConfirmModal] = useState(false);
     const [depositSubmitting, setDepositSubmitting] = useState(false);
+    const [depositAdvance, setDepositAdvance] = useState(0);
 
     const [referralCode, setReferralCode] = useState("");
     const [referralFocused, setReferralFocused] = useState(false);
@@ -533,6 +572,11 @@ export default function ConfirmPage() {
         try {
             const params = new URLSearchParams({ roomTypeId, paymentMode: mode });
             if (code) params.set("referralCode", code);
+            // Pass add-on selections so pricing includes transport/mess fees
+            const transportEnabled = step3.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "transport")?.enabled;
+            const lunchEnabled = step3.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "lunch")?.enabled;
+            if (transportEnabled) params.set("transport", "true");
+            if (lunchEnabled) params.set("mess", "true");
             const res = await apiFetch<{ data: FullPreviewResponse }>(
                 `/api/public/payments/calculate-preview?${params}`
             );
@@ -550,7 +594,7 @@ export default function ConfirmPage() {
         } finally {
             setPreviewLoading(false);
         }
-    }, [step3.selectedRoom, resolvedRoomTypeId]);
+    }, [step3.selectedRoom, step3.addOns, resolvedRoomTypeId]);
 
     useEffect(() => {
         // Only fetch preview for full/half modes — deposit mode uses static DepositInvoicePanel
@@ -577,6 +621,15 @@ export default function ConfirmPage() {
         setDepositSubmitting(true);
         setErrors({});
         try {
+            // Confirm onboarding first — sets onboardingStatus='completed' on the User model.
+            // The deposit service requires this status before allowing a deposit.
+            try {
+                await apiFetch("/api/public/onboarding/confirm", { method: "POST", token });
+            } catch (confirmErr) {
+                const msg = confirmErr instanceof Error ? confirmErr.message : "";
+                if (!msg.toLowerCase().includes("already") && !msg.toLowerCase().includes("completed")) throw confirmErr;
+            }
+
             let receiptUrl = "";
             if (payment.screenshot) {
                 receiptUrl = await uploadFile("receipt", payment.screenshot.preview, payment.screenshot.name);
@@ -589,6 +642,7 @@ export default function ConfirmPage() {
                     paymentMode: "deposit",
                     transactionId: payment.transactionId,
                     receiptUrl,
+                    totalAmount: 16000 + depositAdvance,
                 },
             });
             router.push("/user-onboarding/deposit-status");
@@ -645,6 +699,10 @@ export default function ConfirmPage() {
                 token,
                 body: {
                     paymentMode,
+                    addOns: {
+                        transport: !!step3.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "transport")?.enabled,
+                        mess: !!step3.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "lunch")?.enabled,
+                    },
                     ...(referralCode.trim() ? { referralCode: referralCode.trim().toUpperCase() } : {}),
                     paymentMethod: payment.method,
                     description: `Onboarding payment - ${step3.selectedRoom?.title || "Room"}`,
@@ -673,46 +731,7 @@ export default function ConfirmPage() {
                 <StepTitle>Complete your payment</StepTitle>
                 <StepSubtitle>Review your invoice, upload payment proof, and confirm your booking.</StepSubtitle>
             </motion.div>
-            {/* Active Hold Banner — shown when returning user has already done deposit-only */}
-            <AnimatePresence>
-                {hasActiveHold && (
-                    <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }} style={{ overflow: "hidden" }}>
-                        <div style={{ background: "rgba(22,163,74,0.08)", border: "1.5px solid rgba(22,163,74,0.22)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(22,163,74,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <Shield size={18} color="#16a34a" />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.88rem", fontWeight: 700, color: "#15803d", margin: 0 }}>
-                                    ✅ Your ₹16,000 deposit is confirmed
-                                </p>
-                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "#16a34a", margin: "3px 0 0", opacity: 0.8 }}>
-                                    Your ₹15,000 security deposit will be applied to your payment below. Choose how you want to pay the balance.
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
-            <AnimatePresence>
-                {hasDepositCredit && (
-                    <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }} style={{ overflow: "hidden" }}>
-                        <div style={{ background: "rgba(22,163,74,0.08)", border: "1.5px solid rgba(22,163,74,0.22)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(22,163,74,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <Shield size={18} color="#16a34a" />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.88rem", fontWeight: 700, color: "#15803d", margin: 0 }}>
-                                    {inr(breakdown?.depositCredited)} security deposit credited
-                                </p>
-                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "#16a34a", margin: "3px 0 0", opacity: 0.8 }}>
-                                    Your earlier ₹15,000 deposit has been applied against this payment.
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* Global Error Banner */}
             <AnimatePresence>
@@ -766,7 +785,7 @@ export default function ConfirmPage() {
                                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                                     <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.5)" }}>🔒 Secure Room Now</span>
                                 </div>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)", display: "block", marginBottom: 8 }}>Pay ₹16,000 deposit now, choose plan later</span>
+                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)", display: "block", marginBottom: 8 }}>Pay ₹16,000 minimum deposit now, choose plan later</span>
                                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                     <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.5)" }}>✅ Room held for 21 days</span>
                                     <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.5)" }}>✅ ₹15,000 refundable within 7 days</span>
@@ -824,7 +843,7 @@ export default function ConfirmPage() {
             {/* Invoice Panel — deposit mode gets static panel; full/half get live server-sourced panel */}
             <motion.div variants={itemVariants}>
                 {paymentMode === "deposit" ? (
-                    <DepositInvoicePanel />
+                    <DepositInvoicePanel advanceAmount={depositAdvance} onAdvanceChange={setDepositAdvance} />
                 ) : (
                     <InvoicePanel
                         paymentMode={paymentMode as "full" | "half"}
@@ -924,6 +943,7 @@ export default function ConfirmPage() {
                         onConfirm={handleDepositSubmit}
                         onClose={() => setShowDepositConfirmModal(false)}
                         loading={depositSubmitting}
+                        advanceAmount={depositAdvance}
                     />
                 )}
             </AnimatePresence>
