@@ -284,19 +284,28 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 const currentPath = pathname;
 
                 // Pages excluded from guards (terminal pages where user should stay)
-                const HOLD_EXCLUDED = ["/deposit-status", "/payment-status", "/confirm"];
+                const HOLD_EXCLUDED = ["/deposit-status", "/confirm"];
                 const LIFECYCLE_EXCLUDED = ["/deposit-status", "/payment-status"];
 
                 const isExcludedFrom = (exclusions: string[]) =>
                     exclusions.some((p) => currentPath.includes(p.replace("/user-onboarding", "")));
 
-                // PRIORITY 1 (HIGHEST): Active deposit hold → deposit-status
+                // PRIORITY 1 (HIGHEST): Active deposit hold → confirm page (to complete payment)
                 if (
                     holdData?.status === "active" &&
                     !isExcludedFrom(HOLD_EXCLUDED)
                 ) {
-                    router.replace("/user-onboarding/deposit-status");
+                    router.replace("/user-onboarding/confirm");
                     return; // Stop — do not evaluate further guards
+                }
+
+                // Pending approval hold → deposit-status
+                if (
+                    holdData?.status === "pending_approval" &&
+                    !currentPath.includes("deposit-status")
+                ) {
+                    router.replace("/user-onboarding/deposit-status");
+                    return;
                 }
 
                 // PRIORITY 2: Payment/onboarding lifecycle redirect
@@ -311,8 +320,10 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         router.replace("/student/dashboard");
                         return;
                     }
-                    // Payment submitted/approved or onboarding complete → payment-status
-                    if (ps === "pending" || ps === "approved" || os === "completed") {
+                    // Payment submitted/approved → payment-status
+                    // NOTE: Do NOT redirect on `os === 'completed'` alone — that would
+                    // block users who finished onboarding but haven't submitted payment yet.
+                    if (ps === "pending" || ps === "approved") {
                         router.replace("/user-onboarding/payment-status");
                         return;
                     }

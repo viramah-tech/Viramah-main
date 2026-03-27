@@ -32,31 +32,6 @@ const PERKS = [
     "All-inclusive pricing",
 ];
 
-/**
- * Determine the correct post-auth landing page based on user lifecycle stage.
- * Mirrors the login page's logic for consistency across all auth entry points.
- */
-function getRedirectPath(u: {
-    onboardingStatus: string;
-    paymentStatus: string;
-    documentVerificationStatus?: string;
-    moveInStatus?: string;
-}) {
-    if (
-        u.paymentStatus === "approved" &&
-        u.documentVerificationStatus === "approved" &&
-        u.moveInStatus === "completed"
-    ) {
-        return "/student/dashboard";
-    }
-    if (u.onboardingStatus === "completed") {
-        return "/user-onboarding/payment-status";
-    }
-    if (u.paymentStatus === "pending" || u.paymentStatus === "approved") {
-        return "/user-onboarding/payment-status";
-    }
-    return "/user-onboarding/terms";
-}
 
 export default function SignUpPage() {
     const [name, setName] = useState("");
@@ -69,21 +44,25 @@ export default function SignUpPage() {
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [touched, setTouched] = useState<Record<string, boolean>>({});
-    const { signup, user, isAuthenticated, loading } = useAuth();
+    const { signup, logout, isAuthenticated, loading } = useAuth();
     const { showToast } = useToast();
     const router = useRouter();
 
-    // ── Production redirect: route authenticated users to the correct stage ──
+    // ── Auto-logout: visiting /signup means "I want a NEW account" ──
+    // If a previous user's session is still active, clear it so the
+    // signup form is accessible. Without this, the old JWT causes
+    // AuthContext to set isAuthenticated=true with stale user data,
+    // and the page would redirect to payment-status before rendering.
     useEffect(() => {
-        if (!loading && isAuthenticated && user) {
-            router.replace(getRedirectPath(user));
+        if (!loading && isAuthenticated) {
+            logout();
         }
-    }, [isAuthenticated, user, loading, router]);
+    }, [loading, isAuthenticated, logout]);
 
     const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
 
-    // Don't render form while auth is loading or if user is already authenticated
-    if (loading || (isAuthenticated && user)) return null;
+    // Show loading state while auth is initializing
+    if (loading) return null;
 
     // ── Validation helpers ──────────────────────────────────
     const nameError = touched.name && name.trim().length > 0 && name.trim().length < 2

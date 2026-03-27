@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
 
 const containerVariants = {
@@ -46,12 +47,13 @@ export default function LoginPage() {
     const passwordError = touched.password && password.length === 0
         ? "Password is required" : "";
 
-    const getRedirectPath = (u: {
+    const getRedirectPath = async (u: {
         onboardingStatus: string;
         paymentStatus: string;
         documentVerificationStatus?: string;
         moveInStatus?: string;
-    }) => {
+    }): Promise<string> => {
+        // Fully onboarded resident → student dashboard
         if (
             u.paymentStatus === "approved" &&
             u.documentVerificationStatus === "approved" &&
@@ -59,12 +61,26 @@ export default function LoginPage() {
         ) {
             return "/student/dashboard";
         }
-        if (u.onboardingStatus === "completed") {
+
+        // Before redirecting to payment-status, check for an active deposit hold.
+        if (u.paymentStatus === "pending" || u.paymentStatus === "approved" || u.onboardingStatus === "completed") {
+            try {
+                const holdRes = await apiFetch<{ data: { hold: { status?: string; paymentMode?: string } | null } }>(
+                    "/api/public/deposits/status"
+                );
+                const hold = holdRes?.data?.hold;
+                if (hold?.status === "active") {
+                    return "/user-onboarding/confirm";
+                }
+                if (hold?.status === "pending_approval") {
+                    return "/user-onboarding/deposit-status";
+                }
+            } catch {
+                // If deposit check fails, fall through to default
+            }
             return "/user-onboarding/payment-status";
         }
-        if (u.paymentStatus === "pending" || u.paymentStatus === "approved") {
-            return "/user-onboarding/payment-status";
-        }
+
         return "/user-onboarding/step-1";
     };
 
@@ -88,7 +104,8 @@ export default function LoginPage() {
         try {
             const loggedInUser = await login(email, password);
             showToast("Login successful! Redirecting...", "success");
-            router.replace(getRedirectPath(loggedInUser));
+            const path = await getRedirectPath(loggedInUser);
+            router.replace(path);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Login failed. Please try again.";
             setError(message);
