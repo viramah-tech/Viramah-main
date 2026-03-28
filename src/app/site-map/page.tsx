@@ -32,9 +32,9 @@ const SITEMAP_SECTIONS = [
     {
         title: "Legal & Support",
         links: [
-            { name: "Privacy Policy", href: "#" },
-            { name: "Terms of Service", href: "#" },
-            { name: "Support Center", href: "#" },
+            { name: "Privacy Policy", href: "/privacy-policy" },
+            { name: "Terms & Pricing", href: "/terms-and-pricing" },
+            { name: "Support Center", href: "mailto:team@viramahstay.com" },
             { name: "Internal Sitemap (XML)", href: "/sitemap.xml" },
         ],
     },

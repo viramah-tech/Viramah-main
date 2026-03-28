@@ -364,6 +364,14 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 );
                 if (!res.ok) return; // If auth fails, the auth guard above handles it
                 const data = await res.json();
+
+                // Contact verification guard: redirect to /verify-contact if email not verified
+                const emailVerified = data?.data?.verification?.emailVerified;
+                if (!emailVerified) {
+                    router.replace("/verify-contact");
+                    return;
+                }
+
                 const agreed = data?.data?.agreements?.termsAccepted;
                 if (!agreed) {
                     router.replace("/user-onboarding/terms");

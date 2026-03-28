@@ -12,11 +12,5 @@ export async function GET() {
     return NextResponse.json({
         ok: true,
         timestamp: new Date().toISOString(),
-        env: {
-            resendKeySet: !!process.env.RESEND_API_KEY,
-            fromEmailSet: !!process.env.RESEND_FROM_EMAIL,
-            sheetsUrlSet: !!process.env.GOOGLE_SHEET_WEBHOOK_URL,
-            appUrlSet: !!process.env.NEXT_PUBLIC_APP_URL,
-        },
     });
 }

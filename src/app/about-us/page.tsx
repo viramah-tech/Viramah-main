@@ -1,6 +1,17 @@
 import { Container } from "@/components/layout/Container";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Our Story | Viramah — From a Shared Problem to a Shared Solution",
+    description: "The Viramah story: from a frustration with student housing to building a dignified, community-first hostel in India. 100+ happy residents, 4.9 rating.",
+    openGraph: {
+        title: "Our Story | Viramah",
+        description: "From frustration with student housing to building a dignified, community-first hostel. 100+ residents, 4.9 rating.",
+        url: "https://viramahstay.com/about-us",
+    },
+};
 
 export default function AboutUsPage() {
     return (

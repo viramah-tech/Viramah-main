@@ -2,7 +2,12 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
     title: "Viramah Community | Networking & Social Events for Students in India",
-    description: "Join the largest student living community in India. Viramah offers weekly community dinners, peer mentorship, and networking opportunities for ambitious Gen Z students and creators.",
+    description: "Join Viramah's student living community. Weekly community dinners, peer mentorship, and networking for ambitious Gen Z students and creators in India.",
+    openGraph: {
+        title: "Viramah Community | Networking for Students",
+        description: "Weekly dinners, peer mentorship, and networking for ambitious Gen Z students. Members, not tenants — join the Viramah community.",
+        url: "https://viramahstay.com/community",
+    },
     keywords: [
         "community based hostel living",
         "gen z hostel lifestyle",

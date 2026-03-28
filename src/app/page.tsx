@@ -24,7 +24,12 @@ const ClosingSection = dynamic(() => import("@/components/sections/ClosingSectio
 
 export const metadata: Metadata = {
   title: "Viramah stay",
-  description: "Experience premium student living at Viramah. Modern hostel with high-speed WiFi, gaming zone, and nutritious food. The ultimate PG alternative for Gen Z and working professionals.",
+  description: "Experience premium student living at Viramah. Modern hostel with high-speed WiFi, gaming zone, and nutritious food. The ultimate PG alternative for students.",
+  openGraph: {
+    title: "Viramah | Premium Student Living Reimagined",
+    description: "Modern hostel with high-speed WiFi, gaming zone, nutritious food, and a thriving community. The ultimate PG alternative for students in India.",
+    url: "https://viramahstay.com",
+  },
   keywords: [
     "best hostel for students in India",
     "hostel that feels like home",
@@ -39,6 +44,49 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is included in the rent?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Our all-inclusive rent covers your premium furnished stay, high-speed WiFi, daily housekeeping, 24/7 security, In-House Mess with 3 meals a day (Breakfast, Supper & Dinner), and full access to all community spaces like the gaming zone, gym, and library."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is food available?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes! We serve 3 wholesome meals a day — Breakfast, Supper, and Dinner — through our In-House Quality Mess. We also have a 24x7 Canteen, Self Pantry Services, and a Restaurant on-site."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What security measures are in place?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "We have 2-layer round-the-clock security with continuous 24x7 CCTV surveillance monitoring of all common areas and residential zones."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is the booking process?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Select your preferred living type, schedule a visit or take a virtual tour, submit your basic documents, and pay the security deposit to lock your space."
+                }
+              }
+            ]
+          })
+        }}
+      />
       <Navigation />
 
       {/* Terra-inspired Hero Section with Scroll Gallery */}

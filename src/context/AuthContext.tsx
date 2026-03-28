@@ -34,6 +34,23 @@ export interface AuthUser {
     address: string;
     lastLogin: string;
     createdAt: string;
+    // Contact verification
+    emailVerified?: boolean;
+    phoneVerified?: boolean;
+    verification?: {
+        emailVerified: boolean;
+        emailVerifiedAt: string | null;
+        phoneVerified: boolean;
+        phoneVerifiedAt: string | null;
+    };
+    agreements?: {
+        termsAccepted: boolean;
+        termsAcceptedAt: string | null;
+        termsVersion: string | null;
+        privacyPolicyAccepted: boolean;
+        privacyPolicyAcceptedAt: string | null;
+        privacyPolicyVersion: string | null;
+    };
 }
 
 interface AuthContextType {

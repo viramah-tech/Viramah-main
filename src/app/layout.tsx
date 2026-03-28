@@ -34,7 +34,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://viramahstay.com"),
   title: "Viramah | Premium Student Living & Experience-Focused Hostels in India",
-  description: "Dignified student housing reimagined. Experience intentional living with premium amenities, community focus, and comfort that feels like home. The best premium hostel for students in India.",
+  description: "Dignified student housing reimagined. Intentional living with premium amenities, community focus, and comfort that feels like home. Best hostel for students in India.",
   keywords: [
     "premium hostel in India",
     "experience focused hostel",
@@ -144,20 +144,35 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "LocalBusiness",
+              "@type": "LodgingBusiness",
               "name": "Viramah",
               "image": "https://viramahstay.com/logo.png",
-              "@id": "",
+              "@id": "https://viramahstay.com",
               "url": "https://viramahstay.com",
-              "telephone": "",
+              "email": "team@viramahstay.com",
+              "priceRange": "₹₹",
               "address": {
                 "@type": "PostalAddress",
                 "streetAddress": "Krishna Valley",
                 "addressLocality": "Vrindavan",
+                "addressRegion": "Uttar Pradesh",
                 "postalCode": "281121",
                 "addressCountry": "IN"
               },
               "description": "Premium student living reimagined. Experience intentional living with premium amenities, community focus, and comfort that feels like home.",
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.9",
+                "reviewCount": "100"
+              },
+              "amenityFeature": [
+                { "@type": "LocationFeatureSpecification", "name": "High-Speed WiFi", "value": true },
+                { "@type": "LocationFeatureSpecification", "name": "3 Meals a Day", "value": true },
+                { "@type": "LocationFeatureSpecification", "name": "Gaming Zone", "value": true },
+                { "@type": "LocationFeatureSpecification", "name": "24/7 Security", "value": true },
+                { "@type": "LocationFeatureSpecification", "name": "Gym", "value": true },
+                { "@type": "LocationFeatureSpecification", "name": "Library", "value": true }
+              ],
               "openingHoursSpecification": {
                 "@type": "OpeningHoursSpecification",
                 "dayOfWeek": [

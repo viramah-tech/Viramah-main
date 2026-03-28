@@ -123,7 +123,7 @@ export default function SignUpPage() {
         try {
             await signup(name, email, password);
             showToast("Account created successfully! Redirecting...", "success");
-            router.push("/user-onboarding/terms");
+            router.push("/verify-contact");
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
             setError(message);
