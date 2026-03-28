@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Phone, Users } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { uploadFile } from "@/lib/uploadFile";
+import { uploadFile, deleteUploadedFile } from "@/lib/uploadFile";
 import {
     FieldLabel, FieldHint, FieldError, FieldInput, PhotoUpload,
     NavButton, SecondaryButton, FormCard, StepBadge, StepTitle,
@@ -293,6 +293,7 @@ export default function Step2Page() {
                                     file={step2.parentIdFront}
                                     onUpload={(f) => updateStep2({ parentIdFront: f })}
                                     onRemove={() => updateStep2({ parentIdFront: null })}
+                                    onDeleteFromServer={deleteUploadedFile}
                                 />
                                 {attempted && errors.parentIdFront && <FieldError>{errors.parentIdFront}</FieldError>}
                             </div>
@@ -302,6 +303,7 @@ export default function Step2Page() {
                                     file={step2.parentIdBack}
                                     onUpload={(f) => updateStep2({ parentIdBack: f })}
                                     onRemove={() => updateStep2({ parentIdBack: null })}
+                                    onDeleteFromServer={deleteUploadedFile}
                                 />
                                 {attempted && errors.parentIdBack && <FieldError>{errors.parentIdBack}</FieldError>}
                             </div>

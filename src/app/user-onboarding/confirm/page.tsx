@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     CreditCard, ArrowLeft, Upload, X, Building2, Banknote,
     Check, AlertCircle, Camera, Shield, Tag, Lock, Info,
-    KeyRound,
+    KeyRound, Trash2, Loader2,
 } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { uploadFile } from "@/lib/uploadFile";
+import { uploadFile, deleteUploadedFile } from "@/lib/uploadFile";
 import type { UploadedFile } from "@/context/OnboardingContext";
 import {
     FieldLabel, FieldInput, FieldError, NavButton, SecondaryButton,
@@ -104,12 +104,15 @@ function PaymentMethodCard({
 // ── Screenshot Upload ──────────────────────────────────────────────────────────
 
 function ScreenshotUpload({
-    screenshot, onUpload, onRemove,
+    screenshot, onUpload, onRemove, onDeleteFromServer
 }: {
     screenshot: UploadedFile | null; onUpload: (f: UploadedFile) => void; onRemove: () => void;
+    onDeleteFromServer?: (fileUrl: string) => Promise<void>;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [hovered, setHovered] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0];
         if (f) {
@@ -118,6 +121,22 @@ function ScreenshotUpload({
             reader.readAsDataURL(f);
         }
     };
+
+    const isServerFile = screenshot?.preview && !screenshot.preview.startsWith("data:");
+
+    const handleRemove = async () => {
+        if (isServerFile && onDeleteFromServer && screenshot) {
+            setDeleting(true);
+            try {
+                await onDeleteFromServer(screenshot.preview);
+            } catch (err) {
+                console.error("Failed to delete from server:", err);
+            } finally {
+                setDeleting(false);
+            }
+        }
+        onRemove();
+    };
     return (
         <div>
             <FieldLabel>Payment Screenshot / Receipt</FieldLabel>
@@ -125,8 +144,14 @@ function ScreenshotUpload({
                 {screenshot ? (
                     <div style={{ position: "relative", maxWidth: 300, borderRadius: 12, overflow: "hidden", border: `2px solid ${GREEN}` }}>
                         <img src={screenshot.preview} alt="Screenshot" style={{ width: "100%", height: "auto", display: "block" }} />
-                        <button onClick={onRemove} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.95)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
-                            <X size={14} color={GREEN} />
+                        <button onClick={handleRemove} disabled={deleting} title={isServerFile ? "Delete from server" : "Remove"} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: isServerFile ? "rgba(192,57,43,0.95)" : "rgba(255,255,255,0.95)", border: "none", cursor: deleting ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
+                            {deleting ? (
+                                <Loader2 size={14} color="#fff" style={{ animation: "spin 1s linear infinite" }} />
+                            ) : isServerFile ? (
+                                <Trash2 size={13} color="#fff" />
+                            ) : (
+                                <X size={14} color={GREEN} />
+                            )}
                         </button>
                         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(31,58,45,0.85)", backdropFilter: "blur(8px)", padding: "6px 12px", display: "flex", alignItems: "center", gap: 6 }}>
                             <Check size={12} color={GOLD} />
@@ -145,6 +170,7 @@ function ScreenshotUpload({
                 )}
             </div>
             <input ref={inputRef} type="file" accept="image/*,.pdf" onChange={handleFile} style={{ display: "none" }} />
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }
@@ -222,29 +248,6 @@ function DepositInvoicePanel({ advanceAmount, onAdvanceChange }: { advanceAmount
                     <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: GOLD, fontWeight: 700, letterSpacing: "0.05em" }}>Total Due Now</span>
                     <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.2rem", color: GOLD }}>{inr(totalDue)}</span>
                 </div>
-            </div>
-
-            {/* Amber policy notice */}
-            <div style={{ marginTop: 18, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 12, padding: "14px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
-                    <AlertCircle size={13} color="#d97706" />
-                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.15em", color: "#d97706", fontWeight: 700 }}>Please Read Before Proceeding</span>
-                </div>
-                {[
-                    "Your room will be HELD for 21 days.",
-                    "You must complete full payment within 21 days.",
-                    "Days 1–7: Security deposit (₹15,000) refundable if you cancel.",
-                    "After day 7: Security deposit is NON-REFUNDABLE.",
-                    advanceAmount > 0 ? `Your ₹${advanceAmount.toLocaleString("en-IN")} advance is ALWAYS refundable.` : null,
-                    "After day 21: Room released. No refund.",
-                    "₹1,000 registration fee: NEVER refundable.",
-                    "After paying now, you will return here to choose Full Tenure or Half Yearly.",
-                ].filter(Boolean).map((line, i) => (
-                    <div key={i} style={{ display: "flex", gap: 7, marginTop: 4 }}>
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#d97706", flexShrink: 0, marginTop: 1 }}>•</span>
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#92400e", lineHeight: 1.5 }}>{line}</span>
-                    </div>
-                ))}
             </div>
         </div>
     );
@@ -487,10 +490,10 @@ export default function ConfirmPage() {
 
     // Map frontend room IDs to backend RoomType.name values (mirrors step-3)
     const ROOM_TYPE_MAP: Record<string, string> = {
-        "nexus-plus":    "NEXUS",
+        "nexus-plus": "NEXUS",
         "collective-plus": "COLLECTIVE",
-        "axis":          "AXIS",
-        "studio":        "AXIS+",
+        "axis": "AXIS",
+        "studio": "AXIS+",
     };
 
 
@@ -912,6 +915,7 @@ export default function ConfirmPage() {
                         screenshot={payment.screenshot}
                         onUpload={(f) => updatePayment({ screenshot: f })}
                         onRemove={() => updatePayment({ screenshot: null })}
+                        onDeleteFromServer={deleteUploadedFile}
                     />
                     {attempted && errors.screenshot && <FieldError>{errors.screenshot}</FieldError>}
                 </FormCard>

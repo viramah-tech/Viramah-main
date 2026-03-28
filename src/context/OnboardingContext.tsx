@@ -21,6 +21,7 @@ export interface Step1Data {
     idNumber: string;
     idFront: UploadedFile | null;
     idBack: UploadedFile | null;
+    profilePhoto: UploadedFile | null;
     gender: string;
     address: string;
 }
@@ -95,6 +96,7 @@ const INITIAL_STATE: OnboardingState = {
         idNumber: "",
         idFront: null,
         idBack: null,
+        profilePhoto: null,
         gender: "",
         address: "",
     },
@@ -320,6 +322,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                             dateOfBirth: d.dateOfBirth ? d.dateOfBirth.split("T")[0] : prev.step1.dateOfBirth,
                             idType: d.idType || prev.step1.idType,
                             idNumber: d.idNumber || prev.step1.idNumber,
+                        };
+                    }
+
+                    // Restore profile photo from backend if saved
+                    if (d.documents?.photo && !prev.step1.profilePhoto) {
+                        merged.step1 = {
+                            ...merged.step1,
+                            profilePhoto: { name: "profile-photo", preview: d.documents.photo },
                         };
                     }
 

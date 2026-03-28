@@ -121,21 +121,13 @@ export function Navigation() {
                 </div>
 
                 {/* CTA */}
-                <div className="flex items-center gap-2">
-                    {/* 
+                <div className="flex items-center gap-1 md:gap-3">
                     <Link
                         href="/login"
-                        className="px-4 py-2 rounded-full text-sm font-medium text-sand-light/70 hover:text-sand-light hover:bg-white/10 transition-colors hidden xl:block font-mono text-[10px] uppercase tracking-wider"
+                        className="px-4 py-2 rounded-full text-sand-light/70 hover:text-sand-light hover:bg-white/10 transition-all hidden lg:block font-mono text-[10px] xl:text-[11px] uppercase tracking-widest border border-transparent hover:border-white/10"
                     >
-                        ALREADY A MEMBER
+                        Login
                     </Link>
-                    <Link
-                        href="/signup"
-                        className="px-4 md:px-6 py-2 md:py-2.5 rounded-full text-[11px] md:text-sm font-bold bg-green-sage text-white shadow-lg shadow-green-sage/20 hover:bg-green-sage/90 hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap uppercase tracking-tight"
-                    >
-                        JOIN NOW
-                    </Link>
-                    */}
                     <EnquireNowButton variant="gold" label="join us" rounded={true} />
                 </div>
                 {/* Mobile hamburger */}
@@ -230,9 +222,16 @@ function MobileMenuButtonAndPanel({ navLinks }: { navLinks: NavLink[] }) {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
-                            className="p-1"
+                            className="p-1 flex flex-col gap-2"
                         >
                             <EnquireNowButton variant="gold" label="Book a Space" rounded={true} className="w-full" />
+                            <Link
+                                href="/login"
+                                onClick={() => setOpen(false)}
+                                className="w-full py-3 rounded-full border border-white/10 text-center text-sand-light/80 font-mono text-[10px] uppercase tracking-[0.2em] font-semibold hover:bg-white/5 hover:text-sand-light hover:border-white/20 transition-all"
+                            >
+                                Member Login
+                            </Link>
                         </motion.div>
                     </motion.div>
                 )}

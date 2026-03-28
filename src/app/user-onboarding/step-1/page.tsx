@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Shield, User } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { uploadFile } from "@/lib/uploadFile";
+import { uploadFile, deleteUploadedFile } from "@/lib/uploadFile";
 import {
     FieldLabel, FieldHint, FieldError, FieldInput, PhotoUpload,
     NavButton, FormCard, StepBadge, StepTitle, StepSubtitle,
     SelectionButton, containerVariants, itemVariants, FieldTextarea,
+    AvatarUpload,
 } from "@/components/onboarding/FormComponents";
 
 const ID_TYPES = [
@@ -43,6 +44,7 @@ export default function Step1Page() {
         if (!step1.address.trim()) errs.address = "Current address is required";
         if (step1.address.trim().length > 0 && step1.address.trim().length < 10) errs.address = "Address must be at least 10 characters";
         if (!step1.idNumber.trim()) errs.idNumber = "ID number is required";
+        if (!step1.profilePhoto) errs.profilePhoto = "Profile photo is required";
         if (!step1.idFront) errs.idFront = "Front side of ID is required";
         if (!step1.idBack) errs.idBack = "Back side of ID is required";
 
@@ -82,17 +84,21 @@ export default function Step1Page() {
 
         setSubmitting(true);
         try {
-            // Upload ID images to S3
-            const [idProofUrl, addressProofUrl] = await Promise.all([
-                step1.idFront
+            // Upload profile photo + ID images to S3 in parallel
+            const isNewProfilePhoto = step1.profilePhoto?.preview?.startsWith("data:");
+            const [profilePhotoUrl, idProofUrl, addressProofUrl] = await Promise.all([
+                isNewProfilePhoto && step1.profilePhoto
+                    ? uploadFile("photo", step1.profilePhoto.preview, step1.profilePhoto.name)
+                    : Promise.resolve(step1.profilePhoto?.preview || ""),
+                step1.idFront?.preview?.startsWith("data:")
                     ? uploadFile("document", step1.idFront.preview, step1.idFront.name)
-                    : Promise.resolve(""),
-                step1.idBack
+                    : Promise.resolve(step1.idFront?.preview || ""),
+                step1.idBack?.preview?.startsWith("data:")
                     ? uploadFile("document", step1.idBack.preview, step1.idBack.name)
-                    : Promise.resolve(""),
+                    : Promise.resolve(step1.idBack?.preview || ""),
             ]);
 
-            // Save KYC data (text fields + document URLs) to backend
+            // Save KYC data (text fields + document URLs + photo URL) to backend
             await saveStepToBackend(1, {
                 fullName: step1.fullName,
                 dateOfBirth: step1.dateOfBirth,
@@ -102,7 +108,7 @@ export default function Step1Page() {
                 idNumber: step1.idNumber,
                 idProof: idProofUrl,
                 addressProof: addressProofUrl,
-                photo: idProofUrl, // Use front as photo fallback
+                photo: profilePhotoUrl,
             });
 
             markStepComplete(1);
@@ -131,6 +137,31 @@ export default function Step1Page() {
             {/* Main Form Card */}
             <motion.div variants={itemVariants}>
                 <FormCard>
+                    {/* Profile Photo */}
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 6,
+                            paddingBottom: 20,
+                            borderBottom: "1px solid rgba(31,58,45,0.1)",
+                        }}
+                    >
+                        <AvatarUpload
+                            label="Profile Photo"
+                            file={step1.profilePhoto}
+                            onUpload={(f) => updateStep1({ profilePhoto: f })}
+                            onRemove={() => updateStep1({ profilePhoto: null })}
+                            onDeleteFromServer={deleteUploadedFile}
+                        />
+                        {attempted && errors.profilePhoto ? (
+                            <FieldError>{errors.profilePhoto}</FieldError>
+                        ) : (
+                            <FieldHint>A clear passport-size photo of your face</FieldHint>
+                        )}
+                    </div>
+
                     {/* Full Name */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         <FieldLabel htmlFor="s1-name">Full Name (as per ID)</FieldLabel>
@@ -285,6 +316,7 @@ export default function Step1Page() {
                                     file={step1.idFront}
                                     onUpload={(f) => updateStep1({ idFront: f })}
                                     onRemove={() => updateStep1({ idFront: null })}
+                                    onDeleteFromServer={deleteUploadedFile}
                                 />
                                 {attempted && errors.idFront && <FieldError>{errors.idFront}</FieldError>}
                             </div>
@@ -294,6 +326,7 @@ export default function Step1Page() {
                                     file={step1.idBack}
                                     onUpload={(f) => updateStep1({ idBack: f })}
                                     onRemove={() => updateStep1({ idBack: null })}
+                                    onDeleteFromServer={deleteUploadedFile}
                                 />
                                 {attempted && errors.idBack && <FieldError>{errors.idBack}</FieldError>}
                             </div>

@@ -9,22 +9,23 @@ import { OnboardingProvider } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
 
 const BOOKING_STEPS = [
-    { id: 1, label: "Identity", description: "KYC Verification" },
-    { id: 2, label: "Emergency", description: "Contact Info" },
-    { id: 3, label: "Room", description: "Select & Add-ons" },
-    { id: 4, label: "Review", description: "Verify Details" },
-    { id: 5, label: "Payment", description: "Confirm Booking" },
+    { id: 1, label: "Agreements", description: "Terms & Policies" },
+    { id: 2, label: "Identity", description: "KYC Verification" },
+    { id: 3, label: "Emergency", description: "Contact Info" },
+    { id: 4, label: "Room", description: "Select & Add-ons" },
+    { id: 5, label: "Review", description: "Verify Details" },
+    { id: 6, label: "Payment", description: "Confirm Booking" },
 ];
 
 function getStepFromPath(pathname: string): number {
-    if (pathname.includes("terms")) return 0;        // pre-step: terms & pricing
-    if (pathname.includes("deposit")) return 6;       // deposit sub-flow (post-stepper)
-    if (pathname.includes("step-1")) return 1;
-    if (pathname.includes("step-2")) return 2;
-    if (pathname.includes("step-3")) return 3;
-    if (pathname.includes("step-4")) return 4;
-    if (pathname.includes("confirm")) return 5;
-    if (pathname.includes("payment-status")) return 7; // post-flow
+    if (pathname.includes("terms")) return 1;
+    if (pathname.includes("step-1")) return 2;
+    if (pathname.includes("step-2")) return 3;
+    if (pathname.includes("step-3")) return 4;
+    if (pathname.includes("step-4")) return 5;
+    if (pathname.includes("confirm")) return 6;
+    if (pathname.includes("deposit")) return 7;       // deposit sub-flow (post-stepper)
+    if (pathname.includes("payment-status")) return 8; // post-flow
     return 1;
 }
 
@@ -229,8 +230,8 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
     const router = useRouter();
     const { loading, isAuthenticated } = useAuth();
     const currentStep = getStepFromPath(pathname);
-    const isTermsPage  = currentStep === 0;
-    const isPostFlow   = currentStep >= 6; // deposit-status, payment-status
+    const isTermsPage  = false;
+    const isPostFlow   = currentStep >= 7; // deposit-status, payment-status
     const [isScrolled, setIsScrolled] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
 
@@ -364,7 +365,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 if (!res.ok) return; // If auth fails, the auth guard above handles it
                 const data = await res.json();
                 const agreed = data?.data?.agreements?.termsAccepted;
-                if (agreed === false) {
+                if (!agreed) {
                     router.replace("/user-onboarding/terms");
                 }
             } catch {
@@ -527,23 +528,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                                 exit={{ height: 0, opacity: 0, marginTop: 0, transition: { duration: 0.25, delay: 0, ease: "easeIn" } }}
                                 style={{ overflow: "hidden" }}
                             >
-                                {/* Terms pre-step indicator */}
-                                {isTermsPage && (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, padding: "8px 12px", borderRadius: 10, background: "rgba(31,58,45,0.05)", border: "1px solid rgba(31,58,45,0.1)" }}>
-                                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#1F3A2D", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", fontWeight: 700, color: "#D8B56A" }}>T</span>
-                                        </div>
-                                        <div>
-                                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.75rem", fontWeight: 700, color: "#1F3A2D", display: "block" }}>Terms & Pricing</span>
-                                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.4)" }}>Read before booking</span>
-                                        </div>
-                                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
-                                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#D8B56A" }} />
-                                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "#9a7a3a", textTransform: "uppercase", letterSpacing: "0.15em" }}>Step 0 of 5</span>
-                                        </div>
-                                    </div>
-                                )}
-                                <ExpandedStepper steps={BOOKING_STEPS} currentStep={isTermsPage ? 0 : currentStep} />
+                                <ExpandedStepper steps={BOOKING_STEPS} currentStep={currentStep} />
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -594,7 +579,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         letterSpacing: "0.1em",
                     }}
                 >
-                    {isPostFlow ? "Booking Submitted" : isTermsPage ? "Step 0 · Terms & Pricing" : `Step ${currentStep} of 5`}
+                    {isPostFlow ? "Booking Submitted" : `Step ${currentStep} of 6`}
                 </span>
             </footer>
         </div>

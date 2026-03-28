@@ -228,7 +228,7 @@ export default function Step4Page() {
                     iconBg="rgba(31,58,45,0.08)"
                     iconColor={GREEN}
                     title="Personal Details"
-                    subtitle="Step 1 — Identity Verification"
+                    subtitle="Step 2 — Identity Verification"
                     editStep="/user-onboarding/step-1"
                     onEdit={() => router.push("/user-onboarding/step-1")}
                 >
@@ -260,7 +260,7 @@ export default function Step4Page() {
                     iconBg="rgba(216,181,106,0.12)"
                     iconColor={GOLD}
                     title="Emergency Contact"
-                    subtitle="Step 2 — Guardian Details"
+                    subtitle="Step 3 — Guardian Details"
                     editStep="/user-onboarding/step-2"
                     onEdit={() => router.push("/user-onboarding/step-2")}
                 >
@@ -297,7 +297,7 @@ export default function Step4Page() {
                     iconBg="rgba(31,58,45,0.08)"
                     iconColor={GREEN}
                     title="Room Selected"
-                    subtitle="Step 3 — Room & Services"
+                    subtitle="Step 4 — Room & Services"
                     editStep="/user-onboarding/step-3"
                     onEdit={() => router.push("/user-onboarding/step-3")}
                 >

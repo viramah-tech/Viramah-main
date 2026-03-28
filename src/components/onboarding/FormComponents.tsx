@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Camera, Trash2, Loader2 } from "lucide-react";
 import type { UploadedFile } from "@/context/OnboardingContext";
 
 // ── Design Tokens ────────────────────────────────────────────
@@ -133,14 +133,17 @@ export function PhotoUpload({
     file,
     onUpload,
     onRemove,
+    onDeleteFromServer,
 }: {
     label: string;
     file: UploadedFile | null;
     onUpload: (file: UploadedFile) => void;
     onRemove: () => void;
+    onDeleteFromServer?: (fileUrl: string) => Promise<void>;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [hovered, setHovered] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
@@ -151,6 +154,22 @@ export function PhotoUpload({
             };
             reader.readAsDataURL(selectedFile);
         }
+    };
+
+    const isServerFile = file?.preview && !file.preview.startsWith("data:");
+
+    const handleRemove = async () => {
+        if (isServerFile && onDeleteFromServer && file) {
+            setDeleting(true);
+            try {
+                await onDeleteFromServer(file.preview);
+            } catch (err) {
+                console.error("Failed to delete from server:", err);
+            } finally {
+                setDeleting(false);
+            }
+        }
+        onRemove();
     };
 
     return (
@@ -181,7 +200,8 @@ export function PhotoUpload({
                 >
                     <img src={file.preview} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     <button
-                        onClick={onRemove}
+                        onClick={handleRemove}
+                        disabled={deleting}
                         style={{
                             position: "absolute",
                             top: 8,
@@ -189,16 +209,23 @@ export function PhotoUpload({
                             width: 28,
                             height: 28,
                             borderRadius: "50%",
-                            background: "rgba(255,255,255,0.95)",
+                            background: isServerFile ? "rgba(192,57,43,0.95)" : "rgba(255,255,255,0.95)",
                             border: "none",
-                            cursor: "pointer",
+                            cursor: deleting ? "wait" : "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                         }}
+                        title={isServerFile ? "Delete from server" : "Remove"}
                     >
-                        <X size={14} color={GREEN} />
+                        {deleting ? (
+                            <Loader2 size={14} color="#fff" style={{ animation: "spin 1s linear infinite" }} />
+                        ) : isServerFile ? (
+                            <Trash2 size={13} color="#fff" />
+                        ) : (
+                            <X size={14} color={GREEN} />
+                        )}
                     </button>
                 </div>
             ) : (
@@ -248,6 +275,220 @@ export function PhotoUpload({
                 </button>
             )}
             <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+        </div>
+    );
+}
+
+// ── AvatarUpload (Circular Profile Photo) ────────────────────
+
+export function AvatarUpload({
+    label,
+    file,
+    onUpload,
+    onRemove,
+    onDeleteFromServer,
+}: {
+    label: string;
+    file: UploadedFile | null;
+    onUpload: (file: UploadedFile) => void;
+    onRemove: () => void;
+    onDeleteFromServer?: (fileUrl: string) => Promise<void>;
+}) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [hovered, setHovered] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                onUpload({ name: selectedFile.name, preview: reader.result as string });
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+    };
+
+    const isServerFile = file?.preview && !file.preview.startsWith("data:");
+
+    const handleRemove = async () => {
+        if (isServerFile && onDeleteFromServer && file) {
+            setDeleting(true);
+            try {
+                await onDeleteFromServer(file.preview);
+            } catch (err) {
+                console.error("Failed to delete from server:", err);
+            } finally {
+                setDeleting(false);
+            }
+        }
+        onRemove();
+    };
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            {file ? (
+                <div
+                    style={{
+                        position: "relative",
+                        width: 130,
+                        height: 130,
+                    }}
+                    onMouseEnter={() => setHovered(true)}
+                    onMouseLeave={() => setHovered(false)}
+                >
+                    <div
+                        style={{
+                            width: 130,
+                            height: 130,
+                            borderRadius: "50%",
+                            overflow: "hidden",
+                            border: `3px solid ${GREEN}`,
+                            boxShadow: "0 6px 24px rgba(31,58,45,0.15)",
+                        }}
+                    >
+                        <img
+                            src={file.preview}
+                            alt={label}
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                            }}
+                        />
+                    </div>
+                    {/* Hover overlay with change hint */}
+                    <div
+                        onClick={() => inputRef.current?.click()}
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            borderRadius: "50%",
+                            background: hovered ? "rgba(31,58,45,0.45)" : "transparent",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            transition: "all 0.3s ease",
+                        }}
+                    >
+                        {hovered && <Camera size={24} color="#fff" />}
+                    </div>
+                    {/* Remove button */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemove();
+                        }}
+                        disabled={deleting}
+                        style={{
+                            position: "absolute",
+                            top: 2,
+                            right: 2,
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            background: isServerFile ? "rgba(192,57,43,0.95)" : "#fff",
+                            border: isServerFile ? "none" : `1.5px solid rgba(31,58,45,0.15)`,
+                            cursor: deleting ? "wait" : "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                            transition: "all 0.2s ease",
+                            opacity: hovered ? 1 : 0,
+                        }}
+                        title={isServerFile ? "Delete from server" : "Remove"}
+                    >
+                        {deleting ? (
+                            <Loader2 size={13} color={isServerFile ? "#fff" : "#c0392b"} style={{ animation: "spin 1s linear infinite" }} />
+                        ) : isServerFile ? (
+                            <Trash2 size={13} color="#fff" />
+                        ) : (
+                            <X size={13} color="#c0392b" />
+                        )}
+                    </button>
+                </div>
+            ) : (
+                <button
+                    onClick={() => inputRef.current?.click()}
+                    onMouseEnter={() => setHovered(true)}
+                    onMouseLeave={() => setHovered(false)}
+                    style={{
+                        width: 130,
+                        height: 130,
+                        borderRadius: "50%",
+                        border: `2.5px dashed ${hovered ? GREEN : "rgba(31,58,45,0.22)"}`,
+                        background: hovered
+                            ? "rgba(31,58,45,0.05)"
+                            : "linear-gradient(145deg, rgba(246,244,239,0.6), rgba(255,255,255,0.8))",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        transition: "all 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
+                        transform: hovered ? "scale(1.04)" : "scale(1)",
+                        boxShadow: hovered
+                            ? "0 8px 28px rgba(31,58,45,0.12)"
+                            : "0 2px 12px rgba(31,58,45,0.06)",
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: "50%",
+                            background: hovered ? "rgba(31,58,45,0.08)" : "rgba(31,58,45,0.04)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "all 0.3s ease",
+                        }}
+                    >
+                        <Camera
+                            size={20}
+                            color={hovered ? GREEN : "rgba(31,58,45,0.35)"}
+                            style={{ transition: "color 0.3s ease" }}
+                        />
+                    </div>
+                    <span
+                        style={{
+                            fontFamily: "var(--font-mono, monospace)",
+                            fontSize: "0.55rem",
+                            color: hovered ? GREEN : "rgba(31,58,45,0.4)",
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            fontWeight: 600,
+                            transition: "color 0.3s ease",
+                        }}
+                    >
+                        Add Photo
+                    </span>
+                </button>
+            )}
+            <span
+                style={{
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: "0.6rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.25em",
+                    color: "rgba(31,58,45,0.5)",
+                    fontWeight: 700,
+                }}
+            >
+                {label}
+            </span>
+            <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+            />
         </div>
     );
 }

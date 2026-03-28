@@ -4,12 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Clock, Shield, CheckCircle2, Home, Phone, Mail, AlertCircle,
-    CreditCard, CalendarClock, FileText, RefreshCw, ChevronDown, ChevronUp,
+    CreditCard, CalendarClock, FileText, RefreshCw, ChevronDown, ChevronUp, Printer,
 } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth, type AuthUser } from "@/context/AuthContext";
 import { useSocket } from "@/hooks/useSocket";
 import { apiFetch } from "@/lib/api";
+import { printReceipt } from "@/utils/printReceipt";
 import { containerVariants, itemVariants } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
@@ -235,6 +236,36 @@ function PaymentCard({ payment, hasAdvance }: { payment: PaymentRecord; hasAdvan
                 {payment.dueDate && payment.status === "upcoming" && (
                     <MetaItem label="Due By" value={fmtDate(payment.dueDate)} />
                 )}
+            </div>
+
+            {/* Print Receipt Button */}
+            <div style={{ padding: "0 20px 14px" }}>
+                <button
+                    onClick={() => printReceipt({
+                        type: "payment",
+                        amount: payment.amount,
+                        transactionId: payment.transactionId,
+                        date: payment.createdAt,
+                        status: payment.status,
+                        paymentId: payment.paymentId,
+                        paymentMode: payment.paymentMode,
+                        installmentNumber: payment.installmentNumber,
+                        breakdown: b as Record<string, any> || undefined,
+                        depositCredited: payment.depositCredited,
+                    })}
+                    style={{
+                        padding: "6px 14px", borderRadius: 8,
+                        border: "1.5px solid rgba(31,58,45,0.15)",
+                        background: "rgba(31,58,45,0.03)",
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontSize: "0.6rem", fontWeight: 600,
+                        color: GREEN, cursor: "pointer",
+                        display: "inline-flex", alignItems: "center", gap: 6,
+                        textTransform: "uppercase", letterSpacing: "0.1em",
+                    }}
+                >
+                    <Printer size={12} /> Print Receipt
+                </button>
             </div>
 
             {/* Deposit credit banner */}

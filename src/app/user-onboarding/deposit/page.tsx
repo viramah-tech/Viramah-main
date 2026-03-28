@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CreditCard, Camera, Upload, Check, X, AlertCircle,
-  Shield, Clock, Banknote, ChevronDown, ChevronUp, RefreshCw,
+  Shield, Clock, Banknote, ChevronDown, ChevronUp, RefreshCw, Trash2, Loader2
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { uploadFile } from "@/lib/uploadFile";
+import { uploadFile, deleteUploadedFile } from "@/lib/uploadFile";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { usePricingConfig } from "@/hooks/usePricingConfig";
 import {
@@ -42,14 +42,16 @@ interface PreviewData {
 // ── ReceiptUpload ─────────────────────────────────────────────────────────────
 
 function ReceiptUpload({
-  file, onUpload, onRemove,
+  file, onUpload, onRemove, onDeleteFromServer
 }: {
   file: { name: string; preview: string } | null;
   onUpload: (f: { name: string; preview: string }) => void;
   onRemove: () => void;
+  onDeleteFromServer?: (fileUrl: string) => Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [hovered, setHovered] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -60,6 +62,22 @@ function ReceiptUpload({
     }
   };
 
+  const isServerFile = file?.preview && !file.preview.startsWith("data:");
+
+  const handleRemove = async () => {
+    if (isServerFile && onDeleteFromServer && file) {
+      setDeleting(true);
+      try {
+        await onDeleteFromServer(file.preview);
+      } catch (err) {
+        console.error("Failed to delete from server:", err);
+      } finally {
+        setDeleting(false);
+      }
+    }
+    onRemove();
+  };
+
   return (
     <div>
       <FieldLabel>Payment Receipt / Screenshot</FieldLabel>
@@ -68,10 +86,18 @@ function ReceiptUpload({
           <div style={{ position: "relative", maxWidth: 300, borderRadius: 12, overflow: "hidden", border: `2px solid ${GREEN}` }}>
             <img src={file.preview} alt="Receipt" style={{ width: "100%", height: "auto", display: "block" }} />
             <button
-              onClick={onRemove}
-              style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.95)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
+              onClick={handleRemove}
+              disabled={deleting}
+              title={isServerFile ? "Delete from server" : "Remove"}
+              style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: isServerFile ? "rgba(192,57,43,0.95)" : "rgba(255,255,255,0.95)", border: "none", cursor: deleting ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
             >
-              <X size={14} color={GREEN} />
+              {deleting ? (
+                <Loader2 size={14} color="#fff" style={{ animation: "spin 1s linear infinite" }} />
+              ) : isServerFile ? (
+                <Trash2 size={13} color="#fff" />
+              ) : (
+                <X size={14} color={GREEN} />
+              )}
             </button>
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(31,58,45,0.85)", backdropFilter: "blur(8px)", padding: "6px 12px", display: "flex", alignItems: "center", gap: 6 }}>
               <Check size={12} color={GOLD} />
@@ -101,6 +127,7 @@ function ReceiptUpload({
         )}
       </div>
       <input ref={inputRef} type="file" accept="image/*,.pdf" onChange={handleFileChange} style={{ display: "none" }} />
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -547,7 +574,7 @@ export default function DepositPage() {
 
                 <div style={{ height: 1, background: "rgba(31,58,45,0.08)" }} />
 
-                <ReceiptUpload file={receipt} onUpload={setReceipt} onRemove={() => setReceipt(null)} />
+                <ReceiptUpload file={receipt} onUpload={setReceipt} onRemove={() => setReceipt(null)} onDeleteFromServer={deleteUploadedFile} />
                 {attempted && errors.receipt && <FieldError>{errors.receipt}</FieldError>}
               </FormCard>
             </div>

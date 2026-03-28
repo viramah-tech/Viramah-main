@@ -118,14 +118,7 @@ function ConsentCheckbox({
     onChange: (v: boolean) => void;
     scrollPct: number;
 }) {
-    const [warnShown, setWarnShown] = useState(false);
-    const hasScrolledEnough = scrollPct >= 80;
-
     const handleChange = () => {
-        if (!hasScrolledEnough && !checked) {
-            setWarnShown(true);
-            setTimeout(() => setWarnShown(false), 3000);
-        }
         onChange(!checked);
     };
 
@@ -148,18 +141,6 @@ function ConsentCheckbox({
                 </div>
                 <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", color: "rgba(31,58,45,0.8)", lineHeight: 1.5 }}>{label}</span>
             </div>
-            {warnShown && (
-                <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "rgba(217,119,6,0.08)", borderRadius: 6, border: "1px solid rgba(217,119,6,0.2)" }}
-                >
-                    <AlertTriangle size={12} color="#d97706" />
-                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "#92400e" }}>
-                        Please scroll through the document before accepting — you can still check this.
-                    </span>
-                </motion.div>
-            )}
         </div>
     );
 }

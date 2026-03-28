@@ -55,3 +55,29 @@ export async function uploadFile(
 
     return data.data.url;
 }
+
+/**
+ * Delete an uploaded file from S3 and clear DB references.
+ * @param fileUrl - The full S3 URL of the file to delete
+ */
+export async function deleteUploadedFile(fileUrl: string): Promise<void> {
+    const token =
+        typeof window !== "undefined"
+            ? localStorage.getItem("viramah_token")
+            : null;
+
+    const res = await fetch(`${API_BASE}/api/public/upload/file`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ fileUrl }),
+        credentials: "include",
+    });
+
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message || `Delete failed (${res.status})`);
+    }
+}

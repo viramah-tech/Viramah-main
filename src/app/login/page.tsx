@@ -89,6 +89,18 @@ export default function LoginPage() {
             }
         }
 
+        const anyU = u as any;
+        const hasAcceptedTerms = anyU.agreements?.termsAccepted;
+        if (!hasAcceptedTerms) return "/user-onboarding/terms";
+
+        const hasStep1 = !!(anyU.documents?.idProof || (anyU.gender && anyU.address));
+        const hasStep2 = !!anyU.emergencyContact?.name;
+        const hasStep3 = !!anyU.selectedRoomType;
+
+        if (hasStep1 && hasStep2 && hasStep3) return "/user-onboarding/step-4";
+        if (hasStep1 && hasStep2) return "/user-onboarding/step-3";
+        if (hasStep1) return "/user-onboarding/step-2";
+
         return "/user-onboarding/step-1";
     };
 

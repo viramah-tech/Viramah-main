@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Clock, CheckCircle, XCircle, AlertCircle, RefreshCw,
-    ArrowRight, RotateCcw, Shield, X,
+    ArrowRight, RotateCcw, Shield, X, Printer,
 } from "lucide-react";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
 import BookingTimeline from "@/components/BookingTimeline";
 import { getDaysHoursRemaining } from "@/utils/deadlineUtils";
 import { apiFetch } from "@/lib/api";
+import { printReceipt } from "@/utils/printReceipt";
 import { containerVariants, itemVariants } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
@@ -443,6 +444,38 @@ export default function DepositStatusPage() {
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.57rem", color: "rgba(31,58,45,0.3)", marginTop: 6 }}>
                         Status auto-refreshes every 30 seconds
                     </p>
+                </motion.div>
+
+                {/* Print Receipt Button */}
+                <motion.div variants={itemVariants} style={{ textAlign: "center" }}>
+                    <button
+                        onClick={() => printReceipt({
+                            type: "deposit",
+                            amount: hold.totalPaidAtDeposit || hold.depositAmount || 15000,
+                            transactionId: (hold as any).depositTransactionId,
+                            date: hold.depositPaidAt || hold.createdAt,
+                            status: hold.status,
+                            paymentId: hold._id,
+                            paymentMode: (hold as any).paymentMode,
+                            roomType: (hold as any).roomTypeId?.name || (hold as any).roomTypeId?.displayName,
+                            depositAmount: hold.depositAmount,
+                            registrationFee: (hold as any).registrationFeePaid,
+                            advanceAmount: holdAdvance,
+                            totalPaidAtDeposit: hold.totalPaidAtDeposit,
+                        })}
+                        style={{
+                            padding: "10px 20px", borderRadius: 10,
+                            border: "1.5px solid rgba(31,58,45,0.18)",
+                            background: "rgba(31,58,45,0.04)",
+                            fontFamily: "var(--font-mono, monospace)",
+                            fontSize: "0.65rem", fontWeight: 700,
+                            color: GREEN, cursor: "pointer",
+                            display: "inline-flex", alignItems: "center", gap: 8,
+                            textTransform: "uppercase", letterSpacing: "0.12em",
+                        }}
+                    >
+                        <Printer size={14} /> Print Deposit Receipt
+                    </button>
                 </motion.div>
 
                 {/* Policy Reminder */}

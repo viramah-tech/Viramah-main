@@ -595,6 +595,22 @@ export default function Step3Page() {
                         <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "rgba(31,58,45,0.5)" }}>
                             Enhance your stay with optional services
                         </p>
+                        <div style={{
+                            marginTop: 14,
+                            padding: "10px 14px",
+                            background: "rgba(245, 158, 11, 0.08)",
+                            border: "1px solid rgba(245, 158, 11, 0.25)",
+                            borderRadius: 8,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                            textAlign: "left"
+                        }}>
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", fontWeight: 700, color: "#92400e", letterSpacing: "0.02em", lineHeight: 1.4 }}>
+                                ONLY SELECT FOR YEARLY PAYMENT OF ADD-ONS.<br />
+                                FOR MONTHLY PAYMENTS, PLEASE USE YOUR DASHBOARD.
+                            </span>
+                        </div>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                         <AddOnCard
