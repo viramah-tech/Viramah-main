@@ -1,0 +1,240 @@
+/* ====================================================================
+   Onboarding Stepper – Mobile-First Responsive Styles
+   ==================================================================== */
+
+/* ── Header inner container ── */
+.onboarding-header-inner {
+  padding: 0 14px;
+}
+
+@media (min-width: 640px) {
+  .onboarding-header-inner {
+    padding: 0 24px;
+  }
+}
+
+/* ── Main content area ── */
+.onboarding-main-content {
+  padding: 140px 16px 90px;
+}
+
+.onboarding-main-content[data-postflow="true"] {
+  padding: 80px 16px 90px;
+}
+
+@media (min-width: 640px) {
+  .onboarding-main-content {
+    padding: 170px 24px 100px;
+  }
+  .onboarding-main-content[data-postflow="true"] {
+    padding: 80px 24px 100px;
+  }
+}
+
+@media (min-width: 768px) {
+  .onboarding-main-content {
+    padding: 180px 24px 100px;
+  }
+}
+
+/* ====================================================================
+   COMPACT STEPPER (scrolled / collapsed header)
+   ==================================================================== */
+
+.compact-stepper-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+@media (min-width: 640px) {
+  .compact-stepper-row {
+    gap: 2px;
+  }
+}
+
+/* Compact step circle */
+.compact-step-circle {
+  width: 22px;
+  height: 22px;
+  font-size: 0.55rem;
+}
+
+@media (min-width: 640px) {
+  .compact-step-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 0.65rem;
+  }
+}
+
+/* Compact connector between circles */
+.compact-step-connector {
+  width: 8px;
+  margin: 0 2px;
+}
+
+@media (min-width: 640px) {
+  .compact-step-connector {
+    width: 16px;
+    margin: 0 4px;
+  }
+}
+
+/* ====================================================================
+   EXPANDED STEPPER (full visible header)
+   ==================================================================== */
+
+.expanded-stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+/* Track background line */
+.expanded-stepper-track {
+  position: absolute;
+  top: 13px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(31, 58, 45, 0.1);
+  z-index: 0;
+}
+
+@media (min-width: 640px) {
+  .expanded-stepper-track {
+    top: 16px;
+  }
+}
+
+/* Track fill line (animated) */
+.expanded-stepper-track-fill {
+  position: absolute;
+  top: 13px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #1f3a2d, #d8b56a);
+  z-index: 0;
+}
+
+@media (min-width: 640px) {
+  .expanded-stepper-track-fill {
+    top: 16px;
+  }
+}
+
+/* Each step item container */
+.expanded-step-item {
+  min-width: 0; /* allow flex shrink */
+}
+
+/* Background mask behind the circle (covers the track line) */
+.expanded-step-mask {
+  position: absolute;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f6f4ef;
+}
+
+@media (min-width: 640px) {
+  .expanded-step-mask {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Step circle */
+.expanded-step-circle {
+  width: 26px;
+  height: 26px;
+}
+
+@media (min-width: 640px) {
+  .expanded-step-circle {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Check icon inside completed circle */
+.expanded-step-check-icon {
+  width: 11px;
+  height: 11px;
+}
+
+@media (min-width: 640px) {
+  .expanded-step-check-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Step number text */
+.expanded-step-number {
+  font-size: 0.55rem;
+}
+
+@media (min-width: 640px) {
+  .expanded-step-number {
+    font-size: 0.65rem;
+  }
+}
+
+/* Label text (e.g. "Agreements", "Identity") */
+.expanded-step-label {
+  font-size: 0.55rem;
+  max-width: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 480px) {
+  .expanded-step-label {
+    font-size: 0.6rem;
+    max-width: 60px;
+  }
+}
+
+@media (min-width: 640px) {
+  .expanded-step-label {
+    font-size: 0.7rem;
+    max-width: none;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+  }
+}
+
+/* Description text (e.g. "Terms & Policies") – hidden on mobile */
+.expanded-step-desc {
+  display: none !important;
+  font-size: 0.55rem;
+}
+
+@media (min-width: 640px) {
+  .expanded-step-desc {
+    display: block !important;
+  }
+}
+
+/* Label wrap container */
+.expanded-step-label-wrap {
+  max-width: 52px;
+}
+
+@media (min-width: 480px) {
+  .expanded-step-label-wrap {
+    max-width: 65px;
+  }
+}
+
+@media (min-width: 640px) {
+  .expanded-step-label-wrap {
+    max-width: none;
+  }
+}

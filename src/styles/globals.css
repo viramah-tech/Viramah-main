@@ -12,6 +12,7 @@
 @import "./testimonials-section.css";
 @import "./footer-section.css";
 @import "./privacy-page.css";
+@import "./onboarding-stepper.css";
 
 @theme {
   --font-display: var(--font-display), "DM Serif Display", serif;

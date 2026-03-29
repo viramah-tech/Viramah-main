@@ -32,21 +32,19 @@ function getStepFromPath(pathname: string): number {
 // Compact stepper for scrolled state
 function CompactStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; currentStep: number }) {
     return (
-        <div className="flex items-center gap-2">
+        <div className="compact-stepper-row">
             {steps.map((step, index) => {
                 const isCompleted = step.id < currentStep;
                 const isActive = step.id === currentStep;
                 return (
                     <div key={step.id} className="flex items-center">
                         <div
+                            className="compact-step-circle"
                             style={{
-                                width: 28,
-                                height: 28,
                                 borderRadius: "50%",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: "0.65rem",
                                 fontFamily: "var(--font-mono, monospace)",
                                 fontWeight: 700,
                                 transition: "all 0.3s",
@@ -63,14 +61,13 @@ function CompactStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; c
                                 color: isCompleted ? "#D8B56A" : isActive ? "#1F3A2D" : "rgba(31,58,45,0.3)",
                             }}
                         >
-                            {isCompleted ? <Check size={12} strokeWidth={2.5} /> : step.id}
+                            {isCompleted ? <Check size={10} strokeWidth={2.5} /> : step.id}
                         </div>
                         {index < steps.length - 1 && (
                             <div
+                                className="compact-step-connector"
                                 style={{
-                                    width: 16,
                                     height: 2,
-                                    margin: "0 4px",
                                     background: isCompleted ? "#1F3A2D" : "rgba(31,58,45,0.12)",
                                     transition: "background 0.3s",
                                 }}
@@ -99,30 +96,13 @@ function CompactStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; c
 // Full expanded stepper
 function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; currentStep: number }) {
     return (
-        <div className="w-full">
-            <div className="flex items-center justify-between relative">
+        <div className="w-full expanded-stepper">
+            <div className="expanded-stepper-row">
                 {/* Track background */}
-                <div
-                    style={{
-                        position: "absolute",
-                        top: 16,
-                        left: 0,
-                        right: 0,
-                        height: 2,
-                        background: "rgba(31,58,45,0.1)",
-                        zIndex: 0,
-                    }}
-                />
+                <div className="expanded-stepper-track" />
                 {/* Track fill */}
                 <motion.div
-                    style={{
-                        position: "absolute",
-                        top: 16,
-                        left: 0,
-                        height: 2,
-                        background: "linear-gradient(90deg, #1F3A2D, #D8B56A)",
-                        zIndex: 0,
-                    }}
+                    className="expanded-stepper-track-fill"
                     initial={{ width: "0%" }}
                     animate={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
                     transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
@@ -133,23 +113,13 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                     const isActive = step.id === currentStep;
 
                     return (
-                        <div key={step.id} className="flex flex-col items-center relative z-10">
+                        <div key={step.id} className="flex flex-col items-center relative z-10 expanded-step-item">
                             {/* BG mask */}
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: "50%",
-                                    background: "#F6F4EF",
-                                }}
-                            />
+                            <div className="expanded-step-mask" />
                             <motion.div
+                                className="expanded-step-circle"
                                 style={{
                                     position: "relative",
-                                    width: 32,
-                                    height: 32,
                                     borderRadius: "50%",
                                     display: "flex",
                                     alignItems: "center",
@@ -166,7 +136,7 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                                             ? "#fff"
                                             : "#F6F4EF",
                                     boxShadow: isActive
-                                        ? "0 0 0 4px rgba(31,58,45,0.1), 0 4px 12px rgba(31,58,45,0.15)"
+                                        ? "0 0 0 3px rgba(31,58,45,0.1), 0 3px 10px rgba(31,58,45,0.15)"
                                         : "none",
                                     transition: "all 0.3s",
                                 }}
@@ -175,12 +145,12 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                             >
                                 {isCompleted ? (
-                                    <Check size={14} color="#D8B56A" strokeWidth={2.5} />
+                                    <Check className="expanded-step-check-icon" color="#D8B56A" strokeWidth={2.5} />
                                 ) : (
                                     <span
+                                        className="expanded-step-number"
                                         style={{
                                             fontFamily: "var(--font-mono, monospace)",
-                                            fontSize: "0.65rem",
                                             fontWeight: 700,
                                             color: isActive ? "#1F3A2D" : "rgba(31,58,45,0.3)",
                                         }}
@@ -190,11 +160,11 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                                 )}
                             </motion.div>
 
-                            <div className="mt-2 text-center">
+                            <div className="mt-1 sm:mt-2 text-center expanded-step-label-wrap">
                                 <span
+                                    className="expanded-step-label"
                                     style={{
                                         fontFamily: "var(--font-body, sans-serif)",
-                                        fontSize: "0.7rem",
                                         fontWeight: 600,
                                         display: "block",
                                         color: isActive
@@ -207,9 +177,9 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                                     {step.label}
                                 </span>
                                 <span
+                                    className="expanded-step-desc"
                                     style={{
                                         fontFamily: "var(--font-mono, monospace)",
-                                        fontSize: "0.55rem",
                                         color: "rgba(31,58,45,0.35)",
                                         display: "block",
                                     }}
@@ -445,7 +415,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
             >
-                <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
+                <div style={{ maxWidth: 900, margin: "0 auto" }} className="onboarding-header-inner">
                     <div className="flex items-center justify-between relative">
                         {/* Back link */}
                         <Link
@@ -544,7 +514,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
             </motion.header>
 
             {/* Main Content */}
-            <main style={{ maxWidth: 760, margin: "0 auto", padding: `${isPostFlow ? 80 : 180}px 24px 100px` }}>
+            <main className="onboarding-main-content" style={{ maxWidth: 760, margin: "0 auto" }} data-postflow={isPostFlow ? "true" : "false"}>
                 {children}
             </main>
 
