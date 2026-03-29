@@ -77,15 +77,7 @@ function CompactStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; c
                 );
             })}
             <span
-                style={{
-                    marginLeft: 10,
-                    fontFamily: "var(--font-mono, monospace)",
-                    fontSize: "0.65rem",
-                    color: "#1F3A2D",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.15em",
-                }}
-                className="hidden sm:block"
+                className="ml-1 sm:ml-2.5 text-[0.6rem] sm:text-[0.65rem] tracking-widest uppercase font-mono text-[#1F3A2D] truncate max-w-[80px] sm:max-w-none"
             >
                 {steps.find((s) => s.id === currentStep)?.label}
             </span>
@@ -206,9 +198,9 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                                 )}
                             </motion.div>
 
-                            <div style={{ marginTop: 8, textAlign: "center" }} className="px-0 sm:px-1">
+                            <div className="mt-2 text-center px-0 sm:px-1">
                                 <span
-                                    className="text-[0.55rem] tracking-tighter sm:text-[0.7rem] sm:tracking-normal whitespace-normal sm:whitespace-nowrap leading-tight"
+                                    className="text-[9px] sm:text-[11px] md:text-[12px] whitespace-normal sm:whitespace-nowrap leading-[1.1] sm:leading-tight break-words"
                                     style={{
                                         fontFamily: "var(--font-body, sans-serif)",
                                         fontWeight: 600,
@@ -587,24 +579,22 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 }}
             >
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <Lock size={11} color="rgba(31,58,45,0.4)" />
+                    <Lock size={11} className="w-2.5 sm:w-3 h-2.5 sm:h-3" color="rgba(31,58,45,0.4)" />
                     <span
+                        className="text-[9px] sm:text-[10px] tracking-tight sm:tracking-widest"
                         style={{
                             fontFamily: "var(--font-mono, monospace)",
-                            fontSize: "0.6rem",
                             color: "rgba(31,58,45,0.4)",
-                            letterSpacing: "0.05em",
                         }}
                     >
                         Your data is encrypted and secure
                     </span>
                 </div>
                 <span
+                    className="text-[9px] sm:text-[10px] tracking-tight sm:tracking-[0.1em] whitespace-nowrap ml-2"
                     style={{
                         fontFamily: "var(--font-mono, monospace)",
-                        fontSize: "0.6rem",
                         color: "rgba(31,58,45,0.4)",
-                        letterSpacing: "0.1em",
                     }}
                 >
                     {isPostFlow ? "Booking Submitted" : `Step ${currentStep} of 6`}
