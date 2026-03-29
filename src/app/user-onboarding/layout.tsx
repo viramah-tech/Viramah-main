@@ -200,11 +200,10 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
 
                             <div className="mt-2 text-center px-0 sm:px-1">
                                 <span
-                                    className="text-[9px] sm:text-[11px] md:text-[12px] whitespace-normal sm:whitespace-nowrap leading-[1.1] sm:leading-tight break-words"
+                                    className="block text-[9px] sm:text-[11px] md:text-[12px] whitespace-normal sm:whitespace-nowrap leading-[1.1] sm:leading-tight break-words"
                                     style={{
                                         fontFamily: "var(--font-body, sans-serif)",
                                         fontWeight: 600,
-                                        display: "block",
                                         color: isActive
                                             ? "#1F3A2D"
                                             : isCompleted
@@ -215,12 +214,11 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                                     {step.label}
                                 </span>
                                 <span
-                                    className="hidden sm:block"
+                                    className="hidden sm:block mt-0.5"
                                     style={{
                                         fontFamily: "var(--font-mono, monospace)",
                                         fontSize: "0.55rem",
                                         color: "rgba(31,58,45,0.35)",
-                                        display: "block",
                                         whiteSpace: "nowrap",
                                     }}
                                 >
