@@ -4,7 +4,7 @@ export const PAYMENT_CONFIG = {
     accountNo: "5020 0095 7498 1623",
     ifsc: "HDFC0001234",
     bank: "HDFC Bank",
-    upiId: "viramah@hdfcbank"
+    upiId: "kvinfrabuildcon@idbi"
   },
   QR_CODE_IMAGE_PATH: "/kvinfra qr code.png"
 };
