@@ -39,6 +39,7 @@ export interface Step2Data {
 
 export interface SelectedRoom {
     id: string;
+    backendId?: string;
     title: string;
     type: string;
     price: number;
@@ -259,9 +260,9 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                     };
                 }>("/api/public/onboarding/status");
 
-                let fetchedRooms: { name: string; basePrice?: number; discountedPrice?: number; pricing?: { discounted: number } }[] = [];
+                let fetchedRooms: { _id: string; name: string; basePrice?: number; discountedPrice?: number; pricing?: { discounted: number } }[] = [];
                 try {
-                    const roomsRes = await apiFetch<{ data: { roomTypes: { name: string; basePrice?: number; discountedPrice?: number; pricing?: { discounted: number } }[] } }>("/api/public/rooms");
+                    const roomsRes = await apiFetch<{ data: { roomTypes: { _id: string; name: string; basePrice?: number; discountedPrice?: number; pricing?: { discounted: number } }[] } }>("/api/public/rooms");
                     fetchedRooms = roomsRes.data.roomTypes || [];
                 } catch (e) {
                     console.error("Failed to fetch rooms during hydration:", e);
@@ -364,6 +365,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                             const frontendId = REVERSE_ROOM_MAP[d.selectedRoomType] || d.selectedRoomType.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                             const roomInfo = {
                                 id: frontendId,
+                                backendId: backendRoom?._id,
                                 title: backendRoom?.name || d.selectedRoomType,
                                 type: backendRoom?.name || d.selectedRoomType,
                                 priceLabel: `₹${discPrice.toLocaleString()}`,
@@ -372,6 +374,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                                 ...prev.step3,
                                 selectedRoom: {
                                     id: roomInfo.id,
+                                    backendId: roomInfo.backendId,
                                     title: roomInfo.title,
                                     type: roomInfo.type,
                                     price: discPrice,

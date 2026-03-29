@@ -13,18 +13,11 @@ import { useOnboarding } from "@/context/OnboardingContext";
 import { apiFetch } from "@/lib/api";
 import { usePricingConfig } from "@/hooks/usePricingConfig";
 import { ROOMS as STATIC_ROOMS, type RoomType } from "@/data/rooms";
+import { ROOM_TYPE_MAP } from "@/config/paymentConfig";
 import {
     NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
     containerVariants, itemVariants,
 } from "@/components/onboarding/FormComponents";
-
-// Map frontend room IDs to backend RoomType.name values (must match DB exactly)
-const ROOM_TYPE_MAP: Record<string, string> = {
-    "nexus-plus": "NEXUS",
-    "collective-plus": "COLLECTIVE",
-    "axis": "AXIS",
-    "studio": "AXIS+",
-};
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -457,6 +450,7 @@ export default function Step3Page() {
                             const discPrice = beRoom.pricing?.discounted ?? beRoom.discountedPrice ?? staticRoom.price;
                             return {
                                 ...staticRoom,
+                                backendId: beRoom._id,
                                 price: discPrice,
                                 priceLabel: `₹${discPrice.toLocaleString()}`,
                                 originalPrice: `₹${origPrice.toLocaleString()}`,
@@ -483,6 +477,7 @@ export default function Step3Page() {
         updateStep3({
             selectedRoom: {
                 id: room.id,
+                backendId: room.backendId,
                 title: room.title,
                 type: room.type,
                 price: room.price,

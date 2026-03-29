@@ -3,6 +3,7 @@
 
 export interface RoomType {
     id: string;
+    backendId?: string;
     title: string;
     type: string;
     price: number;

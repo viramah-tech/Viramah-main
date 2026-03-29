@@ -18,6 +18,7 @@ import {
     StepBadge, StepTitle, StepSubtitle, FormCard,
     containerVariants, itemVariants,
 } from "@/components/onboarding/FormComponents";
+import { PAYMENT_CONFIG, ROOM_TYPE_MAP } from "@/config/paymentConfig";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -116,6 +117,14 @@ function ScreenshotUpload({
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0];
         if (f) {
+            if (f.size > 5 * 1024 * 1024) {
+                alert("File size must be less than 5MB");
+                return;
+            }
+            if (!["image/jpeg", "image/png", "application/pdf"].includes(f.type)) {
+                alert("Only JPG, PNG, and PDF formats are supported");
+                return;
+            }
             const reader = new FileReader();
             reader.onload = () => onUpload({ name: f.name, preview: reader.result as string });
             reader.readAsDataURL(f);
@@ -488,14 +497,6 @@ export default function ConfirmPage() {
     // Resolved MongoDB ObjectId for the selected room (looked up once on mount)
     const [resolvedRoomTypeId, setResolvedRoomTypeId] = useState<string | null>(null);
 
-    // Map frontend room IDs to backend RoomType.name values (mirrors step-3)
-    const ROOM_TYPE_MAP: Record<string, string> = {
-        "nexus-plus": "NEXUS",
-        "collective-plus": "COLLECTIVE",
-        "axis": "AXIS",
-        "studio": "AXIS+",
-    };
-
 
     // Access guard + hold detection (combined to avoid race conditions).
     // If user has an active deposit hold, they're returning to complete payment
@@ -552,28 +553,33 @@ export default function ConfirmPage() {
 
     // Fetch live price preview whenever paymentMode or referralCode changes
     const fetchPreview = useCallback(async (mode: "full" | "half", code?: string) => {
-        // step3.selectedRoom.id is a frontend string like 'nexus-plus', NOT a MongoDB _id.
-        // We need to resolve the real ObjectId from the backend rooms list.
         let roomTypeId = resolvedRoomTypeId;
         if (!roomTypeId) {
+            const backendIdFromState = (step3.selectedRoom as Record<string, any>)?.backendId;
             const frontendId = (step3.selectedRoom as Record<string, any>)?.id;
-            if (!frontendId) { setPreviewError(true); return; }
-            const backendName = ROOM_TYPE_MAP[frontendId];
-            if (!backendName) { setPreviewError(true); return; }
-            try {
-                const roomsRes = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string }> } }>("/api/public/rooms");
-                const match = roomsRes.data.roomTypes.find((r) => r.name === backendName);
-                if (!match) { setPreviewError(true); return; }
-                roomTypeId = match._id;
-                setResolvedRoomTypeId(match._id);
-            } catch {
-                setPreviewError(true); return;
+            
+            if (backendIdFromState) {
+                roomTypeId = backendIdFromState;
+                setResolvedRoomTypeId(backendIdFromState);
+            } else {
+                if (!frontendId) { setPreviewError(true); return; }
+                const backendName = ROOM_TYPE_MAP[frontendId];
+                if (!backendName) { setPreviewError(true); return; }
+                try {
+                    const roomsRes = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string }> } }>("/api/public/rooms");
+                    const match = roomsRes.data.roomTypes.find((r) => r.name === backendName);
+                    if (!match) { setPreviewError(true); return; }
+                    roomTypeId = match._id;
+                    setResolvedRoomTypeId(match._id);
+                } catch {
+                    setPreviewError(true); return;
+                }
             }
         }
         setPreviewLoading(true);
         setPreviewError(false);
         try {
-            const params = new URLSearchParams({ roomTypeId, paymentMode: mode });
+            const params = new URLSearchParams({ roomTypeId: roomTypeId as string, paymentMode: mode });
             if (code) params.set("referralCode", code);
             // Pass add-on selections so pricing includes transport/mess fees
             const transportEnabled = step3.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "transport")?.enabled;
@@ -612,8 +618,11 @@ export default function ConfirmPage() {
     const validate = (): boolean => {
         const errs: Record<string, string> = {};
         if (!payment.method) errs.method = "Please select a payment method";
-        if (!payment.transactionId.trim()) errs.transactionId = "Transaction ID is required";
-        else if (payment.transactionId.trim().length < 4) errs.transactionId = "Transaction ID must be at least 4 characters";
+        if (!payment.transactionId.trim()) {
+            errs.transactionId = "Transaction ID is required";
+        } else if (!/^[0-9A-Za-z]{10,22}$/.test(payment.transactionId.trim())) {
+            errs.transactionId = "Must be a valid 10-22 character alphanumeric reference";
+        }
         if (!payment.screenshot) errs.screenshot = "Payment screenshot is required";
         setErrors(errs);
         return Object.keys(errs).length === 0;
@@ -879,13 +888,25 @@ export default function ConfirmPage() {
                     {/* Bank Details */}
                     <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: "14px 16px", marginTop: 8 }}>
                         <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.8rem", fontWeight: 700, color: GREEN, margin: "0 0 10px" }}>Transfer to:</p>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                            {[["Account Name", "VIRAMAH Student Living Pvt Ltd"], ["Account No", "5020 0095 7498 1623"], ["IFSC", "HDFC0001234"], ["Bank", "HDFC Bank"], ["UPI ID", "viramah@hdfcbank"]].map(([label, val]) => (
-                                <div key={label} style={{ display: "flex", gap: 8 }}>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.4)", minWidth: 90 }}>{label}:</span>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", fontWeight: 700, color: GREEN }}>{val}</span>
-                                </div>
-                            ))}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 5, flex: 1, minWidth: 200 }}>
+                                {[
+                                    ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName], 
+                                    ["Account No", PAYMENT_CONFIG.BANK_DETAILS.accountNo], 
+                                    ["IFSC", PAYMENT_CONFIG.BANK_DETAILS.ifsc], 
+                                    ["Bank", PAYMENT_CONFIG.BANK_DETAILS.bank], 
+                                    ["UPI ID", PAYMENT_CONFIG.BANK_DETAILS.upiId]
+                                ].map(([label, val]) => (
+                                    <div key={label} style={{ display: "flex", gap: 8 }}>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.4)", minWidth: 90 }}>{label}:</span>
+                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", fontWeight: 700, color: GREEN }}>{val}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ textAlign: "center" }}>
+                                <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 100, height: 100, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
+                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.5rem", marginTop: 4, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
+                            </div>
                         </div>
                     </div>
                 </FormCard>

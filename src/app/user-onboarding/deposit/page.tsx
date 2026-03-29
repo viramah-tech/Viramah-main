@@ -16,6 +16,7 @@ import {
   StepBadge, StepTitle, StepSubtitle, FormCard,
   containerVariants, itemVariants,
 } from "@/components/onboarding/FormComponents";
+import { PAYMENT_CONFIG, ROOM_TYPE_MAP } from "@/config/paymentConfig";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -271,14 +272,7 @@ export default function DepositPage() {
   const depositAmount = pricingConfig.securityDeposit;
   const roomTypeName = (state as Record<string, any>)?.step3?.selectedRoom?.title || "Your Selected Room";
   const frontendRoomId = (state as Record<string, any>)?.step3?.selectedRoom?.id;
-
-  // Map frontend room IDs to backend RoomType.name values
-  const ROOM_TYPE_MAP: Record<string, string> = {
-    "nexus-plus":     "NEXUS",
-    "collective-plus": "COLLECTIVE",
-    "axis":            "AXIS",
-    "studio":          "AXIS+",
-  };
+  const backendRoomIdFromState = (state as Record<string, any>)?.step3?.selectedRoom?.backendId;
 
   // Payment mode state — MUST be chosen before proceeding
   const [paymentMode, setPaymentMode] = useState<"full" | "half" | null>(null);
@@ -298,11 +292,12 @@ export default function DepositPage() {
 
   // Fetch price previews for both modes on mount
   const fetchPreviews = useCallback(async () => {
-    // Resolve real MongoDB _id from frontend room id
-    const backendName = frontendRoomId ? ROOM_TYPE_MAP[frontendRoomId] : null;
-    if (!backendName) return;
-    let roomTypeId = resolvedRoomTypeId;
+    // Resolve real MongoDB _id
+    let roomTypeId = backendRoomIdFromState || resolvedRoomTypeId;
+    
     if (!roomTypeId) {
+      const backendName = frontendRoomId ? ROOM_TYPE_MAP[frontendRoomId] : null;
+      if (!backendName) return;
       try {
         const roomsRes = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string }> } }>("/api/public/rooms");
         const match = roomsRes.data.roomTypes.find((r) => r.name === backendName);
@@ -310,7 +305,10 @@ export default function DepositPage() {
         roomTypeId = match._id;
         setResolvedRoomTypeId(match._id);
       } catch { return; }
+    } else {
+      setResolvedRoomTypeId(roomTypeId);
     }
+    
     setPreviewLoading(true);
     try {
       const [fullRes, halfRes] = await Promise.allSettled([
@@ -333,8 +331,11 @@ export default function DepositPage() {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!paymentMode) errs.mode = "Please select a payment plan to continue";
-    if (!transactionId.trim()) errs.transactionId = "Transaction / Reference ID is required";
-    else if (transactionId.trim().length < 4) errs.transactionId = "Must be at least 4 characters";
+    if (!transactionId.trim()) {
+      errs.transactionId = "Transaction / Reference ID is required";
+    } else if (!/^[0-9A-Za-z]{10,22}$/.test(transactionId.trim())) {
+      errs.transactionId = "Must be a valid 10-22 character alphanumeric reference";
+    }
     if (!receipt) errs.receipt = "Payment receipt is required";
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -538,19 +539,25 @@ export default function DepositPage() {
               <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, margin: "0 0 14px" }}>
                 Step 2 — Transfer {inr(depositAmount)} to:
               </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {[
-                  ["Account Name", "VIRAMAH Student Living Pvt Ltd"],
-                  ["Account No", "5020 0095 7498 1623"],
-                  ["IFSC", "HDFC0001234"],
-                  ["Bank", "HDFC Bank"],
-                  ["UPI ID", "viramah@hdfcbank"],
-                ].map(([label, val]) => (
-                  <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>
-                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.72rem", fontWeight: 700, color: GREEN }}>{val}</span>
-                  </div>
-                ))}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 200 }}>
+                  {[
+                    ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName],
+                    ["Account No", PAYMENT_CONFIG.BANK_DETAILS.accountNo],
+                    ["IFSC", PAYMENT_CONFIG.BANK_DETAILS.ifsc],
+                    ["Bank", PAYMENT_CONFIG.BANK_DETAILS.bank],
+                    ["UPI ID", PAYMENT_CONFIG.BANK_DETAILS.upiId],
+                  ].map(([label, val]) => (
+                    <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                      <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>
+                      <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.72rem", fontWeight: 700, color: GREEN }}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 120, height: 120, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
+                  <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", marginTop: 6, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
+                </div>
               </div>
             </FormCard>
 
