@@ -245,3 +245,76 @@
         height: 320px;
     }
 }
+
+/* ── PHONES (< 768px) ── */
+@media (max-width: 767px) {
+    .fs-section {
+        padding: 4.5rem 0;
+    }
+
+    .fs-grain {
+        display: none;
+    }
+
+    .fs-inner {
+        padding: 0 1.5rem;
+        gap: 2rem;
+    }
+
+    .fs-quote-icon {
+        font-size: 5rem;
+        margin-bottom: -2.5rem;
+    }
+
+    .fs-quote-text {
+        font-size: clamp(1.3rem, 5vw, 1.6rem);
+    }
+
+    .fs-image-wrap {
+        max-width: 100%;
+    }
+
+    .fs-image-inner {
+        height: 280px;
+    }
+
+    .fs-founder-name {
+        font-size: 1.2rem;
+    }
+
+    .fs-founder-title {
+        font-size: 0.6rem;
+        letter-spacing: 0.2em;
+    }
+}
+
+/* ── XS PHONES (< 375px) ── */
+@media (max-width: 374px) {
+    .fs-section {
+        padding: 3rem 0;
+    }
+
+    .fs-quote-text {
+        font-size: 1.15rem;
+    }
+
+    .fs-image-inner {
+        height: 220px;
+    }
+
+    .fs-rivet {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+/* ── PREFERS REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+    .fs-image {
+        transition: none !important;
+    }
+
+    .fs-about-link {
+        transition: none !important;
+    }
+}

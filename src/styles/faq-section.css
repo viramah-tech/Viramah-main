@@ -95,3 +95,72 @@
         gap: 3rem;
     }
 }
+
+/* ── PHONES (< 768px) ── */
+@media (max-width: 767px) {
+    .faq-section {
+        padding: 4rem 0;
+    }
+
+    .faq-title {
+        font-size: clamp(2rem, 7vw, 2.8rem);
+    }
+
+    .faq-subtitle {
+        font-size: 0.95rem;
+    }
+
+    .faq-question {
+        padding: 1.5rem 0;
+        font-size: 1rem;
+        gap: 1rem;
+        /* WCAG AA: min 44px touch target */
+        min-height: 44px;
+    }
+
+    .faq-answer-inner {
+        padding-bottom: 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    .faq-icon {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* ── XS PHONES (< 375px) ── */
+@media (max-width: 374px) {
+    .faq-section {
+        padding: 3rem 0;
+    }
+
+    .faq-title {
+        font-size: 1.8rem;
+    }
+
+    .faq-question {
+        font-size: 0.9rem;
+        padding: 1.25rem 0;
+    }
+
+    .faq-answer-inner {
+        font-size: 0.88rem;
+    }
+}
+
+/* ── PREFERS REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+    .faq-item {
+        transition: none !important;
+    }
+
+    .faq-icon {
+        transition: none !important;
+    }
+
+    .faq-answer {
+        transition: none !important;
+    }
+}

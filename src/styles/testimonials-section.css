@@ -110,3 +110,77 @@
         gap: 2rem;
     }
 }
+
+/* Disable grain on mobile — GPU compositor overhead */
+@media (max-width: 767px) {
+    .tm-grain {
+        display: none;
+    }
+
+    .tm-section {
+        padding: 4.5rem 0;
+    }
+
+    .tm-header {
+        margin-bottom: 3rem;
+    }
+
+    .tm-title {
+        font-size: clamp(2rem, 7vw, 3rem);
+    }
+
+    .tm-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .tm-quote-mark {
+        font-size: 3.5rem;
+        margin-bottom: -1rem;
+    }
+
+    .tm-text {
+        font-size: 1.05rem;
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* ── XS PHONES ── */
+@media (max-width: 374px) {
+    .tm-section {
+        padding: 3rem 0;
+    }
+
+    .tm-card {
+        padding: 1.5rem 1rem;
+    }
+
+    .tm-text {
+        font-size: 0.95rem;
+    }
+}
+
+/* ── HOVER ONLY ── */
+@media (hover: hover) and (pointer: fine) {
+    .tm-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: #D8B56A;
+        transform: translateY(-8px);
+    }
+}
+
+@media (hover: none) {
+    .tm-card {
+        cursor: default;
+    }
+
+    .tm-card:hover {
+        transform: none;
+    }
+}
+
+/* ── PREFERS REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+    .tm-card {
+        transition: none !important;
+    }
+}

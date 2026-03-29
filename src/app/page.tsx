@@ -11,15 +11,23 @@ import { FAQSection } from "@/components/sections/FAQSection";
 import { Metadata } from "next";
 import dynamic from "next/dynamic";
 
+// Skeleton placeholder for lazy-loaded sections (prevents CLS)
+const SectionSkeleton = () => (
+  <div className="w-full animate-pulse" style={{ minHeight: '400px' }}>
+    <div className="h-full bg-sand-dark/20 rounded-lg" />
+  </div>
+);
+
 // Dynamic imports for below-the-fold sections
-const CategoriesSection = dynamic(() => import("@/components/sections/CategoriesSection").then((mod) => mod.CategoriesSection), { ssr: true });
-const AmenitiesSection = dynamic(() => import("@/components/sections/AmenitiesSection").then((mod) => mod.AmenitiesSection), { ssr: true });
-const LifeAtViramahSection = dynamic(() => import("@/components/sections/LifeAtViramahSection").then((mod) => mod.LifeAtViramahSection), { ssr: true });
-const CommunitySection = dynamic(() => import("@/components/sections/CommunitySection").then((mod) => mod.CommunitySection), { ssr: true });
-const FoodSection = dynamic(() => import("@/components/sections/FoodSection").then((mod) => mod.FoodSection), { ssr: true });
-const FounderSection = dynamic(() => import("@/components/sections/FounderSection").then((mod) => mod.FounderSection), { ssr: true });
-const AudienceSection = dynamic(() => import("@/components/sections/AudienceSection").then((mod) => mod.AudienceSection), { ssr: true });
-const ClosingSection = dynamic(() => import("@/components/sections/ClosingSection").then((mod) => mod.ClosingSection), { ssr: true });
+const CategoriesSection = dynamic(() => import("@/components/sections/CategoriesSection").then((mod) => mod.CategoriesSection), { ssr: true, loading: () => <SectionSkeleton /> });
+const AmenitiesSection = dynamic(() => import("@/components/sections/AmenitiesSection").then((mod) => mod.AmenitiesSection), { ssr: true, loading: () => <SectionSkeleton /> });
+const LifeAtViramahSection = dynamic(() => import("@/components/sections/LifeAtViramahSection").then((mod) => mod.LifeAtViramahSection), { ssr: true, loading: () => <SectionSkeleton /> });
+const CommunitySection = dynamic(() => import("@/components/sections/CommunitySection").then((mod) => mod.CommunitySection), { ssr: true, loading: () => <SectionSkeleton /> });
+const FoodSection = dynamic(() => import("@/components/sections/FoodSection").then((mod) => mod.FoodSection), { ssr: true, loading: () => <SectionSkeleton /> });
+const FounderSection = dynamic(() => import("@/components/sections/FounderSection").then((mod) => mod.FounderSection), { ssr: true, loading: () => <SectionSkeleton /> });
+const AudienceSection = dynamic(() => import("@/components/sections/AudienceSection").then((mod) => mod.AudienceSection), { ssr: true, loading: () => <SectionSkeleton /> });
+const ClosingSection = dynamic(() => import("@/components/sections/ClosingSection").then((mod) => mod.ClosingSection), { ssr: true, loading: () => <SectionSkeleton /> });
+
 
 
 export const metadata: Metadata = {

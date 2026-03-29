@@ -206,6 +206,21 @@ export function ScheduleVisitModal() {
         }
     }, [step, isOpen]);
 
+    // Mobile keyboard-aware modal height — uses visualViewport API
+    useEffect(() => {
+        if (!isOpen || typeof window === 'undefined') return;
+        const vv = window.visualViewport;
+        if (!vv) return;
+        const handler = () => {
+            const panel = document.querySelector('[role="dialog"]') as HTMLElement | null;
+            if (panel) {
+                panel.style.maxHeight = `${vv.height - 20}px`;
+            }
+        };
+        vv.addEventListener('resize', handler);
+        return () => vv.removeEventListener('resize', handler);
+    }, [isOpen]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);

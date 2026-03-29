@@ -429,6 +429,21 @@ export function EnquiryModal() {
         };
     }, []);
 
+    // Mobile keyboard-aware modal height — uses visualViewport API
+    useEffect(() => {
+        if (!isOpen || typeof window === 'undefined') return;
+        const vv = window.visualViewport;
+        if (!vv) return;
+        const handler = () => {
+            const panel = document.querySelector('[role="dialog"]') as HTMLElement | null;
+            if (panel) {
+                panel.style.maxHeight = `${vv.height - 20}px`;
+            }
+        };
+        vv.addEventListener('resize', handler);
+        return () => vv.removeEventListener('resize', handler);
+    }, [isOpen]);
+
     const handleChange = (field: keyof FormState, value: string) => {
         setForm((prev) => {
             const next = { ...prev, [field]: value };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -56,6 +56,12 @@ export function RoomCard({
         y.set(0);
     }
 
+    // Detect touch devices to disable 3D tilt (wastes GPU, looks broken on touch)
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+    useEffect(() => {
+        setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    }, []);
+
     const hasImages = images.length > 0;
 
     function prevImg(e: React.MouseEvent) {
@@ -70,9 +76,9 @@ export function RoomCard({
 
     return (
         <motion.div
-            style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
+            style={isTouchDevice ? {} : { rotateX, rotateY, transformStyle: "preserve-3d" }}
+            onMouseMove={isTouchDevice ? undefined : handleMouseMove}
+            onMouseLeave={isTouchDevice ? undefined : handleMouseLeave}
             className={cn(
                 "group relative w-full rounded-[6px] overflow-hidden",
                 featured
@@ -179,21 +185,21 @@ export function RoomCard({
                             <>
                                 <button
                                     onClick={prevImg}
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/45 hover:bg-black/70 text-white rounded-full text-lg transition-all duration-200 z-20 opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center bg-black/45 hover:bg-black/70 text-white rounded-full text-lg transition-all duration-200 z-20 sm:opacity-0 sm:group-hover:opacity-100 opacity-80 backdrop-blur-sm border border-white/10"
                                     aria-label="Previous photo"
                                 >
                                     ‹
                                 </button>
                                 <button
                                     onClick={nextImg}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/45 hover:bg-black/70 text-white rounded-full text-lg transition-all duration-200 z-20 opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center bg-black/45 hover:bg-black/70 text-white rounded-full text-lg transition-all duration-200 z-20 sm:opacity-0 sm:group-hover:opacity-100 opacity-80 backdrop-blur-sm border border-white/10"
                                     aria-label="Next photo"
                                 >
                                     ›
                                 </button>
 
                                 {/* Dot indicators */}
-                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20">
                                     {images.map((_, i) => (
                                         <button
                                             key={i}
@@ -201,9 +207,10 @@ export function RoomCard({
                                             className={cn(
                                                 "rounded-full transition-all duration-300",
                                                 i === currentImg
-                                                    ? "bg-white w-4 h-1.5"
-                                                    : "bg-white/45 w-1.5 h-1.5"
+                                                    ? "bg-white w-5 h-2.5"
+                                                    : "bg-white/45 w-2.5 h-2.5"
                                             )}
+                                            style={{ minWidth: '10px', minHeight: '10px' }}
                                             aria-label={`Photo ${i + 1}`}
                                         />
                                     ))}

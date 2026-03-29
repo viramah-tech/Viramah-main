@@ -290,3 +290,50 @@
         padding: 0.4rem 0.8rem;
     }
 }
+
+/* ── XS PHONES (< 375px) ── */
+@media (max-width: 374px) {
+    .cs-section {
+        padding: 3rem 0;
+    }
+
+    .cs-inner {
+        padding: 0 1rem;
+        gap: 2rem;
+    }
+
+    .cs-title {
+        font-size: clamp(1.8rem, 10vw, 2.5rem);
+    }
+
+    .cs-body {
+        font-size: 0.88rem;
+    }
+
+    .cs-stat-num {
+        font-size: 1.1rem;
+    }
+
+    .cs-stat-label {
+        font-size: 0.45rem;
+    }
+
+    .cs-perk-pill {
+        padding: 0.35rem 0.6rem;
+    }
+
+    .cs-perk-label {
+        font-size: 0.55rem;
+    }
+}
+
+/* ── PREFERS REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+    .cs-image {
+        transition: none !important;
+    }
+
+    .cs-perk-pill {
+        transition: none !important;
+    }
+}

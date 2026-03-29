@@ -191,7 +191,8 @@ function MobileMenuButtonAndPanel({ navLinks }: { navLinks: NavLink[] }) {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.98 }}
                         transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                        className="absolute right-0 top-full mt-3 w-72 bg-luxury-green border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-3 flex flex-col gap-1 z-50 overflow-hidden origin-top-right backdrop-blur-2xl"
+                        className="absolute right-0 top-full mt-3 w-72 bg-luxury-green border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-3 flex flex-col gap-1 z-50 overflow-y-auto overflow-x-hidden origin-top-right backdrop-blur-2xl"
+                        style={{ maxHeight: 'calc(100vh - 120px)', overscrollBehavior: 'contain' }}
                     >
                         {navLinks.map((l, i) => (
                             <motion.div

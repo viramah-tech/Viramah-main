@@ -92,6 +92,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* DNS prefetch & preconnect for third-party scripts */}
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://connect.facebook.net" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Viewport with safe-area coverage for notched devices */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+      </head>
       <body
         className={`${dmSerif.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >

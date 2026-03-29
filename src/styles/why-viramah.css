@@ -314,6 +314,7 @@
     .wv-card-desc {
         display: -webkit-box;
         -webkit-line-clamp: 3;
+        line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -328,6 +329,42 @@
         gap: 1.5rem;
     }
 }
+
+/* ── XS PHONES (< 375px) ── */
+@media (max-width: 374px) {
+    .wv-section {
+        padding: 3rem 0 2rem;
+    }
+
+    .wv-title-main {
+        font-size: clamp(2rem, 14vw, 3rem);
+    }
+
+    .wv-title-sub {
+        font-size: 1rem;
+    }
+
+    .wv-card {
+        padding: 1.1rem 1rem;
+    }
+
+    .wv-card-title {
+        font-size: 0.7rem;
+    }
+
+    .wv-card-desc {
+        font-size: 0.82rem;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .wv-cta-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 20px;
+    }
+}
+
 
 /* ── PREFERS REDUCED MOTION ──────────────────── */
 @media (prefers-reduced-motion: reduce) {

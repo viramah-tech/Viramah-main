@@ -270,3 +270,47 @@
 /* ---------------------------------- */
 
 /* Tilt is fully removed — no hover rule needed */
+
+/* ── XS PHONES (< 375px) ── */
+@media (max-width: 374px) {
+  .cta-pulp-card {
+    padding: 2rem 1rem;
+  }
+
+  .cta-headline {
+    font-size: clamp(1.8rem, 12vw, 2.2rem);
+  }
+
+  .cta-description {
+    font-size: 0.9rem;
+  }
+
+  .cta-stamped-btn,
+  .cta-ghost-btn {
+    padding: 0.9rem 1.5rem;
+    font-size: 0.85rem;
+  }
+
+  .cta-availability {
+    font-size: 0.6rem;
+  }
+}
+
+/* ── GRAIN: disable on mobile ── */
+@media (max-width: 767px) {
+  .cta-pulp-card::before {
+    opacity: 0.04;
+  }
+}
+
+/* ── PREFERS REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+  .cta-stamped-btn,
+  .cta-ghost-btn {
+    transition: none !important;
+  }
+
+  .cta-availability-dot {
+    animation: none !important;
+  }
+}

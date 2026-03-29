@@ -99,6 +99,8 @@
     -webkit-text-size-adjust: 100%;
     /* Prevent iOS font bump */
     text-size-adjust: 100%;
+    /* Prevent horizontal overflow on all mobile devices */
+    overflow-x: hidden;
   }
 
   body {
@@ -109,6 +111,9 @@
     /* Prevent bounce/rubber-band on iOS */
     touch-action: pan-y;
     /* Allow vertical scroll but no accidental zoom */
+    /* Safe area insets for notched phones (iPhone X+, Dynamic Island, etc.) */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   /* Fixed grain texture overlay */
@@ -173,5 +178,25 @@
   .ab-feature-card,
   .tm-card {
     will-change: opacity;
+  }
+
+  /* ── Mobile: Remove will-change from non-animated elements to save GPU memory ── */
+  @media (max-width: 767px) {
+    .wv-card,
+    .cm-perk-card,
+    .ab-value-card,
+    .ab-feature-card,
+    .tm-card {
+      will-change: auto;
+    }
+  }
+
+  /* ── Touch device: always show interactive indicators ── */
+  @media (hover: none) {
+    /* Carousel arrows must always be visible on touch */
+    .group:hover .group-hover\:opacity-100,
+    [class*="group-hover:opacity-100"] {
+      opacity: 1 !important;
+    }
   }
 }

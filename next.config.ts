@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
+
   // ── Turbopack: bypass broken CSS module resolution ──────────────────
   // Turbopack's CSS @import resolver starts from the wrong directory when the
   // project path contains spaces (known bug). resolveAlias hardwires the
@@ -77,8 +78,8 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Cache static assets aggressively
-        source: "/(.*)\\.(jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2)",
+        // Cache static assets aggressively (images, fonts, JS, CSS)
+        source: "/(.*)\\.(jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2|js|css)",
         headers: [
           {
             key: "Cache-Control",

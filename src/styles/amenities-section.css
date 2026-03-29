@@ -230,6 +230,12 @@
 @media (hover: none) {
     .amen-cell {
         cursor: default;
+        /* Remove GPU compositor hints on touch — saves memory on low-end devices */
+        will-change: auto;
+    }
+
+    .amen-icon-wrap {
+        will-change: auto;
     }
 }
 
