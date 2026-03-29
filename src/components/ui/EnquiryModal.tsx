@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, forwardRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -379,6 +379,8 @@ function SubmitButton({ loading, text = "Send Dispatch" }: { loading: boolean, t
 
 // ── Main Component ───────────────────────────────────────────
 export function EnquiryModal() {
+    const pathname = usePathname();
+    const isUserOnboarding = pathname?.startsWith("/user-onboarding");
     const [isOpen, setIsOpen] = useState(false);
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -511,8 +513,9 @@ export function EnquiryModal() {
     return (
         <>
             {/* ── Side Action Group: WhatsApp + Enquiry Tab + Call ── */}
-            <div
-                className="fixed right-0 top-1/2 z-[998]"
+            {!isUserOnboarding && (
+                <div
+                    className="fixed right-0 top-1/2 z-[998]"
                 style={{
                     transform: "translateY(-50%)",
                     display: "flex",
@@ -679,6 +682,7 @@ export function EnquiryModal() {
                     </svg>
                 </motion.a>
             </div>
+            )}
 
             {/* ── Modal Overlay + Panel ─────────────────────── */}
             <AnimatePresence>
