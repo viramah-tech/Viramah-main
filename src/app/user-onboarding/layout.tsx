@@ -32,21 +32,19 @@ function getStepFromPath(pathname: string): number {
 // Compact stepper for scrolled state
 function CompactStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; currentStep: number }) {
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
             {steps.map((step, index) => {
                 const isCompleted = step.id < currentStep;
                 const isActive = step.id === currentStep;
                 return (
                     <div key={step.id} className="flex items-center">
                         <div
+                            className="w-5 h-5 sm:w-7 sm:h-7 text-[0.55rem] sm:text-[0.65rem]"
                             style={{
-                                width: 28,
-                                height: 28,
                                 borderRadius: "50%",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: "0.65rem",
                                 fontFamily: "var(--font-mono, monospace)",
                                 fontWeight: 700,
                                 transition: "all 0.3s",
@@ -63,14 +61,13 @@ function CompactStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; c
                                 color: isCompleted ? "#D8B56A" : isActive ? "#1F3A2D" : "rgba(31,58,45,0.3)",
                             }}
                         >
-                            {isCompleted ? <Check size={12} strokeWidth={2.5} /> : step.id}
+                            {isCompleted ? <Check size={12} className="w-2.5 h-2.5 sm:w-3 sm:h-3" strokeWidth={2.5} /> : step.id}
                         </div>
                         {index < steps.length - 1 && (
                             <div
+                                className="w-2 sm:w-4 mx-0.5 sm:mx-1"
                                 style={{
-                                    width: 16,
                                     height: 2,
-                                    margin: "0 4px",
                                     background: isCompleted ? "#1F3A2D" : "rgba(31,58,45,0.12)",
                                     transition: "background 0.3s",
                                 }}
@@ -112,9 +109,9 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
             >
                 {/* Track background */}
                 <div
+                    className="top-3 sm:top-4"
                     style={{
                         position: "absolute",
-                        top: 16,
                         left: 0,
                         right: 0,
                         height: 2,
@@ -124,9 +121,9 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                 />
                 {/* Track fill */}
                 <motion.div
+                    className="top-3 sm:top-4"
                     style={{
                         position: "absolute",
-                        top: 16,
                         left: 0,
                         height: 2,
                         background: "linear-gradient(90deg, #1F3A2D, #D8B56A)",
@@ -156,20 +153,18 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                         >
                             {/* BG mask */}
                             <div
+                                className="w-8 h-8 sm:w-10 sm:h-10"
                                 style={{
                                     position: "absolute",
                                     top: 0,
-                                    width: 40,
-                                    height: 40,
                                     borderRadius: "50%",
                                     background: "#F6F4EF",
                                 }}
                             />
                             <motion.div
+                                className="w-6 h-6 sm:w-8 sm:h-8"
                                 style={{
                                     position: "relative",
-                                    width: 32,
-                                    height: 32,
                                     borderRadius: "50%",
                                     display: "flex",
                                     alignItems: "center",
@@ -196,12 +191,12 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                             >
                                 {isCompleted ? (
-                                    <Check size={14} color="#D8B56A" strokeWidth={2.5} />
+                                    <Check size={14} className="w-3 h-3 sm:w-3.5 sm:h-3.5" color="#D8B56A" strokeWidth={2.5} />
                                 ) : (
                                     <span
+                                        className="text-[0.5rem] sm:text-[0.65rem]"
                                         style={{
                                             fontFamily: "var(--font-mono, monospace)",
-                                            fontSize: "0.65rem",
                                             fontWeight: 700,
                                             color: isActive ? "#1F3A2D" : "rgba(31,58,45,0.3)",
                                         }}
@@ -211,11 +206,11 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                                 )}
                             </motion.div>
 
-                            <div style={{ marginTop: 8, textAlign: "center" }}>
+                            <div style={{ marginTop: 8, textAlign: "center" }} className="px-0 sm:px-1">
                                 <span
+                                    className="text-[0.55rem] tracking-tighter sm:text-[0.7rem] sm:tracking-normal whitespace-normal sm:whitespace-nowrap leading-tight"
                                     style={{
                                         fontFamily: "var(--font-body, sans-serif)",
-                                        fontSize: "0.7rem",
                                         fontWeight: 600,
                                         display: "block",
                                         color: isActive
@@ -223,12 +218,12 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
                                             : isCompleted
                                                 ? "#1F3A2D"
                                                 : "rgba(31,58,45,0.35)",
-                                        whiteSpace: "nowrap",
                                     }}
                                 >
                                     {step.label}
                                 </span>
                                 <span
+                                    className="hidden sm:block"
                                     style={{
                                         fontFamily: "var(--font-mono, monospace)",
                                         fontSize: "0.55rem",
@@ -468,7 +463,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
             >
-                <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
+                <div className="px-3 sm:px-6" style={{ maxWidth: 900, margin: "0 auto" }}>
                     <div className="flex items-center justify-between relative">
                         {/* Back link */}
                         <Link
@@ -567,12 +562,13 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
             </motion.header>
 
             {/* Main Content */}
-            <main style={{ maxWidth: 760, margin: "0 auto", padding: `${isPostFlow ? 80 : 180}px 24px 100px` }}>
+            <main className="px-4 sm:px-6" style={{ maxWidth: 760, margin: "0 auto", paddingTop: isPostFlow ? 80 : 180, paddingBottom: 100 }}>
                 {children}
             </main>
 
             {/* Footer bar */}
             <footer
+                className="px-4 sm:px-6"
                 style={{
                     position: "fixed",
                     bottom: 0,
@@ -581,7 +577,8 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                     background: "rgba(246,244,239,0.92)",
                     backdropFilter: "blur(16px)",
                     borderTop: "1px solid rgba(31,58,45,0.1)",
-                    padding: "10px 24px",
+                    paddingTop: 10,
+                    paddingBottom: 10,
                     zIndex: 30,
                     display: "flex",
                     alignItems: "center",
