@@ -334,7 +334,7 @@ export default function DepositPage() {
     const errs: Record<string, string> = {};
     if (!paymentMode) errs.mode = "Please select a payment plan to continue";
     if (!transactionId.trim()) errs.transactionId = "Transaction / Reference ID is required";
-    if (transactionId.trim().length < 4) errs.transactionId = "Must be at least 4 characters";
+    else if (transactionId.trim().length < 4) errs.transactionId = "Must be at least 4 characters";
     if (!receipt) errs.receipt = "Payment receipt is required";
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -541,9 +541,10 @@ export default function DepositPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {[
                   ["Account Name", "VIRAMAH Student Living Pvt Ltd"],
-                  ["Account No", "1234 5678 9012 3456"],
-                  ["IFSC", "SBIN0001234"],
-                  ["UPI", "viramah@ybl"],
+                  ["Account No", "5020 0095 7498 1623"],
+                  ["IFSC", "HDFC0001234"],
+                  ["Bank", "HDFC Bank"],
+                  ["UPI ID", "viramah@hdfcbank"],
                 ].map(([label, val]) => (
                   <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
                     <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>

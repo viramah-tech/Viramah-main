@@ -1,0 +1,16 @@
+﻿git : fatal: path 'src/styles/onbo
+arding-stepper.css' exists on 
+disk, but not in 'HEAD~1'
+At line:1 char:1
++ git show HEAD~1:src/styles/onboa
+rding-stepper.css 2>&1 | Out-File 
+-Fi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : Not 
+   Specified: (fatal: path 'sr..  
+  .not in 'HEAD~1':String) [],    
+ RemoteException
+    + FullyQualifiedErrorId : Nat 
+   iveCommandError
+ 

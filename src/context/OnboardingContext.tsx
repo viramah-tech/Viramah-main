@@ -59,7 +59,7 @@ export interface Step3Data {
 }
 
 export interface PaymentData {
-    method: "bank_transfer" | "cash_deposit" | "";
+    method: "bank_transfer" | "cash_deposit" | "upi" | "";
     transactionId: string;
     screenshot: UploadedFile | null;
 }

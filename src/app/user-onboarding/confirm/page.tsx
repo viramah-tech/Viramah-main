@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    CreditCard, ArrowLeft, Upload, X, Building2, Banknote,
+    CreditCard, ArrowLeft, Upload, X, Building2, Banknote, Smartphone,
     Check, AlertCircle, Camera, Shield, Tag, Lock, Info,
     KeyRound, Trash2, Loader2,
 } from "lucide-react";
@@ -613,7 +613,7 @@ export default function ConfirmPage() {
         const errs: Record<string, string> = {};
         if (!payment.method) errs.method = "Please select a payment method";
         if (!payment.transactionId.trim()) errs.transactionId = "Transaction ID is required";
-        if (payment.transactionId.trim().length < 4) errs.transactionId = "Transaction ID must be at least 4 characters";
+        else if (payment.transactionId.trim().length < 4) errs.transactionId = "Transaction ID must be at least 4 characters";
         if (!payment.screenshot) errs.screenshot = "Payment screenshot is required";
         setErrors(errs);
         return Object.keys(errs).length === 0;
@@ -867,19 +867,20 @@ export default function ConfirmPage() {
                         <FieldLabel>Select Payment Method</FieldLabel>
                         {attempted && errors.method && <FieldError>{errors.method}</FieldError>}
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                        <PaymentMethodCard icon={Building2} title="Bank Transfer" description="NEFT / IMPS / UPI"
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                        <PaymentMethodCard icon={Building2} title="Bank Transfer" description="NEFT / IMPS"
                             selected={payment.method === "bank_transfer"} onClick={() => updatePayment({ method: "bank_transfer" })} />
+                        <PaymentMethodCard icon={Smartphone} title="UPI" description="GPay / PhonePe / Paytm"
+                            selected={payment.method === "upi"} onClick={() => updatePayment({ method: "upi" })} />
                         <PaymentMethodCard icon={Banknote} title="Cash" description="In-person at office"
                             selected={payment.method === "cash_deposit"} onClick={() => updatePayment({ method: "cash_deposit" })} />
-
                     </div>
 
                     {/* Bank Details */}
                     <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: "14px 16px", marginTop: 8 }}>
                         <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.8rem", fontWeight: 700, color: GREEN, margin: "0 0 10px" }}>Transfer to:</p>
                         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                            {[["Account Name", "VIRAMAH Student Living Pvt Ltd"], ["Account No", "1234 5678 9012 3456"], ["IFSC", "SBIN0001234"], ["UPI", "viramah@ybl"]].map(([label, val]) => (
+                            {[["Account Name", "VIRAMAH Student Living Pvt Ltd"], ["Account No", "5020 0095 7498 1623"], ["IFSC", "HDFC0001234"], ["Bank", "HDFC Bank"], ["UPI ID", "viramah@hdfcbank"]].map(([label, val]) => (
                                 <div key={label} style={{ display: "flex", gap: 8 }}>
                                     <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.4)", minWidth: 90 }}>{label}:</span>
                                     <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", fontWeight: 700, color: GREEN }}>{val}</span>
