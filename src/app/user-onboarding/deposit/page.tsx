@@ -539,8 +539,8 @@ export default function DepositPage() {
               <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, margin: "0 0 14px" }}>
                 Step 2 — Transfer {inr(depositAmount)} to:
               </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 200 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 200px" }}>
                   {[
                     ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName],
                     ["Account No", PAYMENT_CONFIG.BANK_DETAILS.accountNo],
@@ -554,7 +554,7 @@ export default function DepositPage() {
                     </div>
                   ))}
                 </div>
-                <div style={{ textAlign: "center" }}>
+                <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                   <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 120, height: 120, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
                   <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", marginTop: 6, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
                 </div>

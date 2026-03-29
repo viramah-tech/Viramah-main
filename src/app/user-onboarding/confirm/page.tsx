@@ -876,7 +876,7 @@ export default function ConfirmPage() {
                         <FieldLabel>Select Payment Method</FieldLabel>
                         {attempted && errors.method && <FieldError>{errors.method}</FieldError>}
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
                         <PaymentMethodCard icon={Building2} title="Bank Transfer" description="NEFT / IMPS"
                             selected={payment.method === "bank_transfer"} onClick={() => updatePayment({ method: "bank_transfer" })} />
                         <PaymentMethodCard icon={Smartphone} title="UPI" description="GPay / PhonePe / Paytm"
@@ -888,8 +888,8 @@ export default function ConfirmPage() {
                     {/* Bank Details */}
                     <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: "14px 16px", marginTop: 8 }}>
                         <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.8rem", fontWeight: 700, color: GREEN, margin: "0 0 10px" }}>Transfer to:</p>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center" }}>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 5, flex: 1, minWidth: 200 }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 5, flex: "1 1 200px" }}>
                                 {[
                                     ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName], 
                                     ["Account No", PAYMENT_CONFIG.BANK_DETAILS.accountNo], 
@@ -903,7 +903,7 @@ export default function ConfirmPage() {
                                     </div>
                                 ))}
                             </div>
-                            <div style={{ textAlign: "center" }}>
+                            <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                                 <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 100, height: 100, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
                                 <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.5rem", marginTop: 4, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
                             </div>

@@ -607,7 +607,7 @@ export default function Step3Page() {
                             </span>
                         </div>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
                         <AddOnCard
                             icon={Bus}
                             name="Daily Transport"
