@@ -333,8 +333,6 @@ export default function DepositPage() {
     if (!paymentMode) errs.mode = "Please select a payment plan to continue";
     if (!transactionId.trim()) {
       errs.transactionId = "Transaction / Reference ID is required";
-    } else if (!/^[0-9A-Za-z]{10,22}$/.test(transactionId.trim())) {
-      errs.transactionId = "Must be a valid 10-22 character alphanumeric reference";
     }
     if (!receipt) errs.receipt = "Payment receipt is required";
     setErrors(errs);

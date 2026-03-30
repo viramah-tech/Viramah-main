@@ -620,8 +620,6 @@ export default function ConfirmPage() {
         if (!payment.method) errs.method = "Please select a payment method";
         if (!payment.transactionId.trim()) {
             errs.transactionId = "Transaction ID is required";
-        } else if (!/^[0-9A-Za-z]{10,22}$/.test(payment.transactionId.trim())) {
-            errs.transactionId = "Must be a valid 10-22 character alphanumeric reference";
         }
         if (!payment.screenshot) errs.screenshot = "Payment screenshot is required";
         setErrors(errs);
