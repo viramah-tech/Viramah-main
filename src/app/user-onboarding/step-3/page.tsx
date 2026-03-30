@@ -618,9 +618,9 @@ export default function Step3Page() {
                         />
                         <AddOnCard
                             icon={UtensilsCrossed}
-                            name="Lunch Add-on"
+                            name="Mess Amount"
                             price={pricingCfg.messMonthly}
-                            description="Packed lunch delivery"
+                            description="Daily meals per month"
                             enabled={step3.addOns.find((a) => a.id === "lunch")?.enabled ?? false}
                             onToggle={() => toggleAddOn("lunch")}
                         />
@@ -670,7 +670,7 @@ export default function Step3Page() {
                                     {addon.name}
                                 </span>
                                 <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.85rem", color: "rgba(246,244,239,0.9)" }}>
-                                    ₹{addon.price.toLocaleString()}/mo
+                                    ₹{(addon.id === 'lunch' ? pricingCfg.messMonthly : addon.price).toLocaleString()}/mo
                                 </span>
                             </div>
                         ))}

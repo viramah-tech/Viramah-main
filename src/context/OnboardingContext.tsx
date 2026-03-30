@@ -86,7 +86,7 @@ export interface OnboardingState {
 
 const DEFAULT_ADD_ONS: AddOnService[] = [
     { id: "transport", name: "Daily Transport", price: 2000, enabled: false },
-    { id: "lunch", name: "Lunch Add-on", price: 2000, enabled: false },
+    { id: "lunch", name: "Mess Amount", price: 2200, enabled: false },
 ];
 
 const INITIAL_STATE: OnboardingState = {
@@ -230,7 +230,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 ...cached,
                 step1: { ...INITIAL_STATE.step1, ...cached.step1 },
                 step2: { ...INITIAL_STATE.step2, ...cached.step2 },
-                step3: { ...INITIAL_STATE.step3, ...cached.step3 },
+                step3: { 
+                    ...INITIAL_STATE.step3, 
+                    ...cached.step3,
+                    // Force overwrite cached prices/names to match latest definitions
+                    addOns: cached.step3?.addOns?.map(cachedAddon => {
+                        const defaultMatch = DEFAULT_ADD_ONS.find(da => da.id === cachedAddon.id);
+                        return defaultMatch 
+                            ? { ...cachedAddon, price: defaultMatch.price, name: defaultMatch.name }
+                            : cachedAddon;
+                    }) || DEFAULT_ADD_ONS,
+                },
                 step4: { ...INITIAL_STATE.step4, ...cached.step4 },
                 payment: { ...INITIAL_STATE.payment, ...cached.payment },
             });
