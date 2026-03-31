@@ -7,6 +7,7 @@ import {
     Clock, CheckCircle, XCircle, AlertCircle, RefreshCw,
     ArrowRight, RotateCcw, Shield, X, Printer,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
 import BookingTimeline from "@/components/BookingTimeline";
 import { getDaysHoursRemaining } from "@/utils/deadlineUtils";
@@ -249,6 +250,7 @@ function RefundModal({ onConfirm, onClose, loading, refundableAmount }: { onConf
 
 export default function DepositStatusPage() {
     const router = useRouter();
+    const { user } = useAuth();
     const { hold, isRefundEligible, isPaymentWindowOpen, isLoading, error, refetch } = useDepositStatus();
 
     const [showRefundModal, setShowRefundModal] = useState(false);
@@ -477,6 +479,46 @@ export default function DepositStatusPage() {
                         <Printer size={14} /> Print Deposit Receipt
                     </button>
                 </motion.div>
+
+                {/* Referral Banner */}
+                {user?.referralCode && (
+                    <motion.div
+                        variants={itemVariants}
+                        style={{
+                            background: "linear-gradient(135deg, rgba(31,58,45,0.06) 0%, rgba(216,181,106,0.1) 100%)",
+                            border: "1.5px solid rgba(216,181,106,0.3)",
+                            borderRadius: 16, padding: "18px 22px",
+                            textAlign: "center",
+                        }}
+                    >
+                        <p style={{
+                            fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem",
+                            textTransform: "uppercase", letterSpacing: "0.2em",
+                            color: "rgba(31,58,45,0.45)", fontWeight: 700, margin: "0 0 8px",
+                        }}>
+                            Your Referral ID
+                        </p>
+                        <p style={{
+                            fontFamily: "var(--font-display, serif)", fontSize: "1.6rem",
+                            color: GREEN, margin: "0 0 10px", letterSpacing: "0.08em",
+                            fontWeight: 400,
+                        }}>
+                            {user.referralCode}
+                        </p>
+                        <p style={{
+                            fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem",
+                            color: GOLD, margin: 0, fontWeight: 700,
+                        }}>
+                            Refer a friend and earn ₹1,000 back!
+                        </p>
+                        <p style={{
+                            fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem",
+                            color: "rgba(31,58,45,0.4)", margin: "6px 0 0",
+                        }}>
+                            Share your referral ID with friends during their payment to get ₹1,000 credited.
+                        </p>
+                    </motion.div>
+                )}
 
                 {/* Policy Reminder */}
                 <motion.div

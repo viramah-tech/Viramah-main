@@ -51,6 +51,7 @@ export interface AuthUser {
         privacyPolicyAcceptedAt: string | null;
         privacyPolicyVersion: string | null;
     };
+    referralCode?: string;
 }
 
 interface AuthContextType {

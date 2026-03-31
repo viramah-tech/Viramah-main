@@ -999,6 +999,46 @@ export default function PaymentStatusPage() {
                 </motion.div>
             )}
 
+            {/* Referral Banner */}
+            {effectiveUser?.referralCode && (
+                <motion.div
+                    variants={itemVariants}
+                    style={{
+                        background: "linear-gradient(135deg, rgba(31,58,45,0.06) 0%, rgba(216,181,106,0.1) 100%)",
+                        border: "1.5px solid rgba(216,181,106,0.3)",
+                        borderRadius: 16, padding: "18px 22px",
+                        textAlign: "center",
+                    }}
+                >
+                    <p style={{
+                        fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem",
+                        textTransform: "uppercase", letterSpacing: "0.2em",
+                        color: "rgba(31,58,45,0.45)", fontWeight: 700, margin: "0 0 8px",
+                    }}>
+                        Your Referral ID
+                    </p>
+                    <p style={{
+                        fontFamily: "var(--font-display, serif)", fontSize: "1.6rem",
+                        color: GREEN, margin: "0 0 10px", letterSpacing: "0.08em",
+                        fontWeight: 400,
+                    }}>
+                        {effectiveUser.referralCode}
+                    </p>
+                    <p style={{
+                        fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem",
+                        color: GOLD, margin: 0, fontWeight: 700,
+                    }}>
+                        Refer a friend and earn ₹1,000 back!
+                    </p>
+                    <p style={{
+                        fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem",
+                        color: "rgba(31,58,45,0.4)", margin: "6px 0 0",
+                    }}>
+                        Share your referral ID with friends during their payment to get ₹1,000 credited.
+                    </p>
+                </motion.div>
+            )}
+
             {/* Contact Info */}
             <motion.div variants={itemVariants} style={{
                 textAlign: "center", display: "flex", flexDirection: "column",
