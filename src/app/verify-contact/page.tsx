@@ -85,7 +85,7 @@ function OtpInput({
     };
 
     return (
-        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: "clamp(4px, 1.5vw, 8px)", justifyContent: "center" }}>
             {Array.from({ length: 6 }).map((_, i) => (
                 <input
                     key={i}
@@ -100,10 +100,10 @@ function OtpInput({
                     onPaste={handlePaste}
                     autoFocus={i === 0}
                     style={{
-                        width: 48,
-                        height: 56,
+                        width: "clamp(36px, 12vw, 48px)",
+                        height: "clamp(44px, 14vw, 56px)",
                         textAlign: "center",
-                        fontSize: "1.5rem",
+                        fontSize: "clamp(1.1rem, 4vw, 1.5rem)",
                         fontFamily: "var(--font-mono, monospace)",
                         fontWeight: 700,
                         color: BRAND_GREEN,
@@ -294,7 +294,7 @@ export default function VerifyContactPage() {
             <header style={{
                 position: "sticky", top: 0, zIndex: 40,
                 background: "rgba(246,244,239,0.92)", backdropFilter: "blur(16px)",
-                borderBottom: "1px solid rgba(31,58,45,0.1)", padding: "16px 24px",
+                borderBottom: "1px solid rgba(31,58,45,0.1)", padding: "12px clamp(12px, 4vw, 24px)",
             }}>
                 <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "rgba(31,58,45,0.5)" }}>
@@ -315,10 +315,10 @@ export default function VerifyContactPage() {
             </header>
 
             {/* ── Main Content ──────────────────────────────────── */}
-            <main style={{ maxWidth: 660, margin: "0 auto", padding: "48px 24px 120px" }}>
+            <main style={{ maxWidth: 660, margin: "0 auto", padding: "clamp(24px, 6vw, 48px) clamp(12px, 4vw, 24px) 120px" }}>
                 <motion.div variants={containerVariants} initial="hidden" animate="visible">
                     {/* Title */}
-                    <motion.div variants={itemVariants} style={{ textAlign: "center", marginBottom: 40 }}>
+                    <motion.div variants={itemVariants} style={{ textAlign: "center", marginBottom: "clamp(24px, 6vw, 40px)" }}>
                         <div style={{
                             width: 56, height: 56, borderRadius: "50%",
                             background: `linear-gradient(135deg, ${BRAND_GREEN}, #2a4d3a)`,
@@ -353,9 +353,9 @@ export default function VerifyContactPage() {
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 36,
                     }}>
                         <StepDot done={emailState.verified} label="Email" />
-                        <div style={{ width: 40, height: 2, background: emailState.verified ? BRAND_GREEN : "rgba(31,58,45,0.12)", transition: "background 0.5s" }} />
+                        <div style={{ width: "clamp(20px, 8vw, 40px)", height: 2, background: emailState.verified ? BRAND_GREEN : "rgba(31,58,45,0.12)", transition: "background 0.5s" }} />
                         <StepDot done={phoneSaved} label="Phone" />
-                        <div style={{ width: 40, height: 2, background: canContinue ? BRAND_GREEN : "rgba(31,58,45,0.12)", transition: "background 0.5s" }} />
+                        <div style={{ width: "clamp(20px, 8vw, 40px)", height: 2, background: canContinue ? BRAND_GREEN : "rgba(31,58,45,0.12)", transition: "background 0.5s" }} />
                         <StepDot done={canContinue} label="Done" />
                     </motion.div>
 
@@ -384,7 +384,7 @@ export default function VerifyContactPage() {
                                             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                                                 <OtpInput value={emailOtp} onChange={setEmailOtp} disabled={emailState.loading} />
 
-                                                <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                                                <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", flexDirection: "column", alignItems: "center" }}>
                                                     <ActionButton
                                                         onClick={handleVerifyEmail}
                                                         loading={emailState.loading}
@@ -455,8 +455,8 @@ export default function VerifyContactPage() {
                                         </label>
                                         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
                                             <span style={{
-                                                fontFamily: "var(--font-mono, monospace)", fontSize: "0.9rem",
-                                                color: BRAND_GREEN, padding: "12px 12px",
+                                                fontFamily: "var(--font-mono, monospace)", fontSize: "0.85rem",
+                                                color: BRAND_GREEN, padding: "12px 10px",
                                                 background: "rgba(31,58,45,0.04)", border: "1.5px solid rgba(31,58,45,0.12)",
                                                 borderRadius: 10, flexShrink: 0,
                                             }}>+91</span>
@@ -467,7 +467,7 @@ export default function VerifyContactPage() {
                                                 value={phoneInput}
                                                 onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 10))}
                                                 style={{
-                                                    flex: 1, padding: "12px 16px",
+                                                    flex: 1, minWidth: 0, padding: "12px 12px",
                                                     fontFamily: "var(--font-body, sans-serif)", fontSize: "0.95rem",
                                                     color: BRAND_GREEN, background: "#fff",
                                                     border: "1.5px solid rgba(31,58,45,0.15)", borderRadius: 10,
@@ -612,7 +612,7 @@ function VerificationCard({
 }) {
     return (
         <div style={{
-            background: "#fff", borderRadius: 16, padding: "28px 28px",
+            background: "#fff", borderRadius: 16, padding: "clamp(16px, 4vw, 28px)",
             border: `1.5px solid ${verified ? "rgba(46,107,79,0.25)" : "rgba(31,58,45,0.1)"}`,
             boxShadow: verified
                 ? "0 4px 24px rgba(46,107,79,0.08)"

@@ -97,42 +97,53 @@ export async function POST(req: NextRequest) {
                     ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "",
                 };
 
-                // Append as query params so they survive the POST→GET redirect
+                // Google Apps Script always 302-redirects POST → GET, dropping the body.
+                // The most reliable approach: send everything as GET query params.
+                // The Apps Script doGet() handler reads e.parameter to extract data.
                 const queryString = new URLSearchParams(
                     Object.entries(sheetsPayload).map(([k, v]) => [k, String(v)])
                 ).toString();
-                const urlWithParams = `${sheetsUrl}?${queryString}`;
+                const getUrl = `${sheetsUrl}?${queryString}`;
 
-                const sheetsRes = await fetch(urlWithParams, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(sheetsPayload),
+                console.log(`[Schedule Visit] Calling Apps Script GET →`, getUrl.slice(0, 120) + "...");
+
+                const sheetsRes = await fetch(getUrl, {
+                    method: "GET",
                     redirect: "follow",
-                    signal: AbortSignal.timeout(10000),
+                    signal: AbortSignal.timeout(15000),
                 });
 
                 const sheetsText = await sheetsRes.text();
-                console.log(`[Schedule Visit] Sheets HTTP ${sheetsRes.status} →`, sheetsText.slice(0, 120));
+                console.log(`[Schedule Visit] Sheets HTTP ${sheetsRes.status} →`, sheetsText.slice(0, 300));
 
-                try {
-                    const sheetsJson = JSON.parse(sheetsText) as Record<string, unknown>;
-                    
-                    // ── Duplicate check ───────────────────────────────────
-                    if (sheetsJson.duplicate === true) {
-                        console.log(`[Schedule Visit] Duplicate booking detected: ${email} for ${visitDate}`);
-                        return NextResponse.json(
-                            {
-                                success: false,
-                                duplicate: true,
-                                error: "You already have a visit scheduled for this date. If you need to change it, please call us.",
-                            },
-                            { status: 409 }
-                        );
+                // Apps Script MUST return JSON like {"success":true}.
+                // If we get HTML back, it means the request never reached
+                // the actual script (Google served a redirect/login page).
+                if (sheetsText.trimStart().startsWith("<") || sheetsText.includes("<!DOCTYPE")) {
+                    console.error("[Schedule Visit] Got HTML instead of JSON — Apps Script not reached. Check deployment settings.");
+                    sheetsOk = false;
+                } else {
+                    try {
+                        const sheetsJson = JSON.parse(sheetsText) as Record<string, unknown>;
+
+                        // ── Duplicate check ───────────────────────────────────
+                        if (sheetsJson.duplicate === true) {
+                            console.log(`[Schedule Visit] Duplicate booking detected: ${email} for ${visitDate}`);
+                            return NextResponse.json(
+                                {
+                                    success: false,
+                                    duplicate: true,
+                                    error: "You already have a visit scheduled for this date. If you need to change it, please call us.",
+                                },
+                                { status: 409 }
+                            );
+                        }
+
+                        sheetsOk = sheetsJson.success === true;
+                    } catch {
+                        console.error("[Schedule Visit] Response is not valid JSON:", sheetsText.slice(0, 200));
+                        sheetsOk = false;
                     }
-
-                    sheetsOk = sheetsJson.success === true;
-                } catch {
-                    sheetsOk = sheetsRes.ok;
                 }
 
                 if (!sheetsOk) {
@@ -173,14 +184,17 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// ── Health check ──────────────────────────────────────────────
+// ── Health check + debug ─────────────────────────────────────
 export async function GET() {
+    const url = process.env.GOOGLE_SHEET_SCHEDULE_VISIT_URL || "";
     return NextResponse.json({
         status: "ok",
         service: "Viramah Schedule Visit API",
         timestamp: new Date().toISOString(),
         env: {
-            sheetsConfigured: Boolean(process.env.GOOGLE_SHEET_SCHEDULE_VISIT_URL),
+            sheetsConfigured: Boolean(url),
+            // Show first 40 chars so you can verify it's the right URL
+            sheetsUrlPrefix: url ? url.slice(0, 40) + "..." : "NOT SET",
         },
     });
 }

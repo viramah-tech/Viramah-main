@@ -401,9 +401,9 @@ function InvoicePanel({
                         {row(`Room rent × ${breakdown.installmentMonths} months`, inr(breakdown.roomRentTotal))}
                         {breakdown.securityDeposit > 0 && row(`Security deposit (one-time)`, inr(breakdown.securityDeposit))}
                         {breakdown.registrationFee > 0 && row(`Registration / Admin fee`, inr(breakdown.registrationFee))}
-                        {breakdown.transportTotal > 0 && row(`Transport (${inr(breakdown.discountedMonthlyTransport)}/mo × ${breakdown.installmentMonths})`, inr(breakdown.transportTotal))}
+                        {breakdown.transportTotal > 0 && row(`Transport (${inr(breakdown.discountedMonthlyTransport)}/mo × ${breakdown.tenureMonths} months)`, inr(breakdown.transportTotal))}
                         {breakdown.messTotal > 0 && row(
-                            breakdown.messIsLumpSum ? `Mess fee (lump sum)` : `Mess fee (${inr(breakdown.discountedMonthlyMess)}/mo × ${breakdown.installmentMonths})`,
+                            breakdown.messIsLumpSum ? `Mess fee (lump sum)` : `Mess fee (${inr(breakdown.discountedMonthlyMess)}/mo × ${breakdown.tenureMonths} months)`,
                             inr(breakdown.messTotal)
                         )}
 
@@ -447,7 +447,7 @@ function InvoicePanel({
                                     </span>
                                 </div>
                                 <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(246,244,239,0.3)", margin: "4px 0 0" }}>
-                                    No flat fees or referral deduction on installment 2.
+                                    Room rent only. Transport &amp; mess are included in Installment 1.
                                 </p>
                             </div>
                         )}

@@ -201,13 +201,13 @@ function ModeCard({
           ) : (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.5)" }}>Installment 1 (6 mo)</span>
+                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.5)" }}>Installment 1 (6 mo rent + add-ons)</span>
                 <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.1rem", color: selected ? GREEN : "rgba(31,58,45,0.7)" }}>
                   {inr(preview.installment1)}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.4)" }}>Installment 2 (5 mo, later)</span>
+                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.4)" }}>Installment 2 (5 mo rent only, later)</span>
                 <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.78rem", color: "rgba(31,58,45,0.5)" }}>
                   {inr(preview.installment2)}
                 </span>
