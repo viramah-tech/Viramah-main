@@ -257,7 +257,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                         idType: string;
                         idNumber: string;
                         documents: { idProof: string; addressProof: string; photo: string };
-                        emergencyContact: { name: string; phone: string; relation: string };
+                        emergencyContact: { name: string; phone: string; relation: string; alternatePhone?: string };
                         parentDocuments: { idType: string; idNumber: string; idFront: string; idBack: string };
                         selectedRoomType: string;
                         roomNumber: string;
@@ -336,23 +336,48 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                         };
                     }
 
-                    // Restore profile photo from backend if saved
+                    // Restore uploaded documents from backend if saved
                     if (d.documents?.photo && !prev.step1.profilePhoto) {
                         merged.step1 = {
                             ...merged.step1,
                             profilePhoto: { name: "profile-photo", preview: d.documents.photo },
                         };
                     }
+                    if (d.documents?.idProof && !prev.step1.idFront) {
+                        merged.step1 = {
+                            ...merged.step1,
+                            idFront: { name: "id-front", preview: d.documents.idProof },
+                        };
+                    }
+                    if (d.documents?.addressProof && !prev.step1.idBack) {
+                        merged.step1 = {
+                            ...merged.step1,
+                            idBack: { name: "id-back", preview: d.documents.addressProof },
+                        };
+                    }
 
-                    // Restore Step 2: emergency contact + parent docs
+                    // Restore Step 2: emergency contact + parent docs + uploaded images
                     if (d.emergencyContact?.name) {
                         merged.step2 = {
                             ...prev.step2,
                             emergencyName: d.emergencyContact.name || prev.step2.emergencyName,
                             emergencyPhone: d.emergencyContact.phone || prev.step2.emergencyPhone,
                             emergencyRelation: d.emergencyContact.relation || prev.step2.emergencyRelation,
+                            alternatePhone: d.emergencyContact.alternatePhone || prev.step2.alternatePhone,
                             parentIdType: d.parentDocuments?.idType || prev.step2.parentIdType,
                             parentIdNumber: d.parentDocuments?.idNumber || prev.step2.parentIdNumber,
+                        };
+                    }
+                    if (d.parentDocuments?.idFront && !prev.step2.parentIdFront) {
+                        merged.step2 = {
+                            ...merged.step2,
+                            parentIdFront: { name: "parent-id-front", preview: d.parentDocuments.idFront },
+                        };
+                    }
+                    if (d.parentDocuments?.idBack && !prev.step2.parentIdBack) {
+                        merged.step2 = {
+                            ...merged.step2,
+                            parentIdBack: { name: "parent-id-back", preview: d.parentDocuments.idBack },
                         };
                     }
 

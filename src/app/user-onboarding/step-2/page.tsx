@@ -89,14 +89,14 @@ export default function Step2Page() {
 
         setSubmitting(true);
         try {
-            // Upload parent/guardian ID photos to S3
+            // Upload parent/guardian ID photos to S3 (skip if already a server URL)
             const [parentIdFrontUrl, parentIdBackUrl] = await Promise.all([
-                step2.parentIdFront
+                step2.parentIdFront?.preview?.startsWith("data:")
                     ? uploadFile("document", step2.parentIdFront.preview, step2.parentIdFront.name)
-                    : Promise.resolve(""),
-                step2.parentIdBack
+                    : Promise.resolve(step2.parentIdFront?.preview || ""),
+                step2.parentIdBack?.preview?.startsWith("data:")
                     ? uploadFile("document", step2.parentIdBack.preview, step2.parentIdBack.name)
-                    : Promise.resolve(""),
+                    : Promise.resolve(step2.parentIdBack?.preview || ""),
             ]);
 
             await saveStepToBackend(2, {
