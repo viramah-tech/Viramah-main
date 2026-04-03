@@ -33,7 +33,7 @@ const FALLBACK_PRICING: PricingConfig = {
     totalDepositPayment: 16000,
     transportMonthly: 2000,
     messMonthly: 2200,
-    messLumpSum: 19000,
+    messLumpSum: 19900,
     discountFull: 0.40,
     discountHalf: 0.25,
     referralBonus: 1000,
