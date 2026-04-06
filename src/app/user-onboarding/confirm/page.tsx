@@ -311,21 +311,23 @@ export default function ConfirmPage() {
 
                 setPlan(p);
 
-                // Find the first payable phase
-                const payablePhase = p.phases.find(
-                    (ph) => ph.status === "pending" || ph.status === "overdue"
-                );
-                if (payablePhase) {
-                    setActivePhase(payablePhase.phaseNumber);
-                    setBreakdown(payablePhase.breakdown || []);
-                    setFinalAmount(payablePhase.finalAmount || 0);
+                // Handle Track 3 Booking (no phases yet)
+                if (p.trackId === "booking" && !p.chosenTrackId && (p as any).bookingAmount) {
+                    const bookingData = (p as any).bookingAmount;
+                    setActivePhase(1); // logical default for UI
+                    setBreakdown(bookingData.breakdown || []);
+                    setFinalAmount(bookingData.finalAmount || 0);
                 } else {
-                    // All phases paid or locked — show first phase info
-                    const firstPhase = p.phases[0];
-                    if (firstPhase) {
-                        setActivePhase(firstPhase.phaseNumber);
-                        setBreakdown(firstPhase.breakdown || []);
-                        setFinalAmount(firstPhase.finalAmount || 0);
+                    // Find the first payable phase
+                    const payablePhase = p.phases.find(
+                        (ph) => ph.status === "pending" || ph.status === "overdue"
+                    );
+                    const phaseToUse = payablePhase || p.phases[0];
+                    if (phaseToUse) {
+                        setActivePhase(phaseToUse.phaseNumber);
+                        const computedData = (phaseToUse as any).computed || phaseToUse;
+                        setBreakdown(computedData.breakdown || []);
+                        setFinalAmount(computedData.finalAmount || 0);
                     }
                 }
             } catch (err) {
@@ -439,12 +441,12 @@ export default function ConfirmPage() {
                 return;
             }
 
-            // Step 3: Submit payment to V2 endpoint
             await apiFetch("/api/payment/submit", {
                 method: "POST",
                 token,
                 body: {
                     planId: plan._id,
+                    ...(plan.trackId !== "booking" || plan.chosenTrackId ? { phaseNumber: activePhase } : {}),
                     transactionId: payment.transactionId.trim(),
                     receiptUrl: uploadedReceiptUrl,
                     paymentMethod: paymentMethod,

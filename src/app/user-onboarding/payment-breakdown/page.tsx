@@ -63,17 +63,6 @@ interface PlanData {
 interface PlanResponse {
     data: {
         plan: PlanData;
-        computed: Array<{
-            phaseNumber: number;
-            breakdown: BreakdownLine[];
-            finalAmount: number;
-            grossRent: number;
-            discountRate: number;
-            discountAmount: number;
-            netRent: number;
-            nonRentalTotal: number;
-            advanceCreditApplied: number;
-        }>;
     };
 }
 
@@ -81,7 +70,6 @@ export default function PaymentBreakdownPage() {
     const router = useRouter();
     const { token } = useAuth();
     const [plan, setPlan] = useState<PlanData | null>(null);
-    const [computed, setComputed] = useState<PlanResponse["data"]["computed"] | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activePhase, setActivePhase] = useState(1);
@@ -91,7 +79,6 @@ export default function PaymentBreakdownPage() {
             try {
                 const res = await apiFetch<PlanResponse>("/api/payment/plan/me", { token });
                 setPlan(res.data.plan);
-                setComputed(res.data.computed || []);
                 // Default to first pending/unpaid phase
                 const firstPending = res.data.plan.phases.find(
                     (p) => p.status === "pending" || p.status === "overdue"
@@ -138,9 +125,9 @@ export default function PaymentBreakdownPage() {
         );
     }
 
-    const currentComputed = computed?.find((c) => c.phaseNumber === activePhase);
     const currentPhase = plan.phases.find((p) => p.phaseNumber === activePhase);
-    const breakdown = currentComputed?.breakdown || currentPhase?.breakdown || [];
+    const computedPhase = (currentPhase as any)?.computed;
+    const breakdown: BreakdownLine[] = computedPhase?.breakdown || currentPhase?.breakdown || [];
     const trackLabel =
         plan.trackId === "full" ? "Full Payment" :
         plan.trackId === "twopart" ? "Two-Part Payment" :
@@ -205,7 +192,7 @@ export default function PaymentBreakdownPage() {
 
                     {/* Big Amount */}
                     <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.6rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>
-                        {inr(currentComputed?.finalAmount ?? currentPhase?.finalAmount)}
+                        {inr(computedPhase?.finalAmount ?? currentPhase?.finalAmount)}
                     </p>
 
                     {/* Breakdown Lines */}
