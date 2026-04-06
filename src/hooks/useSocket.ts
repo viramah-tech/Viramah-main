@@ -36,6 +36,29 @@ export function useSocket(
             onEventRef.current?.("payment:updated", data);
         });
 
+        // V2 payment lifecycle events (Plan Section 7)
+        socket.on("payment:approved", (data: unknown) => {
+            onEventRef.current?.("payment:approved", data);
+        });
+        socket.on("payment:rejected", (data: unknown) => {
+            onEventRef.current?.("payment:rejected", data);
+        });
+        socket.on("payment:phase2_unlocked", (data: unknown) => {
+            onEventRef.current?.("payment:phase2_unlocked", data);
+        });
+        socket.on("payment:on_hold", (data: unknown) => {
+            onEventRef.current?.("payment:on_hold", data);
+        });
+        socket.on("discount:updated", (data: unknown) => {
+            onEventRef.current?.("discount:updated", data);
+        });
+        socket.on("discount:override_set", (data: unknown) => {
+            onEventRef.current?.("discount:override_set", data);
+        });
+        socket.on("payment:submitted", (data: unknown) => {
+            onEventRef.current?.("payment:submitted", data);
+        });
+
         socket.on("disconnect", () => {
             // noop
         });

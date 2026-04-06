@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth, type AuthUser } from "@/context/AuthContext";
 import { useSocket } from "@/hooks/useSocket";
+import Phase2Banner from "@/components/Phase2Banner";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -186,6 +187,11 @@ export default function StudentDashboard() {
                         </span>
                     </div>
                 </div>
+            </motion.div>
+
+            {/* ── Phase 2 Payment Banner ── */}
+            <motion.div variants={itemVariants}>
+                <Phase2Banner />
             </motion.div>
 
             {/* ── Quick Actions ── */}

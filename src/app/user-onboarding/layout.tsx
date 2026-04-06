@@ -23,6 +23,8 @@ function getStepFromPath(pathname: string): number {
     if (pathname.includes("step-2")) return 3;
     if (pathname.includes("step-3")) return 4;
     if (pathname.includes("step-4")) return 5;
+    if (pathname.includes("track-selection")) return 6;
+    if (pathname.includes("payment-breakdown")) return 6;
     if (pathname.includes("confirm")) return 6;
     if (pathname.includes("deposit")) return 7;       // deposit sub-flow (post-stepper)
     if (pathname.includes("payment-status")) return 8; // post-flow
