@@ -1,114 +1,104 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     CreditCard, ArrowLeft, Upload, X, Building2, Banknote, Smartphone,
-    Check, AlertCircle, Camera, Shield, Tag, Lock, Info,
-    KeyRound, Trash2, Loader2,
+    Check, AlertCircle, Camera, Lock,
+    Trash2, Loader2, Plus, Minus,
 } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { uploadFile, deleteUploadedFile } from "@/lib/uploadFile";
+import { deleteUploadedFile } from "@/lib/uploadFile";
 import type { UploadedFile } from "@/context/OnboardingContext";
 import {
     FieldLabel, FieldInput, FieldError, NavButton, SecondaryButton,
     StepBadge, StepTitle, StepSubtitle, FormCard,
     containerVariants, itemVariants,
 } from "@/components/onboarding/FormComponents";
-import { PAYMENT_CONFIG, ROOM_TYPE_MAP } from "@/config/paymentConfig";
+import { PAYMENT_CONFIG } from "@/config/paymentConfig";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const inr = (n: number | null | undefined) =>
     n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`;
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// ── V2 Types ─────────────────────────────────────────────────────────────────
 
-type PaymentModeType = "full" | "half" | "deposit";
+type V2PaymentMethod = "UPI" | "NEFT" | "RTGS" | "IMPS" | "CASH" | "CHEQUE" | "OTHER";
 
-/**
- * Real shape returned by GET /api/public/payments/calculate-preview
- * → data.breakdown (inst1)
- */
-interface LiveBreakdown {
-    roomMonthly: number;
-    discountedMonthlyBase: number;
-    monthlyGST: number;
-    discountedMonthlyWithGST: number;
-    roomRentTotal: number;
-    registrationFee: number;
-    securityDeposit: number;
-    transportMonthly: number;
-    discountedMonthlyTransport: number;
-    transportTotal: number;
-    messMonthly: number;
-    discountedMonthlyMess: number;
-    messTotal: number;
-    messIsLumpSum: boolean;
-    discountRate: number;
-    gstRate: number;
-    tenureMonths: number;
-    installmentMonths: number;
-    subtotal: number;
-    flatFees: number;
-    referralDeduction: number;
-    depositCredited: number;
+interface BreakdownLine {
+    label: string;
+    amount: number;
+    type: "charge" | "discount" | "credit" | "total";
+}
+
+interface PhaseData {
+    phaseNumber: number;
+    monthsCovered: number;
+    status: string;
     finalAmount: number;
-    _totalFinalAmount?: number;
+    dueDate: string | null;
+    breakdown: BreakdownLine[];
+    grossRent: number;
+    discountAmount: number;
+    netRent: number;
+    nonRentalTotal: number;
+    advanceCreditApplied: number;
 }
 
-interface FullPreviewResponse {
-    breakdown: LiveBreakdown;
-    breakdown2: LiveBreakdown | null;
-    installment1: number;
-    installment2: number;
-    paymentMode: "full" | "half";
-    schedule: Array<{ installment: number; amount: number; dueDate: string }>;
+interface PlanData {
+    _id: string;
+    planId: string;
+    trackId: string;
+    chosenTrackId: string | null;
+    phases: PhaseData[];
+    status: string;
+    discountRate: number;
+    discountSource: string;
+    components: {
+        monthlyRent: number;
+        totalMonths: number;
+        securityDeposit: number;
+        registrationCharges: number;
+        lunch: { opted: boolean; total: number };
+        transport: { opted: boolean; total: number };
+    };
+    advanceCreditTotal: number;
+    advanceCreditRemaining: number;
 }
 
-// ── Payment Method Card ────────────────────────────────────────────────────────
-
-function PaymentMethodCard({
-    icon: Icon, title, description, selected, onClick,
-}: {
-    icon: React.ElementType; title: string; description: string; selected: boolean; onClick: () => void;
-}) {
-    return (
-        <button
-            onClick={onClick}
-            style={{
-                flex: 1, padding: "20px 16px", borderRadius: 16,
-                border: `2px solid ${selected ? GREEN : "rgba(31,58,45,0.12)"}`,
-                background: selected ? "rgba(31,58,45,0.04)" : "#fff",
-                textAlign: "left", cursor: "pointer", transition: "all 0.25s ease",
-                boxShadow: selected ? "0 4px 16px rgba(31,58,45,0.1)" : "none",
-                display: "flex", alignItems: "center", gap: 14,
-            }}
-        >
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: selected ? "rgba(31,58,45,0.1)" : "rgba(31,58,45,0.05)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Icon size={22} color={selected ? GREEN : "rgba(31,58,45,0.35)"} />
-            </div>
-            <div style={{ flex: 1 }}>
-                <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 600, color: selected ? GREEN : "rgba(31,58,45,0.7)", display: "block" }}>{title}</span>
-                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.4)", letterSpacing: "0.05em" }}>{description}</span>
-            </div>
-            <div style={{ width: 24, height: 24, borderRadius: "50%", border: `2px solid ${selected ? GREEN : "rgba(31,58,45,0.2)"}`, background: selected ? GREEN : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {selected && <Check size={12} color={GOLD} strokeWidth={3} />}
-            </div>
-        </button>
-    );
+interface PlanResponse {
+    data: {
+        plan: PlanData;
+        computed?: Array<{
+            phaseNumber: number;
+            breakdown: BreakdownLine[];
+            finalAmount: number;
+        }>;
+    };
 }
+
+const PAYMENT_METHODS: { value: V2PaymentMethod; label: string; icon: typeof Building2; desc: string }[] = [
+    { value: "UPI", label: "UPI", icon: Smartphone, desc: "GPay / PhonePe / Paytm" },
+    { value: "NEFT", label: "NEFT", icon: Building2, desc: "Bank Transfer (NEFT)" },
+    { value: "RTGS", label: "RTGS", icon: Building2, desc: "High-value transfer" },
+    { value: "IMPS", label: "IMPS", icon: Building2, desc: "Instant transfer" },
+    { value: "CASH", label: "Cash", icon: Banknote, desc: "In-person at office" },
+    { value: "CHEQUE", label: "Cheque", icon: CreditCard, desc: "Bank cheque" },
+    { value: "OTHER", label: "Other", icon: CreditCard, desc: "Other method" },
+];
 
 // ── Screenshot Upload ──────────────────────────────────────────────────────────
 
 function ScreenshotUpload({
-    screenshot, onUpload, onRemove, onDeleteFromServer
+    screenshot, onUpload, onRemove, onDeleteFromServer, uploading
 }: {
     screenshot: UploadedFile | null; onUpload: (f: UploadedFile) => void; onRemove: () => void;
-    onDeleteFromServer?: (fileUrl: string) => Promise<void>;
+    onDeleteFromServer?: (fileUrl: string) => Promise<void>; uploading?: boolean;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [hovered, setHovered] = useState(false);
@@ -117,8 +107,8 @@ function ScreenshotUpload({
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0];
         if (f) {
-            if (f.size > 5 * 1024 * 1024) {
-                alert("File size must be less than 5MB");
+            if (f.size > 10 * 1024 * 1024) {
+                alert("File size must be less than 10MB");
                 return;
             }
             if (!["image/jpeg", "image/png", "application/pdf"].includes(f.type)) {
@@ -146,13 +136,21 @@ function ScreenshotUpload({
         }
         onRemove();
     };
+
     return (
         <div>
-            <FieldLabel>Payment Screenshot / Receipt</FieldLabel>
+            <FieldLabel>Payment Receipt / Screenshot</FieldLabel>
             <div style={{ marginTop: 8 }}>
                 {screenshot ? (
                     <div style={{ position: "relative", maxWidth: 300, borderRadius: 12, overflow: "hidden", border: `2px solid ${GREEN}` }}>
-                        <img src={screenshot.preview} alt="Screenshot" style={{ width: "100%", height: "auto", display: "block" }} />
+                        {screenshot.preview.startsWith("data:") ? (
+                            <img src={screenshot.preview} alt="Receipt" style={{ width: "100%", height: "auto", display: "block" }} />
+                        ) : (
+                            <div style={{ padding: 20, textAlign: "center", background: "rgba(31,58,45,0.03)" }}>
+                                <Check size={24} color={GREEN} />
+                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: GREEN, margin: "8px 0 0" }}>Uploaded to server</p>
+                            </div>
+                        )}
                         <button onClick={handleRemove} disabled={deleting} title={isServerFile ? "Delete from server" : "Remove"} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: isServerFile ? "rgba(192,57,43,0.95)" : "rgba(255,255,255,0.95)", border: "none", cursor: deleting ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
                             {deleting ? (
                                 <Loader2 size={14} color="#fff" style={{ animation: "spin 1s linear infinite" }} />
@@ -163,8 +161,11 @@ function ScreenshotUpload({
                             )}
                         </button>
                         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(31,58,45,0.85)", backdropFilter: "blur(8px)", padding: "6px 12px", display: "flex", alignItems: "center", gap: 6 }}>
-                            <Check size={12} color={GOLD} />
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: GOLD }}>{screenshot.name}</span>
+                            {uploading ? (
+                                <><Loader2 size={12} color={GOLD} style={{ animation: "spin 1s linear infinite" }} /><span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: GOLD }}>Uploading…</span></>
+                            ) : (
+                                <><Check size={12} color={GOLD} /><span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: GOLD }}>{screenshot.name}</span></>
+                            )}
                         </div>
                     </div>
                 ) : (
@@ -174,7 +175,7 @@ function ScreenshotUpload({
                             <Camera size={22} color={hovered ? GREEN : "rgba(31,58,45,0.35)"} />
                         </div>
                         <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: hovered ? GREEN : "rgba(31,58,45,0.4)" }}>Upload payment screenshot</span>
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.3)" }}>JPG, PNG, or PDF</span>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.3)" }}>JPG, PNG, or PDF · Max 10MB</span>
                     </button>
                 )}
             </div>
@@ -184,280 +185,85 @@ function ScreenshotUpload({
     );
 }
 
-// ── Skeleton Row ───────────────────────────────────────────────────────────────
+// ── V2 Breakdown Panel ────────────────────────────────────────────────────────
 
-function SkeletonRow({ wide }: { wide?: boolean }) {
-    return (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ display: "inline-block", width: wide ? 160 : 120, height: 10, borderRadius: 3, background: "rgba(255,255,255,0.08)", animation: "pulse 1.5s infinite" }} />
-            <span style={{ display: "inline-block", width: 72, height: 10, borderRadius: 3, background: "rgba(255,255,255,0.08)", animation: "pulse 1.5s infinite" }} />
-        </div>
-    );
-}
-
-// ── Deposit-Only Invoice Panel ─────────────────────────────────────────────────
-
-function DepositInvoicePanel({ advanceAmount, onAdvanceChange }: { advanceAmount: number; onAdvanceChange: (v: number) => void }) {
-    const totalDue = 16000 + advanceAmount;
-    const row = (label: string, value: string, opts?: { faint?: boolean; green?: boolean; amber?: boolean }) => (
-        <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: opts?.faint ? "rgba(246,244,239,0.3)" : "rgba(246,244,239,0.55)", flex: 1, lineHeight: 1.5 }}>{label}</span>
-            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", fontWeight: opts?.green ? 700 : 400, color: opts?.green ? "#86efac" : opts?.amber ? GOLD : "rgba(246,244,239,0.75)", whiteSpace: "nowrap" }}>{value}</span>
-        </div>
-    );
-    return (
-        <div style={{ background: "linear-gradient(135deg, #1F3A2D 0%, #162b1e 100%)", borderRadius: 16, padding: "24px 28px", boxShadow: "0 8px 32px rgba(31,58,45,0.25)" }}>
-            <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(216,181,106,0.6)", margin: "0 0 4px" }}>
-                Payment Summary — Room Reservation
-            </p>
-            <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.4rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>{inr(totalDue)}</p>
-
-            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(216,181,106,0.4)", marginBottom: 2 }}>Breakdown</div>
-                {row("Security Deposit", "₹15,000")}
-                {row("  └ Refundable within 7 days of approval", "", { faint: true })}
-                {row("  └ Non-refundable after 7 days", "", { faint: true })}
-                {row("Registration Fee", "₹1,000")}
-                {row("  └ Non-refundable under any circumstances", "", { faint: true })}
-                {advanceAmount > 0 && (
-                    <>
-                        {row("Advance Payment", inr(advanceAmount), { green: true })}
-                        {row("  └ Credited against final payment · Always refundable", "", { faint: true })}
-                    </>
-                )}
-
-                {/* Advance amount input */}
-                <div style={{ marginTop: 8, padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <label style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(246,244,239,0.4)", display: "block", marginBottom: 8 }}>
-                        Want to pay more now? (optional advance)
-                    </label>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.85rem", color: "rgba(246,244,239,0.5)" }}>₹</span>
-                        <input
-                            type="number"
-                            min={0}
-                            step={1000}
-                            placeholder="0"
-                            value={advanceAmount || ""}
-                            onChange={(e) => onAdvanceChange(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-                            style={{
-                                flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-                                borderRadius: 8, padding: "10px 12px", fontFamily: "var(--font-mono, monospace)",
-                                fontSize: "0.85rem", color: "#F6F4EF", outline: "none",
-                            }}
-                        />
-                    </div>
-                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.52rem", color: "rgba(246,244,239,0.3)", margin: "6px 0 0", lineHeight: 1.4 }}>
-                        This amount will be adjusted against your total payment when you complete booking.
-                    </p>
-                </div>
-
-                <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4 }}>
-                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: GOLD, fontWeight: 700, letterSpacing: "0.05em" }}>Total Due Now</span>
-                    <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.2rem", color: GOLD }}>{inr(totalDue)}</span>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ── Deposit Confirmation Modal ─────────────────────────────────────────────────
-
-function DepositConfirmModal({ onConfirm, onClose, loading, advanceAmount }: { onConfirm: () => void; onClose: () => void; loading: boolean; advanceAmount: number }) {
-    const totalDue = 16000 + advanceAmount;
-    return (
-        <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(15,25,20,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
-            onClick={onClose}
-        >
-            <motion.div
-                initial={{ scale: 0.92, opacity: 0, y: 16 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 16 }}
-                transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                style={{ background: "#fff", borderRadius: 20, maxWidth: 440, width: "100%", padding: 28, boxShadow: "0 24px 64px rgba(0,0,0,0.18)", position: "relative" }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 8, display: "flex" }}>
-                    <X size={18} color="rgba(31,58,45,0.4)" />
-                </button>
-                <div style={{ textAlign: "center", marginBottom: 20 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(31,58,45,0.08)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-                        <KeyRound size={26} color={GREEN} />
-                    </div>
-                    <h2 style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.5rem", color: GREEN, fontWeight: 400, margin: "0 0 12px" }}>Confirm Room Reservation</h2>
-                    <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "rgba(31,58,45,0.65)", lineHeight: 1.6, margin: 0 }}>
-                        You are about to pay <strong>{inr(totalDue)}</strong> to reserve this room.
-                    </p>
-                </div>
-                <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: "14px 16px", marginBottom: 20 }}>
-                    {[
-                        ["Security Deposit", "₹15,000", "Refundable within 7 days of admin approval"],
-                        ["Registration Fee", "₹1,000", "Non-refundable under any circumstances"],
-                        ...(advanceAmount > 0 ? [["Advance Payment", inr(advanceAmount), "Credited against final payment · Always refundable"]] : []),
-                    ].map(([label, amount, note]) => (
-                        <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                            <div>
-                                <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", fontWeight: 600, color: GREEN, display: "block" }}>{label}</span>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.45)" }}>{note}</span>
-                            </div>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, flexShrink: 0, marginLeft: 12 }}>{amount}</span>
+function V2BreakdownPanel({
+    plan, breakdown, finalAmount, loading, trackLabel
+}: {
+    plan: PlanData | null; breakdown: BreakdownLine[]; finalAmount: number; loading: boolean; trackLabel: string;
+}) {
+    if (loading || !plan) {
+        return (
+            <div style={{ background: "linear-gradient(135deg, #1F3A2D 0%, #162b1e 100%)", borderRadius: 16, padding: "24px 28px", boxShadow: "0 8px 32px rgba(31,58,45,0.25)" }}>
+                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(216,181,106,0.6)", margin: "0 0 4px" }}>Loading breakdown…</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ width: i % 2 === 0 ? 120 : 160, height: 10, borderRadius: 3, background: "rgba(255,255,255,0.08)", animation: "pulse 1.5s infinite", display: "inline-block" }} />
+                            <span style={{ width: 72, height: 10, borderRadius: 3, background: "rgba(255,255,255,0.08)", animation: "pulse 1.5s infinite", display: "inline-block" }} />
                         </div>
                     ))}
-                    <div style={{ borderTop: "1px solid rgba(31,58,45,0.1)", paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN }}>Total</span>
-                        <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.1rem", color: GREEN }}>{inr(totalDue)}</span>
-                    </div>
                 </div>
-                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.5)", textAlign: "center", marginBottom: 16, lineHeight: 1.5 }}>
-                    You will have 21 days to complete your full payment. Do you confirm?
-                </p>
-                <div style={{ display: "flex", gap: 10 }}>
-                    <button onClick={onClose} style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: "1.5px solid rgba(31,58,45,0.15)", background: "#fff", fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 600, color: "rgba(31,58,45,0.6)", cursor: "pointer" }}>
-                        Go Back
-                    </button>
-                    <button
-                        onClick={onConfirm} disabled={loading}
-                        style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: "none", background: loading ? "rgba(31,58,45,0.4)" : GREEN, fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", fontWeight: 700, color: GOLD, cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-                    >
-                        {loading ? (
-                            <><motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(216,181,106,0.3)", borderTopColor: GOLD }} />Reserving…</>
-                        ) : "Yes, Reserve My Room"}
-                    </button>
-                </div>
-            </motion.div>
-        </motion.div>
-    );
-}
-
-// ── Invoice Panel ─────────────────────────────────────────────────────────────
-
-function InvoicePanel({
-    paymentMode, breakdown, breakdown2, installment1, installment2,
-    loading, apiError,
-}: {
-    paymentMode: "full" | "half";
-    breakdown: LiveBreakdown | null;
-    breakdown2: LiveBreakdown | null;
-    installment1: number | null;
-    installment2: number | null;
-    loading: boolean;
-    apiError: boolean;
-}) {
-    const discountPct = breakdown ? Math.round(breakdown.discountRate * 100) : (paymentMode === "full" ? 40 : 25);
-
-    const row = (label: string, value: string | null, opts?: { deduct?: boolean; highlight?: boolean; faint?: boolean }) => (
-        <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: opts?.highlight ? "#86efac" : opts?.faint ? "rgba(246,244,239,0.3)" : "rgba(246,244,239,0.5)", flex: 1 }}>{label}</span>
-            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", fontWeight: opts?.highlight ? 700 : 400, color: opts?.highlight ? "#86efac" : "rgba(246,244,239,0.75)", whiteSpace: "nowrap" }}>
-                {value == null ? "—" : `${opts?.deduct ? "−" : ""}${value}`}
-            </span>
-        </div>
-    );
+                <style>{`@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.4 } }`}</style>
+            </div>
+        );
+    }
 
     return (
         <div style={{ background: "linear-gradient(135deg, #1F3A2D 0%, #162b1e 100%)", borderRadius: 16, padding: "24px 28px", boxShadow: "0 8px 32px rgba(31,58,45,0.25)" }}>
             {/* Header */}
-            <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(216,181,106,0.6)", margin: "0 0 4px" }}>
-                {paymentMode === "full" ? "Full Tenure Payment" : "Split Payment — Installment 1"}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(216,181,106,0.6)", margin: 0 }}>
+                    {trackLabel}
+                </p>
+                {plan.discountRate > 0 && (
+                    <span style={{ padding: "3px 10px", borderRadius: 999, background: "rgba(134,239,172,0.15)", fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", fontWeight: 700, color: "#86efac" }}>
+                        {Math.round(plan.discountRate * 100)}% discount
+                    </span>
+                )}
+            </div>
+
+            {/* Big amount */}
+            <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.4rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>
+                {inr(finalAmount)}
             </p>
 
-            {loading ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
-                    <SkeletonRow wide /><SkeletonRow /><SkeletonRow wide /><SkeletonRow /><SkeletonRow />
-                </div>
-            ) : apiError ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "12px 14px", background: "rgba(220,38,38,0.12)", borderRadius: 10 }}>
-                    <AlertCircle size={14} color="#f87171" />
-                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "#f87171" }}>
-                        Unable to load pricing. Please refresh.
-                    </span>
-                </div>
-            ) : breakdown ? (
-                <>
-                    {/* Big amount */}
-                    <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.4rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>
-                        {inr(installment1)}
-                    </p>
-
-                    {/* Breakdown lines */}
-                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, marginTop: 16, display: "flex", flexDirection: "column", gap: 7 }}>
-                        {/* Section: Base calc */}
-                        <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(216,181,106,0.4)", marginBottom: 4 }}>
-                            Base Calculation
-                        </div>
-                        {row(`Monthly base rent`, inr(breakdown.roomMonthly))}
-                        {row(`${discountPct}% discount applied`, inr(breakdown.roomMonthly - breakdown.discountedMonthlyBase), { deduct: true, faint: true })}
-                        {row(`Discounted monthly rent`, inr(breakdown.discountedMonthlyBase))}
-                        {row(`GST (${Math.round((breakdown.gstRate ?? 0.12) * 100)}% on discounted rent)`, inr(breakdown.monthlyGST))}
-                        {row(`Monthly total (post-discount + GST)`, inr(breakdown.discountedMonthlyWithGST))}
-
-                        <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
-
-                        {/* Section: Tenure total */}
-                        <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(216,181,106,0.4)", marginBottom: 4 }}>
-                            Tenure Total
-                        </div>
-                        {row(`Room rent × ${breakdown.installmentMonths} months`, inr(breakdown.roomRentTotal))}
-                        {breakdown.securityDeposit > 0 && row(`Security deposit (one-time)`, inr(breakdown.securityDeposit))}
-                        {breakdown.registrationFee > 0 && row(`Registration / Admin fee`, inr(breakdown.registrationFee))}
-                        {breakdown.transportTotal > 0 && row(`Transport (${inr(breakdown.discountedMonthlyTransport)}/mo × ${breakdown.tenureMonths} months)`, inr(breakdown.transportTotal))}
-                        {breakdown.messTotal > 0 && row(
-                            breakdown.messIsLumpSum ? `Mess fee (lump sum)` : `Mess fee (${inr(breakdown.discountedMonthlyMess)}/mo × ${breakdown.tenureMonths} months)`,
-                            inr(breakdown.messTotal)
-                        )}
-
-                        <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
-
-                        {/* Section: Deductions */}
-                        {(breakdown.referralDeduction > 0 || breakdown.depositCredited > 0) && (
-                            <>
-                                <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(216,181,106,0.4)", marginBottom: 4 }}>
-                                    Deductions
-                                </div>
-                                {breakdown.referralDeduction > 0 && row(`Referral bonus`, inr(breakdown.referralDeduction), { deduct: true, highlight: true })}
-                                {breakdown.depositCredited > 0 && row(
-                                    `Deposit credited (security${breakdown.depositCredited > breakdown.securityDeposit || breakdown.securityDeposit === 0 ? " + advance" : ""})`,
-                                    inr(breakdown.depositCredited),
-                                    { deduct: true, highlight: true }
-                                )}
-                                <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
-                            </>
-                        )}
-
-                        {/* Total */}
-                        <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8 }}>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: GOLD, fontWeight: 700, letterSpacing: "0.05em" }}>
-                                {paymentMode === "full" ? "Total Payable" : "Installment 1"}
-                            </span>
-                            <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.2rem", color: GOLD }}>
-                                {inr(installment1)}
-                            </span>
-                        </div>
-
-                        {/* Installment 2 summary (half mode) */}
-                        {paymentMode === "half" && breakdown2 && installment2 != null && installment2 > 0 && (
-                            <div style={{ marginTop: 12, padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(246,244,239,0.4)" }}>
-                                        Installment 2 ({breakdown2.installmentMonths} months — due later)
-                                    </span>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.78rem", color: "rgba(246,244,239,0.65)" }}>
-                                        {inr(installment2)}
-                                    </span>
-                                </div>
-                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(246,244,239,0.3)", margin: "4px 0 0" }}>
-                                    Room rent only. Transport &amp; mess are included in Installment 1.
-                                </p>
+            {/* Line items */}
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                {breakdown.map((line, i) => {
+                    const isTotal = line.type === "total";
+                    const isGreen = line.type === "discount" || line.type === "credit";
+                    return (
+                        <div key={i} style={{
+                            display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8,
+                            ...(isTotal ? { borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 10, marginTop: 4 } : {}),
+                        }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
+                                {isGreen && <Minus size={10} color="#86efac" />}
+                                {!isGreen && !isTotal && <Plus size={10} color="rgba(246,244,239,0.25)" />}
+                                {isTotal && <Check size={12} color={GOLD} strokeWidth={2.5} />}
+                                <span style={{
+                                    fontFamily: "var(--font-mono, monospace)",
+                                    fontSize: isTotal ? "0.72rem" : "0.62rem",
+                                    color: isTotal ? GOLD : isGreen ? "#86efac" : "rgba(246,244,239,0.55)",
+                                    fontWeight: isTotal ? 700 : 400,
+                                }}>
+                                    {line.label}
+                                </span>
                             </div>
-                        )}
-                    </div>
-                </>
-            ) : (
-                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(246,244,239,0.3)", marginTop: 12 }}>
-                    Select a room to load pricing.
-                </p>
-            )}
+                            <span style={{
+                                fontFamily: "var(--font-mono, monospace)",
+                                fontSize: isTotal ? "1.1rem" : "0.68rem",
+                                fontWeight: isTotal ? 700 : isGreen ? 600 : 400,
+                                color: isTotal ? GOLD : isGreen ? "#86efac" : "rgba(246,244,239,0.75)",
+                                whiteSpace: "nowrap",
+                            }}>
+                                {line.amount < 0 ? `−${inr(Math.abs(line.amount))}` : inr(line.amount)}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -468,230 +274,147 @@ export default function ConfirmPage() {
     const router = useRouter();
     const { state, updatePayment, markStepComplete, canAccessStep, setStatus } = useOnboarding();
     const { token } = useAuth();
-    const { payment = { method: "" as const, transactionId: "", screenshot: null }, step3 = { selectedRoom: null, addOns: [] } } = state;
+    const { payment = { method: "" as const, transactionId: "", screenshot: null } } = state;
 
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [attempted, setAttempted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [redirecting, setRedirecting] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
-    // Invoice state
-    const [breakdown, setBreakdown] = useState<LiveBreakdown | null>(null);
-    const [breakdown2, setBreakdown2] = useState<LiveBreakdown | null>(null);
-    const [installment1, setInstallment1] = useState<number | null>(null);
-    const [installment2, setInstallment2] = useState<number | null>(null);
-    const [previewLoading, setPreviewLoading] = useState(false);
-    const [previewError, setPreviewError] = useState(false);
+    // V2 state
+    const [plan, setPlan] = useState<PlanData | null>(null);
+    const [breakdown, setBreakdown] = useState<BreakdownLine[]>([]);
+    const [finalAmount, setFinalAmount] = useState(0);
+    const [activePhase, setActivePhase] = useState(1);
+    const [planLoading, setPlanLoading] = useState(true);
+    const [planError, setPlanError] = useState<string | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<V2PaymentMethod | "">("");
+    const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
 
-    const [paymentMode, setPaymentMode] = useState<PaymentModeType>("full");
-    const [modeLockedFromDeposit, setModeLockedFromDeposit] = useState(false);
-    const [holdPaymentMode, setHoldPaymentMode] = useState<"full" | "half" | null>(null);
-    const [hasActiveHold, setHasActiveHold] = useState(false);
-    const [showDepositConfirmModal, setShowDepositConfirmModal] = useState(false);
-    const [depositSubmitting, setDepositSubmitting] = useState(false);
-    const [depositAdvance, setDepositAdvance] = useState(0);
-
-    const [referralCode, setReferralCode] = useState("");
-    const [referralFocused, setReferralFocused] = useState(false);
-    // Resolved MongoDB ObjectId for the selected room (looked up once on mount)
-    const [resolvedRoomTypeId, setResolvedRoomTypeId] = useState<string | null>(null);
-
-
-    // Access guard + hold detection (combined to avoid race conditions).
-    // If user has an active deposit hold, they're returning to complete payment
-    // and should bypass the local step-completion check.
-    const [holdChecked, setHoldChecked] = useState(false);
-
+    // Fetch V2 plan on mount
     useEffect(() => {
         let cancelled = false;
 
-        const checkAccessAndHold = async () => {
+        const loadPlan = async () => {
             try {
-                const res = await apiFetch<{ data: { hold: { paymentMode?: string; status?: string } | null } }>(
-                    "/api/public/deposits/status"
-                );
+                const res = await apiFetch<PlanResponse>("/api/payment/plan/me");
                 if (cancelled) return;
-                const hold = res?.data?.hold;
-                if (hold?.status === "active" || hold?.status === "pending_approval") {
-                    // User has an active hold — they're a returning deposit user.
-                    // Grant access to confirm page and lock mode if needed.
-                    setHasActiveHold(true);
-                    if (hold?.paymentMode && (hold.paymentMode === "full" || hold.paymentMode === "half")) {
-                        const savedMode = hold.paymentMode as "full" | "half";
-                        setPaymentMode(savedMode);
-                        setHoldPaymentMode(savedMode);
-                        setModeLockedFromDeposit(true);
-                    } else if (hold?.paymentMode === "deposit") {
-                        setHasActiveHold(true);
-                        setPaymentMode("full");
-                        setModeLockedFromDeposit(false);
-                    }
-                } else {
-                    // No active hold — enforce the normal step-completion access guard
-                    if (!canAccessStep(5)) {
-                        setRedirecting(true);
-                        router.replace("/user-onboarding/step-4");
-                        return;
-                    }
-                }
-            } catch {
-                // Deposit API failed — fall back to normal access guard
-                if (!cancelled && !canAccessStep(5)) {
-                    setRedirecting(true);
-                    router.replace("/user-onboarding/step-4");
+
+                const p = res?.data?.plan;
+                if (!p) {
+                    // No plan — redirect to track selection
+                    router.replace("/user-onboarding/track-selection");
                     return;
                 }
+
+                setPlan(p);
+
+                // Find the first payable phase
+                const payablePhase = p.phases.find(
+                    (ph) => ph.status === "pending" || ph.status === "overdue"
+                );
+                if (payablePhase) {
+                    setActivePhase(payablePhase.phaseNumber);
+                    setBreakdown(payablePhase.breakdown || []);
+                    setFinalAmount(payablePhase.finalAmount || 0);
+                } else {
+                    // All phases paid or locked — show first phase info
+                    const firstPhase = p.phases[0];
+                    if (firstPhase) {
+                        setActivePhase(firstPhase.phaseNumber);
+                        setBreakdown(firstPhase.breakdown || []);
+                        setFinalAmount(firstPhase.finalAmount || 0);
+                    }
+                }
+            } catch (err) {
+                if (cancelled) return;
+                const msg = err instanceof Error ? err.message : "Failed to load payment plan";
+                // If 404 or no plan, redirect
+                if (msg.includes("404") || msg.toLowerCase().includes("no plan") || msg.toLowerCase().includes("not found")) {
+                    router.replace("/user-onboarding/track-selection");
+                    return;
+                }
+                setPlanError(msg);
             } finally {
-                if (!cancelled) setHoldChecked(true);
+                if (!cancelled) setPlanLoading(false);
             }
         };
 
-        checkAccessAndHold();
+        loadPlan();
         return () => { cancelled = true; };
-    }, [canAccessStep, router]);
+    }, [router, token]);
 
-    // Fetch live price preview whenever paymentMode or referralCode changes
-    const fetchPreview = useCallback(async (mode: "full" | "half", code?: string) => {
-        let roomTypeId = resolvedRoomTypeId;
-        if (!roomTypeId) {
-            const backendIdFromState = (step3.selectedRoom as Record<string, any>)?.backendId;
-            const frontendId = (step3.selectedRoom as Record<string, any>)?.id;
-            
-            if (backendIdFromState) {
-                roomTypeId = backendIdFromState;
-                setResolvedRoomTypeId(backendIdFromState);
-            } else {
-                if (!frontendId) { setPreviewError(true); return; }
-                const backendName = ROOM_TYPE_MAP[frontendId];
-                if (!backendName) { setPreviewError(true); return; }
-                try {
-                    const roomsRes = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string }> } }>("/api/public/rooms");
-                    const match = roomsRes.data.roomTypes.find((r) => r.name === backendName);
-                    if (!match) { setPreviewError(true); return; }
-                    roomTypeId = match._id;
-                    setResolvedRoomTypeId(match._id);
-                } catch {
-                    setPreviewError(true); return;
-                }
-            }
-        }
-        setPreviewLoading(true);
-        setPreviewError(false);
-        try {
-            const params = new URLSearchParams({ roomTypeId: roomTypeId as string, paymentMode: mode });
-            if (code) params.set("referralCode", code);
-            // Pass add-on selections so pricing includes transport/mess fees
-            const transportEnabled = step3.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "transport")?.enabled;
-            const lunchEnabled = step3.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "lunch")?.enabled;
-            if (transportEnabled) params.set("transport", "true");
-            if (lunchEnabled) params.set("mess", "true");
-            const res = await apiFetch<{ data: FullPreviewResponse }>(
-                `/api/public/payments/calculate-preview?${params}`
-            );
-            const d = res?.data as unknown as FullPreviewResponse;
-            if (d?.breakdown) {
-                setBreakdown(d.breakdown);
-                setBreakdown2(d.breakdown2 ?? null);
-                setInstallment1(d.installment1 ?? null);
-                setInstallment2(d.installment2 ?? null);
-            } else {
-                setPreviewError(true);
-            }
-        } catch {
-            setPreviewError(true);
-        } finally {
-            setPreviewLoading(false);
-        }
-    }, [step3.selectedRoom, step3.addOns, resolvedRoomTypeId]);
-
+    // Access guard — check step completion
     useEffect(() => {
-        // Only fetch preview for full/half modes — deposit mode uses static DepositInvoicePanel
-        if (paymentMode === "deposit") return;
-        fetchPreview(paymentMode);
-    }, [paymentMode, fetchPreview]);
+        if (!canAccessStep(5)) {
+            // Check if user has a V2 plan (bypass step guard)
+            apiFetch("/api/payment/plan/me").catch(() => {
+                setRedirecting(true);
+                router.replace("/user-onboarding/step-4");
+            });
+        }
+    }, [canAccessStep, router]);
 
     if (redirecting) return null;
 
-    const hasDepositCredit = (breakdown?.depositCredited ?? 0) > 0;
+    const trackLabel =
+        plan?.trackId === "full" ? "Full Payment — 11 Months" :
+        plan?.trackId === "twopart" ? `Two-Part Payment — Phase ${activePhase}` :
+        plan?.trackId === "booking" ? (plan.chosenTrackId ? `Booking → ${plan.chosenTrackId === "full" ? "Full" : "Two-Part"} — Phase ${activePhase}` : "Booking") :
+        "Payment";
+
+    const currentPhase = plan?.phases.find((p) => p.phaseNumber === activePhase);
+    const canSubmit = currentPhase && ["pending", "overdue"].includes(currentPhase.status);
+
+    // Upload receipt to V2 endpoint (two-step flow)
+    const uploadReceiptToV2 = async (file: UploadedFile): Promise<string> => {
+        const authToken = token ?? (typeof window !== "undefined" ? localStorage.getItem("viramah_token") : null);
+
+        // Convert data URL to a File object
+        const [header, base64] = file.preview.split(",");
+        const mime = header.match(/:(.*?);/)?.[1] || "image/jpeg";
+        const bytes = atob(base64);
+        const arr = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+        const blob = new File([arr], file.name, { type: mime });
+
+        const formData = new FormData();
+        formData.append("receipt", blob);
+
+        const res = await fetch(`${API_BASE}/api/payment/upload-receipt`, {
+            method: "POST",
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+            body: formData,
+            credentials: "include",
+        });
+
+        const text = await res.text();
+        let data;
+        try { data = text ? JSON.parse(text) : {}; } catch { throw new Error("Failed to parse upload response"); }
+        if (!res.ok) throw new Error(data?.message || `Upload failed (${res.status})`);
+        return data.data.url;
+    };
 
     const validate = (): boolean => {
         const errs: Record<string, string> = {};
-        if (!payment.method) errs.method = "Please select a payment method";
-        if (!payment.transactionId.trim()) {
-            errs.transactionId = "Transaction ID is required";
-        }
-        if (!payment.screenshot) errs.screenshot = "Payment screenshot is required";
+        if (!paymentMethod) errs.method = "Please select a payment method";
+        if (!payment.transactionId.trim()) errs.transactionId = "Transaction ID is required";
+        if (!payment.screenshot) errs.screenshot = "Payment receipt is required";
         setErrors(errs);
         return Object.keys(errs).length === 0;
-    };
-
-    // Called when Deposit mode confirm modal is confirmed
-    const handleDepositSubmit = async () => {
-        setDepositSubmitting(true);
-        setErrors({});
-        try {
-            // Confirm onboarding first — sets onboardingStatus='completed' on the User model.
-            // The deposit service requires this status before allowing a deposit.
-            try {
-                await apiFetch("/api/public/onboarding/confirm", { method: "POST", token });
-            } catch (confirmErr) {
-                const msg = confirmErr instanceof Error ? confirmErr.message : "";
-                if (!msg.toLowerCase().includes("already") && !msg.toLowerCase().includes("completed")) throw confirmErr;
-            }
-
-            let receiptUrl = "";
-            if (payment.screenshot) {
-                receiptUrl = await uploadFile("receipt", payment.screenshot.preview, payment.screenshot.name);
-            }
-            await apiFetch("/api/public/deposits/initiate", {
-                method: "POST",
-                token,
-                body: {
-                    roomTypeId: resolvedRoomTypeId,
-                    paymentMode: "deposit",
-                    transactionId: payment.transactionId,
-                    receiptUrl,
-                    totalAmount: 16000 + depositAdvance,
-                },
-            });
-            router.push("/user-onboarding/deposit-status");
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Deposit submission failed. Please try again.";
-            setErrors({ method: message });
-            setShowDepositConfirmModal(false);
-        } finally {
-            setDepositSubmitting(false);
-        }
     };
 
     const handleSubmit = async () => {
         setAttempted(true);
         if (!validate()) return;
-
-        // Deposit-only mode: show confirmation modal first
-        if (paymentMode === "deposit") {
-            // Need resolvedRoomTypeId for the API call — resolve it now if not yet done
-            if (!resolvedRoomTypeId) {
-                const frontendId = (step3.selectedRoom as Record<string, any>)?.id;
-                if (frontendId) {
-                    const backendName = ROOM_TYPE_MAP[frontendId];
-                    if (backendName) {
-                        try {
-                            const roomsRes = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string }> } }>("/api/public/rooms");
-                            const match = roomsRes.data.roomTypes.find((r) => r.name === backendName);
-                            if (match) setResolvedRoomTypeId(match._id);
-                        } catch { /* ignore */ }
-                    }
-                }
-            }
-            setShowDepositConfirmModal(true);
-            return;
-        }
+        if (!plan || !canSubmit) return;
 
         setSubmitting(true);
         setErrors({});
         try {
+            // Step 1: Confirm onboarding (idempotent)
             try {
                 await apiFetch("/api/public/onboarding/confirm", { method: "POST", token });
             } catch (confirmErr) {
@@ -699,25 +422,32 @@ export default function ConfirmPage() {
                 if (!msg.toLowerCase().includes("already") && !msg.toLowerCase().includes("completed")) throw confirmErr;
             }
 
-            let receiptUrl = "";
-            if (payment.screenshot) {
-                receiptUrl = await uploadFile("receipt", payment.screenshot.preview, payment.screenshot.name);
+            // Step 2: Upload receipt to V2 endpoint
+            let uploadedReceiptUrl = receiptUrl;
+            if (!uploadedReceiptUrl && payment.screenshot) {
+                setUploading(true);
+                try {
+                    uploadedReceiptUrl = await uploadReceiptToV2(payment.screenshot);
+                    setReceiptUrl(uploadedReceiptUrl);
+                } finally {
+                    setUploading(false);
+                }
             }
 
-            await apiFetch("/api/public/payments/initiate", {
+            if (!uploadedReceiptUrl) {
+                setErrors({ screenshot: "Receipt upload failed. Please try again." });
+                return;
+            }
+
+            // Step 3: Submit payment to V2 endpoint
+            await apiFetch("/api/payment/submit", {
                 method: "POST",
                 token,
                 body: {
-                    paymentMode,
-                    addOns: {
-                        transport: !!step3.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "transport")?.enabled,
-                        mess: !!step3.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "lunch")?.enabled,
-                    },
-                    ...(referralCode.trim() ? { referralCode: referralCode.trim().toUpperCase() } : {}),
-                    paymentMethod: payment.method,
-                    description: `Onboarding payment - ${step3.selectedRoom?.title || "Room"}`,
-                    transactionId: payment.transactionId,
-                    receiptUrl,
+                    planId: plan._id,
+                    transactionId: payment.transactionId.trim(),
+                    receiptUrl: uploadedReceiptUrl,
+                    paymentMethod: paymentMethod,
                 },
             });
 
@@ -732,6 +462,35 @@ export default function ConfirmPage() {
         }
     };
 
+    // Loading state
+    if (planLoading) {
+        return (
+            <motion.div variants={containerVariants} initial="hidden" animate="visible"
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "80px 0" }}>
+                <Loader2 size={32} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
+                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.5)" }}>
+                    Loading your payment plan...
+                </span>
+                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+            </motion.div>
+        );
+    }
+
+    // Error state
+    if (planError) {
+        return (
+            <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ padding: "60px 0", textAlign: "center" }}>
+                <AlertCircle size={40} color="#dc2626" style={{ marginBottom: 16 }} />
+                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "1rem", color: "#dc2626" }}>{planError}</p>
+                <button
+                    onClick={() => router.push("/user-onboarding/track-selection")}
+                    style={{ marginTop: 16, padding: "12px 24px", borderRadius: 10, border: `2px solid ${GREEN}`, background: "transparent", color: GREEN, fontWeight: 600, cursor: "pointer" }}
+                >
+                    Select Payment Track
+                </button>
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
@@ -739,9 +498,8 @@ export default function ConfirmPage() {
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
                 <StepBadge icon={CreditCard} label="Payment" />
                 <StepTitle>Complete your payment</StepTitle>
-                <StepSubtitle>Review your invoice, upload payment proof, and confirm your booking.</StepSubtitle>
+                <StepSubtitle>Review your breakdown, upload payment proof, and submit for approval.</StepSubtitle>
             </motion.div>
-
 
             {/* Global Error Banner */}
             <AnimatePresence>
@@ -754,223 +512,192 @@ export default function ConfirmPage() {
                 )}
             </AnimatePresence>
 
-            {/* Payment Mode + Referral Card */}
-            <motion.div variants={itemVariants}>
-                <FormCard>
-                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(31,58,45,0.4)", fontWeight: 700, margin: "0 0 12px" }}>
-                        Payment Plan
-                    </p>
-
-                    {/* 3-card grid — hide Deposit card when user already has an active hold */}
-                    <div style={{ display: "grid", gridTemplateColumns: hasActiveHold ? "1fr 1fr" : "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 14 }}>
-                        {/* Full Payment */}
-                        <button
-                            key="full"
-                            onClick={() => !modeLockedFromDeposit && setPaymentMode("full")}
-                            disabled={modeLockedFromDeposit}
-                            style={{ padding: "14px 16px", borderRadius: 12, border: `2px solid ${paymentMode === "full" ? GREEN : "rgba(31,58,45,0.12)"}`, background: paymentMode === "full" ? "rgba(31,58,45,0.04)" : "#fff", cursor: modeLockedFromDeposit ? "not-allowed" : "pointer", textAlign: "left", transition: "all 0.2s", opacity: modeLockedFromDeposit && paymentMode !== "full" ? 0.4 : 1 }}
-                        >
-                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: paymentMode === "full" ? GREEN : "rgba(31,58,45,0.5)", display: "block" }}>Full Payment</span>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)" }}>Pay all 11 months now (40% off)</span>
-                        </button>
-
-                        {/* Half / Split Pay */}
-                        <button
-                            key="half"
-                            onClick={() => !modeLockedFromDeposit && setPaymentMode("half")}
-                            disabled={modeLockedFromDeposit}
-                            style={{ padding: "14px 16px", borderRadius: 12, border: `2px solid ${paymentMode === "half" ? GREEN : "rgba(31,58,45,0.12)"}`, background: paymentMode === "half" ? "rgba(31,58,45,0.04)" : "#fff", cursor: modeLockedFromDeposit ? "not-allowed" : "pointer", textAlign: "left", transition: "all 0.2s", opacity: modeLockedFromDeposit && paymentMode !== "half" ? 0.4 : 1 }}
-                        >
-                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: paymentMode === "half" ? GREEN : "rgba(31,58,45,0.5)", display: "block" }}>Split Pay</span>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)" }}>Pay 6 months now, 5 later (25% off)</span>
-                        </button>
-
-                        {/* Deposit-Only Card — only shown when user has NO active hold */}
-                        {!hasActiveHold && (
-                            <button
-                                key="deposit"
-                                onClick={() => setPaymentMode("deposit")}
-                                style={{ padding: "14px 16px", borderRadius: 12, border: `2px solid ${paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.12)"}`, background: paymentMode === "deposit" ? "rgba(245,158,11,0.04)" : "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
-                            >
-                                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                                    <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.5)" }}>🔒 Secure Room Now</span>
-                                </div>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)", display: "block", marginBottom: 8 }}>Pay ₹16,000 minimum deposit now, choose plan later</span>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.5)" }}>✅ Room held for 21 days</span>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: paymentMode === "deposit" ? "#d97706" : "rgba(31,58,45,0.5)" }}>✅ ₹15,000 refundable within 7 days</span>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(220,38,38,0.65)" }}>❌ ₹1,000 reg fee non-refundable</span>
-                                </div>
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Deposit mode policy reminder */}
-                    {paymentMode === "deposit" && !hasActiveHold && (
-                        <div style={{ padding: "10px 12px", background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 10, marginBottom: 12 }}>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#92400e", lineHeight: 1.5, display: "block" }}>
-                                You will choose your full payment plan (Full Tenure or Half Yearly) when you return to complete payment. Your room rent will be calculated then.
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Locked notice (for full/half locked from prior deposit) */}
-                    {modeLockedFromDeposit && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 12px", background: "rgba(31,58,45,0.04)", borderRadius: 10, marginBottom: 12 }}>
-                            <Lock size={13} color="rgba(31,58,45,0.45)" />
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.5)" }}>
-                                Payment mode was set during deposit submission. Contact support to change.
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Referral Code — hidden when deposit mode selected */}
-                    {!modeLockedFromDeposit && paymentMode !== "deposit" && (
-                        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                            <Tag size={14} color="rgba(31,58,45,0.4)" style={{ flexShrink: 0 }} />
-                            <FieldInput
-                                id="referral-code"
-                                type="text"
-                                placeholder="Referral code (optional, e.g. VIR-ABCDEF)"
-                                value={referralCode}
-                                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                                focused={referralFocused}
-                                hasError={false}
-                                onFocus={() => setReferralFocused(true)}
-                                onBlur={() => {
-                                    setReferralFocused(false);
-                                    fetchPreview(paymentMode, referralCode.trim() || undefined);
-                                }}
-                            />
-                            {previewLoading && (
-                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(31,58,45,0.1)", borderTopColor: GREEN, flexShrink: 0 }} />
-                            )}
-                        </div>
-                    )}
-                </FormCard>
-            </motion.div>
-
-            {/* Invoice Panel — deposit mode gets static panel; full/half get live server-sourced panel */}
-            <motion.div variants={itemVariants}>
-                {paymentMode === "deposit" ? (
-                    <DepositInvoicePanel advanceAmount={depositAdvance} onAdvanceChange={setDepositAdvance} />
-                ) : (
-                    <InvoicePanel
-                        paymentMode={paymentMode as "full" | "half"}
-                        breakdown={breakdown}
-                        breakdown2={breakdown2}
-                        installment1={installment1}
-                        installment2={installment2}
-                        loading={previewLoading}
-                        apiError={previewError}
-                    />
-                )}
-            </motion.div>
-
-            {/* Payment Method */}
-            <motion.div variants={itemVariants}>
-                <FormCard>
-                    <div>
-                        <FieldLabel>Select Payment Method</FieldLabel>
-                        {attempted && errors.method && <FieldError>{errors.method}</FieldError>}
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-                        <PaymentMethodCard icon={Building2} title="Bank Transfer" description="NEFT / IMPS"
-                            selected={payment.method === "bank_transfer"} onClick={() => updatePayment({ method: "bank_transfer" })} />
-                        <PaymentMethodCard icon={Smartphone} title="UPI" description="GPay / PhonePe / Paytm"
-                            selected={payment.method === "upi"} onClick={() => updatePayment({ method: "upi" })} />
-                        <PaymentMethodCard icon={Banknote} title="Cash" description="In-person at office"
-                            selected={payment.method === "cash_deposit"} onClick={() => updatePayment({ method: "cash_deposit" })} />
-                    </div>
-
-                    {/* Bank Details */}
-                    <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: "14px 16px", marginTop: 8 }}>
-                        <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.8rem", fontWeight: 700, color: GREEN, margin: "0 0 10px" }}>Transfer to:</p>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 5, flex: "1 1 200px" }}>
-                                {[
-                                    ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName], 
-                                    ["Account No", PAYMENT_CONFIG.BANK_DETAILS.accountNo], 
-                                    ["IFSC", PAYMENT_CONFIG.BANK_DETAILS.ifsc], 
-                                    ["Bank", PAYMENT_CONFIG.BANK_DETAILS.bank], 
-                                    ["UPI ID", PAYMENT_CONFIG.BANK_DETAILS.upiId]
-                                ].map(([label, val]) => (
-                                    <div key={label} style={{ display: "flex", gap: 8 }}>
-                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.4)", minWidth: 90 }}>{label}:</span>
-                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", fontWeight: 700, color: GREEN }}>{val}</span>
+            {/* Phase Tabs (for Two-Part plans) */}
+            {plan && plan.phases.length > 1 && (
+                <motion.div variants={itemVariants}>
+                    <div style={{ display: "flex", gap: 10 }}>
+                        {plan.phases.map((phase) => {
+                            const isActive = activePhase === phase.phaseNumber;
+                            const isPaid = phase.status === "paid";
+                            const isLocked = phase.status === "locked";
+                            return (
+                                <button
+                                    key={phase.phaseNumber}
+                                    onClick={() => {
+                                        setActivePhase(phase.phaseNumber);
+                                        setBreakdown(phase.breakdown || []);
+                                        setFinalAmount(phase.finalAmount || 0);
+                                    }}
+                                    style={{
+                                        flex: 1, padding: "12px 14px", borderRadius: 12,
+                                        border: `2px solid ${isActive ? GREEN : "rgba(31,58,45,0.12)"}`,
+                                        background: isActive ? "rgba(31,58,45,0.04)" : "#fff",
+                                        cursor: "pointer", textAlign: "left", transition: "all 0.25s",
+                                    }}
+                                >
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                        {isPaid && <Check size={12} color={GREEN} strokeWidth={2.5} />}
+                                        {isLocked && <Lock size={12} color="rgba(31,58,45,0.35)" />}
+                                        <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: isActive ? GREEN : "rgba(31,58,45,0.5)" }}>
+                                            Phase {phase.phaseNumber}
+                                        </span>
                                     </div>
-                                ))}
-                            </div>
-                            <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                                <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 100, height: 100, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
-                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.5rem", marginTop: 4, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
-                            </div>
-                        </div>
+                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)" }}>
+                                        {phase.monthsCovered} months · {isPaid ? "Paid" : isLocked ? "Locked" : phase.status}
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
-                </FormCard>
+                </motion.div>
+            )}
+
+            {/* V2 Breakdown Panel */}
+            <motion.div variants={itemVariants}>
+                <V2BreakdownPanel
+                    plan={plan} breakdown={breakdown} finalAmount={finalAmount}
+                    loading={planLoading} trackLabel={trackLabel}
+                />
             </motion.div>
 
-            {/* Transaction ID */}
-            <motion.div variants={itemVariants}>
-                <FormCard>
-                    <FieldLabel htmlFor="txn-id">Transaction / Reference ID</FieldLabel>
-                    <FieldInput
-                        id="txn-id" type="text"
-                        placeholder="e.g. UTR123456789"
-                        value={payment.transactionId}
-                        onChange={(e) => updatePayment({ transactionId: e.target.value })}
-                        focused={focusedField === "txnId"}
-                        hasError={attempted && !!errors.transactionId}
-                        onFocus={() => setFocusedField("txnId")}
-                        onBlur={() => setFocusedField(null)}
-                    />
-                    {attempted && errors.transactionId && <FieldError>{errors.transactionId}</FieldError>}
-                </FormCard>
-            </motion.div>
+            {/* Locked/Paid phase info */}
+            {currentPhase?.status === "locked" && (
+                <motion.div variants={itemVariants}>
+                    <div style={{ padding: "14px 18px", background: "rgba(31,58,45,0.04)", border: "1px solid rgba(31,58,45,0.12)", borderRadius: 12, display: "flex", alignItems: "center", gap: 12 }}>
+                        <Lock size={18} color="rgba(31,58,45,0.4)" />
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.75rem", color: "rgba(31,58,45,0.55)" }}>
+                            This phase is locked. It will unlock when Phase 1 is paid and the admin sets a due date.
+                        </span>
+                    </div>
+                </motion.div>
+            )}
 
-            {/* Screenshot */}
-            <motion.div variants={itemVariants}>
-                <FormCard>
-                    <ScreenshotUpload
-                        screenshot={payment.screenshot}
-                        onUpload={(f) => updatePayment({ screenshot: f })}
-                        onRemove={() => updatePayment({ screenshot: null })}
-                        onDeleteFromServer={deleteUploadedFile}
-                    />
-                    {attempted && errors.screenshot && <FieldError>{errors.screenshot}</FieldError>}
-                </FormCard>
-            </motion.div>
+            {currentPhase?.status === "paid" && (
+                <motion.div variants={itemVariants}>
+                    <div style={{ padding: "14px 18px", background: "rgba(31,58,45,0.04)", border: "1px solid rgba(31,58,45,0.12)", borderRadius: 12, display: "flex", alignItems: "center", gap: 12 }}>
+                        <Check size={18} color={GREEN} strokeWidth={2.5} />
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.75rem", color: GREEN, fontWeight: 600 }}>
+                            This phase is paid. No further action needed.
+                        </span>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Payment Method Selector */}
+            {canSubmit && (
+                <>
+                    <motion.div variants={itemVariants}>
+                        <FormCard>
+                            <div>
+                                <FieldLabel>Select Payment Method</FieldLabel>
+                                {attempted && errors.method && <FieldError>{errors.method}</FieldError>}
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
+                                {PAYMENT_METHODS.map((m) => {
+                                    const Icon = m.icon;
+                                    const selected = paymentMethod === m.value;
+                                    return (
+                                        <button key={m.value} onClick={() => setPaymentMethod(m.value)}
+                                            style={{
+                                                padding: "14px 12px", borderRadius: 12,
+                                                border: `2px solid ${selected ? GREEN : "rgba(31,58,45,0.12)"}`,
+                                                background: selected ? "rgba(31,58,45,0.04)" : "#fff",
+                                                cursor: "pointer", textAlign: "left", transition: "all 0.2s",
+                                            }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                                                <Icon size={16} color={selected ? GREEN : "rgba(31,58,45,0.35)"} />
+                                                <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", fontWeight: 700, color: selected ? GREEN : "rgba(31,58,45,0.5)" }}>
+                                                    {m.label}
+                                                </span>
+                                            </div>
+                                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.4)" }}>
+                                                {m.desc}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Bank Details */}
+                            <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: "14px 16px", marginTop: 8 }}>
+                                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.8rem", fontWeight: 700, color: GREEN, margin: "0 0 10px" }}>Transfer to:</p>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 5, flex: "1 1 200px" }}>
+                                        {[
+                                            ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName],
+                                            ["Account No", PAYMENT_CONFIG.BANK_DETAILS.accountNo],
+                                            ["IFSC", PAYMENT_CONFIG.BANK_DETAILS.ifsc],
+                                            ["Bank", PAYMENT_CONFIG.BANK_DETAILS.bank],
+                                            ["UPI ID", PAYMENT_CONFIG.BANK_DETAILS.upiId]
+                                        ].map(([label, val]) => (
+                                            <div key={label} style={{ display: "flex", gap: 8 }}>
+                                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.4)", minWidth: 90 }}>{label}:</span>
+                                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", fontWeight: 700, color: GREEN }}>{val}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                        <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 100, height: 100, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
+                                        <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.5rem", marginTop: 4, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </FormCard>
+                    </motion.div>
+
+                    {/* Transaction ID */}
+                    <motion.div variants={itemVariants}>
+                        <FormCard>
+                            <FieldLabel htmlFor="txn-id">Transaction / Reference ID</FieldLabel>
+                            <FieldInput
+                                id="txn-id" type="text"
+                                placeholder="e.g. UTR123456789"
+                                value={payment.transactionId}
+                                onChange={(e) => updatePayment({ transactionId: e.target.value })}
+                                focused={focusedField === "txnId"}
+                                hasError={attempted && !!errors.transactionId}
+                                onFocus={() => setFocusedField("txnId")}
+                                onBlur={() => setFocusedField(null)}
+                            />
+                            {attempted && errors.transactionId && <FieldError>{errors.transactionId}</FieldError>}
+                        </FormCard>
+                    </motion.div>
+
+                    {/* Screenshot Upload */}
+                    <motion.div variants={itemVariants}>
+                        <FormCard>
+                            <ScreenshotUpload
+                                screenshot={payment.screenshot}
+                                onUpload={(f) => updatePayment({ screenshot: f })}
+                                onRemove={() => { updatePayment({ screenshot: null }); setReceiptUrl(null); }}
+                                onDeleteFromServer={deleteUploadedFile}
+                                uploading={uploading}
+                            />
+                            {attempted && errors.screenshot && <FieldError>{errors.screenshot}</FieldError>}
+                        </FormCard>
+                    </motion.div>
+                </>
+            )}
 
             {/* Navigation */}
             <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
                 <SecondaryButton onClick={() => router.back()}>
                     <ArrowLeft size={16} /> Back
                 </SecondaryButton>
-                <NavButton onClick={handleSubmit} disabled={submitting}>
-                    {submitting ? (
-                        <>
-                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(216,181,106,0.3)", borderTopColor: GOLD }} />
-                            Submitting…
-                        </>
-                    ) : (
-                        <><Upload size={16} /> Confirm Payment</>
-                    )}
-                </NavButton>
-            </motion.div>
-            {/* Referral fetch on blur fix for paymentMode type */}
-
-            {/* Deposit Confirm Modal */}
-            <AnimatePresence>
-                {showDepositConfirmModal && (
-                    <DepositConfirmModal
-                        onConfirm={handleDepositSubmit}
-                        onClose={() => setShowDepositConfirmModal(false)}
-                        loading={depositSubmitting}
-                        advanceAmount={depositAdvance}
-                    />
+                {canSubmit && (
+                    <NavButton onClick={handleSubmit} disabled={submitting || uploading}>
+                        {submitting ? (
+                            <>
+                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                    style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(216,181,106,0.3)", borderTopColor: GOLD }} />
+                                {uploading ? "Uploading…" : "Submitting…"}
+                            </>
+                        ) : (
+                            <><Upload size={16} /> Confirm Payment</>
+                        )}
+                    </NavButton>
                 )}
-            </AnimatePresence>
+            </motion.div>
         </motion.div>
     );
 }

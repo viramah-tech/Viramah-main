@@ -8,6 +8,7 @@ import {
     Shield, Zap, Clock, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useOnboarding } from "@/context/OnboardingContext";
 import { apiFetch } from "@/lib/api";
 import {
     StepBadge, StepTitle, StepSubtitle,
@@ -79,6 +80,11 @@ const TRACK_DETAILS: Record<string, {
 export default function TrackSelectionPage() {
     const router = useRouter();
     const { token } = useAuth();
+    const { state } = useOnboarding();
+    const addOns = {
+        transport: !!state.step3?.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "transport")?.enabled,
+        mess: !!state.step3?.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "lunch")?.enabled,
+    };
     const [configs, setConfigs] = useState<ConfigResponse["data"] | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -110,13 +116,13 @@ export default function TrackSelectionPage() {
                 await apiFetch("/api/payment/plan/booking", {
                     method: "POST",
                     token,
-                    body: { advance: advanceAmount },
+                    body: { advance: advanceAmount, addOns },
                 });
             } else {
                 await apiFetch("/api/payment/plan/select-track", {
                     method: "POST",
                     token,
-                    body: { trackId: selectedTrack },
+                    body: { trackId: selectedTrack, addOns },
                 });
             }
             router.push("/user-onboarding/payment-breakdown");
