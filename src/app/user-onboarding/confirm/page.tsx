@@ -368,7 +368,10 @@ export default function ConfirmPage() {
         "Payment";
 
     const currentPhase = plan?.phases.find((p) => p.phaseNumber === activePhase);
-    const canSubmit = currentPhase && ["pending", "overdue"].includes(currentPhase.status);
+    const isBookingWithoutPhases = plan?.trackId === "booking" && !plan.chosenTrackId;
+    const canSubmit = isBookingWithoutPhases 
+        ? true 
+        : currentPhase && ["pending", "overdue"].includes(currentPhase.status);
 
     // Upload receipt to V2 endpoint (two-step flow)
     const uploadReceiptToV2 = async (file: UploadedFile): Promise<string> => {
