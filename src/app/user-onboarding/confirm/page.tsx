@@ -51,12 +51,14 @@ interface PhaseData {
 }
 
 interface PlanData {
-    _id: string;
-    planId: string;
+    _id?: string;              // absent when this is a preview (not yet persisted)
+    planId?: string;
+    preview?: boolean;         // true → plan will be created on first payment
+    trackSelection?: { trackId: string; addOns?: Record<string, boolean>; advance?: number };
     trackId: string;
     chosenTrackId: string | null;
     phases: PhaseData[];
-    status: string;
+    status?: string;
     discountRate: number;
     discountSource: string;
     components: {
@@ -69,6 +71,7 @@ interface PlanData {
     };
     advanceCreditTotal: number;
     advanceCreditRemaining: number;
+    bookingAmount?: { finalAmount: number; breakdown: BreakdownLine[] };
 }
 
 interface PlanResponse {
@@ -292,6 +295,8 @@ export default function ConfirmPage() {
     const [planError, setPlanError] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<V2PaymentMethod | "">("");
     const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+    // Partial payment — empty string = pay full remaining balance
+    const [partialAmount, setPartialAmount] = useState<string>("");
 
     // Fetch V2 plan on mount
     useEffect(() => {
@@ -302,9 +307,19 @@ export default function ConfirmPage() {
                 const res = await apiFetch<PlanResponse>("/api/payment/plan/me");
                 if (cancelled) return;
 
-                const p = res?.data?.plan;
+                let p = res?.data?.plan as PlanData | null;
                 if (!p) {
-                    // No plan — redirect to track selection
+                    // Backend no longer persists the plan until first payment.
+                    // Fall back to the preview stashed by the track-selection page.
+                    if (typeof window !== "undefined") {
+                        const raw = localStorage.getItem("viramah_plan_preview");
+                        if (raw) {
+                            try { p = JSON.parse(raw); } catch { p = null; }
+                        }
+                    }
+                }
+
+                if (!p) {
                     router.replace("/user-onboarding/track-selection");
                     return;
                 }
@@ -444,17 +459,48 @@ export default function ConfirmPage() {
                 return;
             }
 
+            // Build the submit body. Two shapes:
+            //  - Preview plan (not yet persisted): send trackSelection, backend
+            //    will atomically create the plan + first payment.
+            //  - Persisted plan: send planId + phaseNumber as before.
+            const isFirstPayment = !plan._id;
+            const partialNum = partialAmount.trim() === "" ? null : Number(partialAmount);
+            if (partialNum != null && (!Number.isFinite(partialNum) || partialNum <= 0)) {
+                setErrors({ method: "Amount must be a positive number" });
+                return;
+            }
+            if (partialNum != null && partialNum > finalAmount) {
+                setErrors({ method: `Amount cannot exceed remaining balance of ₹${finalAmount}` });
+                return;
+            }
+
+            const submitBody: Record<string, unknown> = {
+                transactionId: payment.transactionId.trim(),
+                receiptUrl: uploadedReceiptUrl,
+                paymentMethod: paymentMethod,
+            };
+            if (partialNum != null) submitBody.amount = partialNum;
+
+            if (isFirstPayment) {
+                submitBody.trackSelection =
+                    plan.trackSelection || { trackId: plan.chosenTrackId || plan.trackId };
+            } else {
+                submitBody.planId = plan._id;
+                if (plan.trackId !== "booking" || plan.chosenTrackId) {
+                    submitBody.phaseNumber = activePhase;
+                }
+            }
+
             await apiFetch("/api/payment/submit", {
                 method: "POST",
                 token,
-                body: {
-                    planId: plan._id,
-                    ...(plan.trackId !== "booking" || plan.chosenTrackId ? { phaseNumber: activePhase } : {}),
-                    transactionId: payment.transactionId.trim(),
-                    receiptUrl: uploadedReceiptUrl,
-                    paymentMethod: paymentMethod,
-                },
+                body: submitBody,
             });
+
+            // First-payment success — clear the local preview so reloads hit the DB
+            if (isFirstPayment && typeof window !== "undefined") {
+                localStorage.removeItem("viramah_plan_preview");
+            }
 
             markStepComplete(5);
             setStatus("payment_submitted");
@@ -649,6 +695,32 @@ export default function ConfirmPage() {
                             </div>
                         </FormCard>
                     </motion.div>
+
+                    {/* Partial amount (optional) — only for non-booking phases */}
+                    {plan && !(plan.trackId === "booking" && !plan.chosenTrackId) && finalAmount > 0 && (
+                        <motion.div variants={itemVariants}>
+                            <FormCard>
+                                <FieldLabel htmlFor="partial-amount">
+                                    Amount you&apos;re paying now
+                                </FieldLabel>
+                                <FieldInput
+                                    id="partial-amount"
+                                    type="number"
+                                    placeholder={`Full remaining: ₹${finalAmount.toLocaleString("en-IN")}`}
+                                    value={partialAmount}
+                                    onChange={(e) => setPartialAmount(e.target.value)}
+                                    focused={focusedField === "partialAmount"}
+                                    hasError={false}
+                                    onFocus={() => setFocusedField("partialAmount")}
+                                    onBlur={() => setFocusedField(null)}
+                                />
+                                <p style={{ margin: "6px 0 0", fontSize: "0.62rem", fontFamily: "var(--font-mono, monospace)", color: "rgba(31,58,45,0.55)" }}>
+                                    Leave blank to pay the full remaining balance of ₹{finalAmount.toLocaleString("en-IN")}.
+                                    You can split this installment across multiple payments before its deadline.
+                                </p>
+                            </FormCard>
+                        </motion.div>
+                    )}
 
                     {/* Transaction ID */}
                     <motion.div variants={itemVariants}>

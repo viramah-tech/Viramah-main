@@ -112,18 +112,24 @@ export default function TrackSelectionPage() {
         setError(null);
 
         try {
+            let preview: any;
             if (selectedTrack === "booking") {
-                await apiFetch("/api/payment/plan/booking", {
+                preview = await apiFetch<{ data: { plan: any } }>("/api/payment/plan/booking", {
                     method: "POST",
                     token,
                     body: { advance: advanceAmount, addOns },
                 });
             } else {
-                await apiFetch("/api/payment/plan/select-track", {
+                preview = await apiFetch<{ data: { plan: any } }>("/api/payment/plan/select-track", {
                     method: "POST",
                     token,
                     body: { trackId: selectedTrack, addOns },
                 });
+            }
+            // The backend no longer persists the plan until first payment.
+            // Stash the preview so the confirm page can render + submit it.
+            if (typeof window !== "undefined" && preview?.data?.plan) {
+                localStorage.setItem("viramah_plan_preview", JSON.stringify(preview.data.plan));
             }
             router.push("/user-onboarding/payment-breakdown");
         } catch (err) {
