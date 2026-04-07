@@ -136,17 +136,18 @@ function ReceiptUpload({
 // ── Payment Mode Card ──────────────────────────────────────────────────────────
 
 function ModeCard({
-  mode, selected, preview, loading, onClick,
+  mode, selected, preview, loading, onClick, discountLabel,
 }: {
   mode: "full" | "half";
   selected: boolean;
   preview: PreviewData | null;
   loading: boolean;
   onClick: () => void;
+  discountLabel: string;
 }) {
   const isFull = mode === "full";
   const title = isFull ? "Full Tenure" : "Half Yearly";
-  const discount = isFull ? "40% off" : "25% off";
+  const discount = discountLabel;
   const desc = isFull ? "Pay once for all 11 months" : "Pay in 2 installments";
 
   const Skeleton = () => (
@@ -269,6 +270,30 @@ export default function DepositPage() {
   const router = useRouter();
   const { state } = useOnboarding();
   const { config: pricingConfig, loading: pricingLoading } = usePricingConfig();
+
+  // ─── V2 REDIRECT ─────────────────────────────────────────────────────────
+  // The V2 payment flow (track-selection → payment-breakdown → confirm) has
+  // fully replaced this legacy deposit page. Redirect users to the unified
+  // entry point. The V2 "Booking First" track covers the same security‐deposit
+  // + registration flow that this page previously handled.
+  const [redirecting, setRedirecting] = useState(true);
+  useEffect(() => {
+    router.replace("/user-onboarding/track-selection");
+  }, [router]);
+
+  if (redirecting) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "40vh", gap: 16 }}>
+        <Loader2 size={24} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
+        <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.75rem", color: "rgba(31,58,45,0.5)" }}>
+          Redirecting to payment plans…
+        </p>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+  // ─── END V2 REDIRECT ─────────────────────────────────────────────────────
+
   const depositAmount = pricingConfig.securityDeposit;
   const roomTypeName = (state as Record<string, any>)?.step3?.selectedRoom?.title || "Your Selected Room";
   const frontendRoomId = (state as Record<string, any>)?.step3?.selectedRoom?.id;
@@ -415,6 +440,7 @@ export default function DepositPage() {
                 preview={mode === "full" ? fullPreview : halfPreview}
                 loading={previewLoading}
                 onClick={() => setPaymentMode(mode)}
+                discountLabel={`${Math.round((mode === "full" ? pricingConfig.discountFull : pricingConfig.discountHalf) * 100)}% off`}
               />
             ))}
           </div>
@@ -474,7 +500,7 @@ export default function DepositPage() {
                   Your plan
                 </span>
                 <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: GOLD, fontWeight: 700 }}>
-                  {paymentMode === "full" ? "Full Tenure — 40% discount" : "Half Yearly — 25% discount"}
+                  {paymentMode === "full" ? `Full Tenure — ${Math.round(pricingConfig.discountFull * 100)}% discount` : `Half Yearly — ${Math.round(pricingConfig.discountHalf * 100)}% discount`}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>

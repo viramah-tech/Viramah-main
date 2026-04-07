@@ -507,7 +507,10 @@ export default function PaymentStatusPage() {
             setPaymentsLoading(true);
             setPaymentsError(null);
             const [paymentsRes, upcomingRes, depositRes] = await Promise.allSettled([
-                apiFetch<{ data: { payments: PaymentRecord[] } }>("/api/public/payments/my-payments?limit=50"),
+                // V2: /api/payment/history returns { data: { payments, pagination } }
+                apiFetch<{ data: { payments: PaymentRecord[] } }>("/api/payment/history?limit=50"),
+                // /upcoming has no V2 equivalent yet — derived from PaymentPlan phases.
+                // Kept on legacy V1 endpoint until ported.
                 apiFetch<{ data: { installments: PaymentRecord[] } }>("/api/public/payments/upcoming"),
                 apiFetch<{ data: { hold: { depositAmount: number; registrationFeePaid: number; advanceAmount: number; totalPaidAtDeposit: number; refundableAmount: number } | null } }>("/api/public/deposits/status"),
             ]);
