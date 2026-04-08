@@ -95,6 +95,16 @@ export default function TrackSelectionPage() {
     useEffect(() => {
         const fetchConfig = async () => {
             try {
+                // Check if user already has an active plan in the DB
+                try {
+                    const planRes = await apiFetch<{ data: { plan: any } }>("/api/payment/plan/me", { token });
+                    if (planRes?.data?.plan) {
+                        // User already has a persisted plan — go to confirm to pay against it
+                        router.replace("/user-onboarding/confirm");
+                        return;
+                    }
+                } catch { /* No plan — continue to track selection */ }
+
                 const res = await apiFetch<ConfigResponse>("/api/payment/config");
                 setConfigs(res.data);
             } catch (err) {
@@ -104,7 +114,7 @@ export default function TrackSelectionPage() {
             }
         };
         fetchConfig();
-    }, []);
+    }, [token, router]);
 
     const handleSelect = async () => {
         if (!selectedTrack) return;
@@ -131,7 +141,7 @@ export default function TrackSelectionPage() {
             if (typeof window !== "undefined" && preview?.data?.plan) {
                 localStorage.setItem("viramah_plan_preview", JSON.stringify(preview.data.plan));
             }
-            router.push("/user-onboarding/payment-breakdown");
+            router.push("/user-onboarding/confirm");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to select track");
         } finally {

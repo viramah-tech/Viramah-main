@@ -200,8 +200,26 @@ export default function Step4Page() {
         setSubmitting(true);
         setError("");
         try {
+            // Mark onboarding as completed on the backend before proceeding to payment.
+            // This is the natural completion point — all profile data has been reviewed.
+            // The track-selection backend requires onboardingStatus='completed'.
+            try {
+                await apiFetch("/api/public/onboarding/confirm", { method: "POST" });
+            } catch (confirmErr) {
+                const msg = confirmErr instanceof Error ? confirmErr.message : "";
+                // Allow if already completed (idempotent)
+                if (!msg.toLowerCase().includes("already") && !msg.toLowerCase().includes("completed")) {
+                    throw confirmErr;
+                }
+            }
+
+            // Clear any stale plan preview so user always starts fresh on track-selection
+            if (typeof window !== "undefined") {
+                localStorage.removeItem("viramah_plan_preview");
+            }
+
             markStepComplete(4);
-            router.push("/user-onboarding/confirm");
+            router.push("/user-onboarding/track-selection");
         } catch (err) {
             const message = err instanceof Error ? err.message : "Failed to proceed. Please try again.";
             setError(message);

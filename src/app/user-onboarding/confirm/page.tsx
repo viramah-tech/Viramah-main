@@ -366,10 +366,12 @@ export default function ConfirmPage() {
     // Access guard — check step completion
     useEffect(() => {
         if (!canAccessStep(5)) {
-            // Check if user has a V2 plan (bypass step guard)
+            // Check if user has a V2 plan or a localStorage preview (bypass step guard)
+            const hasLocalPreview = typeof window !== "undefined" && !!localStorage.getItem("viramah_plan_preview");
+            if (hasLocalPreview) return; // preview exists — allow access
             apiFetch("/api/payment/plan/me").catch(() => {
                 setRedirecting(true);
-                router.replace("/user-onboarding/step-4");
+                router.replace("/user-onboarding/track-selection");
             });
         }
     }, [canAccessStep, router]);
@@ -434,13 +436,7 @@ export default function ConfirmPage() {
         setSubmitting(true);
         setErrors({});
         try {
-            // Step 1: Confirm onboarding (idempotent)
-            try {
-                await apiFetch("/api/public/onboarding/confirm", { method: "POST", token });
-            } catch (confirmErr) {
-                const msg = confirmErr instanceof Error ? confirmErr.message : "";
-                if (!msg.toLowerCase().includes("already") && !msg.toLowerCase().includes("completed")) throw confirmErr;
-            }
+            // Onboarding is already confirmed at Step 4 review — no need to re-confirm here.
 
             // Step 2: Upload receipt to V2 endpoint
             let uploadedReceiptUrl = receiptUrl;
