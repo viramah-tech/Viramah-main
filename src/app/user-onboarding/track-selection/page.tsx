@@ -136,11 +136,6 @@ export default function TrackSelectionPage() {
                     body: { trackId: selectedTrack, addOns },
                 });
             }
-            // The backend no longer persists the plan until first payment.
-            // Stash the preview so the confirm page can render + submit it.
-            if (typeof window !== "undefined" && preview?.data?.plan) {
-                localStorage.setItem("viramah_plan_preview", JSON.stringify(preview.data.plan));
-            }
             router.push("/user-onboarding/confirm");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to select track");

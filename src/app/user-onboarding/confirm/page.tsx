@@ -309,19 +309,7 @@ export default function ConfirmPage() {
 
                 let p = res?.data?.plan as PlanData | null;
                 if (!p) {
-                    // Backend no longer persists the plan until first payment.
-                    // Fall back to the preview stashed by the track-selection page.
-                    if (typeof window !== "undefined") {
-                        const raw = localStorage.getItem("viramah_plan_preview");
-                        if (raw) {
-                            try { p = JSON.parse(raw); } catch { p = null; }
-                        }
-                    }
-                }
-
-                if (!p) {
-                    router.replace("/user-onboarding/track-selection");
-                    return;
+                    throw new Error("No active payment plan found. Please select a track.");
                 }
 
                 setPlan(p);
@@ -366,9 +354,7 @@ export default function ConfirmPage() {
     // Access guard — check step completion
     useEffect(() => {
         if (!canAccessStep(5)) {
-            // Check if user has a V2 plan or a localStorage preview (bypass step guard)
-            const hasLocalPreview = typeof window !== "undefined" && !!localStorage.getItem("viramah_plan_preview");
-            if (hasLocalPreview) return; // preview exists — allow access
+            // Check if user has a V2 plan (bypass step guard)
             apiFetch("/api/payment/plan/me").catch(() => {
                 setRedirecting(true);
                 router.replace("/user-onboarding/track-selection");
@@ -455,11 +441,9 @@ export default function ConfirmPage() {
                 return;
             }
 
-            // Build the submit body. Two shapes:
-            //  - Preview plan (not yet persisted): send trackSelection, backend
-            //    will atomically create the plan + first payment.
-            //  - Persisted plan: send planId + phaseNumber as before.
-            const isFirstPayment = !plan._id;
+            // Build the submit body.
+            // Since the plan is now synced to the database on track selection,
+            // we always just submit the planId and phaseNumber.
             const partialNum = partialAmount.trim() === "" ? null : Number(partialAmount);
             if (partialNum != null && (!Number.isFinite(partialNum) || partialNum <= 0)) {
                 setErrors({ method: "Amount must be a positive number" });
@@ -477,14 +461,9 @@ export default function ConfirmPage() {
             };
             if (partialNum != null) submitBody.amount = partialNum;
 
-            if (isFirstPayment) {
-                submitBody.trackSelection =
-                    plan.trackSelection || { trackId: plan.chosenTrackId || plan.trackId };
-            } else {
-                submitBody.planId = plan._id;
-                if (plan.trackId !== "booking" || plan.chosenTrackId) {
-                    submitBody.phaseNumber = activePhase;
-                }
+            submitBody.planId = plan._id;
+            if (plan.trackId !== "booking" || plan.chosenTrackId) {
+                submitBody.phaseNumber = activePhase;
             }
 
             await apiFetch("/api/payment/submit", {
@@ -492,11 +471,6 @@ export default function ConfirmPage() {
                 token,
                 body: submitBody,
             });
-
-            // First-payment success — clear the local preview so reloads hit the DB
-            if (isFirstPayment && typeof window !== "undefined") {
-                localStorage.removeItem("viramah_plan_preview");
-            }
 
             markStepComplete(5);
             setStatus("payment_submitted");

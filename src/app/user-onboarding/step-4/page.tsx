@@ -213,11 +213,6 @@ export default function Step4Page() {
                 }
             }
 
-            // Clear any stale plan preview so user always starts fresh on track-selection
-            if (typeof window !== "undefined") {
-                localStorage.removeItem("viramah_plan_preview");
-            }
-
             markStepComplete(4);
             router.push("/user-onboarding/track-selection");
         } catch (err) {

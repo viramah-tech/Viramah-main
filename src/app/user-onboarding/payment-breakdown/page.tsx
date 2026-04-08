@@ -80,14 +80,6 @@ export default function PaymentBreakdownPage() {
                 const res = await apiFetch<PlanResponse>("/api/payment/plan/me", { token });
                 let p = res?.data?.plan ?? null;
 
-                // Fallback to localStorage preview for plans not yet persisted
-                if (!p && typeof window !== "undefined") {
-                    const raw = localStorage.getItem("viramah_plan_preview");
-                    if (raw) {
-                        try { p = JSON.parse(raw) as PlanData; } catch { p = null as any; }
-                    }
-                }
-
                 if (!p) {
                     setError("No payment plan found. Please select a track first.");
                     return;
@@ -100,22 +92,7 @@ export default function PaymentBreakdownPage() {
                 );
                 if (firstPending) setActivePhase(firstPending.phaseNumber);
             } catch (err) {
-                // On 404/no-plan, try localStorage before erroring
-                if (typeof window !== "undefined") {
-                    const raw = localStorage.getItem("viramah_plan_preview");
-                    if (raw) {
-                        try {
-                            const p = JSON.parse(raw);
-                            setPlan(p);
-                            const firstPending = p.phases?.find(
-                                (ph: any) => ph.status === "pending" || ph.status === "overdue"
-                            );
-                            if (firstPending) setActivePhase(firstPending.phaseNumber);
-                            return;
-                        } catch { /* fall through */ }
-                    }
-                }
-                setError(err instanceof Error ? err.message : "Failed to load payment plan");
+                setError(err instanceof Error ? err.message : "Failed to fetch plan breakdown.");
             } finally {
                 setLoading(false);
             }
