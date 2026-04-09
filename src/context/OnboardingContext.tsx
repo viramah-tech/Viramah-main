@@ -80,6 +80,8 @@ export interface OnboardingState {
     payment: PaymentData;
     status: OnboardingStatus;
     completedSteps: number[];
+    bookingId: string | null;
+    bookingStatus: string | null;
 }
 
 // ── Defaults ─────────────────────────────────────────────────
@@ -124,6 +126,8 @@ const INITIAL_STATE: OnboardingState = {
     },
     status: "pending",
     completedSteps: [],
+    bookingId: null,
+    bookingStatus: null,
 };
 
 // ── localStorage helpers (user-scoped) ──────────────────────
@@ -172,6 +176,8 @@ interface OnboardingContextType {
     setStatus: (status: OnboardingStatus) => void;
     resetOnboarding: () => void;
     saveStepToBackend: (step: number, payload: Record<string, unknown>) => Promise<void>;
+    setBookingId: (id: string) => void;
+    setBookingStatus: (status: string) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType>({
@@ -192,6 +198,8 @@ const OnboardingContext = createContext<OnboardingContextType>({
     setStatus: () => {},
     resetOnboarding: () => {},
     saveStepToBackend: async () => {},
+    setBookingId: () => {},
+    setBookingStatus: () => {},
 });
 
 // ── Provider ─────────────────────────────────────────────────
@@ -544,6 +552,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setState((prev) => ({ ...prev, status }));
     }, []);
 
+    const setBookingId = useCallback((id: string) => {
+        setState(prev => ({ ...prev, bookingId: id }));
+    }, []);
+
+    const setBookingStatus = useCallback((status: string) => {
+        setState(prev => ({ ...prev, bookingStatus: status }));
+    }, []);
+
     const resetOnboarding = useCallback(() => {
         setState(INITIAL_STATE);
         const key = storageKeyRef.current;
@@ -591,6 +607,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 setStatus,
                 resetOnboarding,
                 saveStepToBackend,
+                setBookingId,
+                setBookingStatus,
             }}
         >
             {children}
