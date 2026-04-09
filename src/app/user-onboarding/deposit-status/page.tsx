@@ -8,7 +8,7 @@ import {
     ArrowRight, RotateCcw, Shield, X, Printer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useDepositStatus } from "@/hooks/useDepositStatus";
+import { useBookingStatus } from "@/hooks/useBookingStatus";
 import BookingTimeline from "@/components/BookingTimeline";
 import { getDaysHoursRemaining } from "@/utils/deadlineUtils";
 import { apiFetch } from "@/lib/api";
@@ -251,7 +251,7 @@ function RefundModal({ onConfirm, onClose, loading, refundableAmount }: { onConf
 export default function DepositStatusPage() {
     const router = useRouter();
     const { user } = useAuth();
-    const { hold, isRefundEligible, isPaymentWindowOpen, isLoading, error, refetch } = useDepositStatus();
+    const { booking, timers, isLoading, error, refetch } = useBookingStatus();
 
     const [showRefundModal, setShowRefundModal] = useState(false);
     const [refundLoading, setRefundLoading] = useState(false);
@@ -285,15 +285,15 @@ export default function DepositStatusPage() {
         );
     }
 
-    if (error || !hold) {
+    if (error || !booking) {
         return (
             <div style={{ textAlign: "center", padding: "48px 24px" }}>
                 <AlertCircle size={40} color="rgba(220,38,38,0.5)" style={{ margin: "0 auto 16px", display: "block" }} />
                 <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", color: GREEN, fontWeight: 600, marginBottom: 8 }}>
-                    {hold === null ? "No deposit found" : "Failed to load status"}
+                    {booking === null ? "No booking found" : "Failed to load status"}
                 </p>
                 <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.45)", marginBottom: 20 }}>
-                    {error || "You haven't submitted a deposit yet."}
+                    {error || "You haven't submitted a booking deposit yet."}
                 </p>
                 <button onClick={refetch} style={{ padding: "10px 20px", borderRadius: 10, border: `1.5px solid rgba(31,58,45,0.2)`, background: "#fff", fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: GREEN, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
                     <RefreshCw size={12} /> Retry
@@ -302,13 +302,25 @@ export default function DepositStatusPage() {
         );
     }
 
-    const cfg = STATUS_CONFIG[hold.status] || STATUS_CONFIG.pending_approval;
-    const StatusIcon = cfg.icon;
-    const isActive = hold.status === "active";
-    const holdStatus = hold.status as "pending_approval" | "active" | "converted" | "refunded" | "expired" | "idle";
+    const mapBookingStatus = (status: string | undefined): keyof typeof STATUS_CONFIG => {
+        switch (status) {
+            case "UNDER_VERIFICATION":    return "pending_approval";
+            case "BOOKING_CONFIRMED":
+            case "FINAL_PAYMENT_PENDING": return "active";
+            case "FULLY_PAID":            return "converted";
+            case "CANCELLED":             return "expired";
+            default:                       return "pending_approval";
+        }
+    };
 
-    const holdAdvance = (hold as any).advanceAmount || 0;
-    const holdRefundable = (hold as any).refundableAmount ?? (15000 + holdAdvance);
+    const mappedStatus = mapBookingStatus(booking?.status);
+    const cfg = STATUS_CONFIG[mappedStatus];
+    const StatusIcon = cfg.icon;
+    const isActive = booking?.status === "BOOKING_CONFIRMED" || booking?.status === "FINAL_PAYMENT_PENDING";
+    const holdStatus = mappedStatus as "pending_approval" | "active" | "converted" | "refunded" | "expired";
+
+    const holdAdvance = (booking as any).advanceAmount || 0;
+    const holdRefundable = (booking as any).refundableAmount ?? (15000 + holdAdvance);
 
     return (
         <>
@@ -343,7 +355,7 @@ export default function DepositStatusPage() {
                         {cfg.subtitle}
                     </p>
 
-                    {hold.status === "converted" && (
+                    {booking?.status === "FULLY_PAID" && (
                         <div style={{ marginTop: 16 }}>
                             <button
                                 onClick={() => router.push("/user-onboarding/payment-status")}
@@ -353,14 +365,32 @@ export default function DepositStatusPage() {
                             </button>
                         </div>
                     )}
+                    {booking?.status === "BOOKING_CONFIRMED" && (
+                        <div style={{ marginTop: 16 }}>
+                            <button
+                                onClick={() => router.push("/user-onboarding/track-selection")}
+                                style={{ padding: "12px 24px", borderRadius: 10, border: "none", background: GREEN, color: GOLD, fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: "0 4px 16px rgba(31,58,45,0.2)" }}
+                            >
+                                Select Your Payment Plan →
+                            </button>
+                            {timers?.finalPaymentDeadline && (
+                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.6)", margin: "8px 0 0" }}>
+                                    Plan selection deadline:{" "}
+                                    {new Date(timers.finalPaymentDeadline).toLocaleDateString("en-IN", {
+                                        day: "numeric", month: "long", year: "numeric",
+                                    })}
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </motion.div>
 
                 {/* Timeline */}
                 <motion.div variants={itemVariants} style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.08)", padding: "20px 16px", boxShadow: "0 2px 12px rgba(31,58,45,0.05)" }}>
                     <BookingTimeline
                         currentStatus={holdStatus}
-                        depositTotal={hold?.totalPaidAtDeposit}
-                        advanceAmount={hold?.advanceAmount}
+                        depositTotal={(booking as any)?.totalPaidAtDeposit ?? booking?.financials?.totalBookingAmount}
+                        advanceAmount={(booking as any)?.advanceAmount}
                     />
                 </motion.div>
 
@@ -396,18 +426,18 @@ export default function DepositStatusPage() {
                         >
                             {/* TIMER 1 — Refund Window */}
                             <LiveCountdown
-                                deadline={hold.refundDeadline}
+                                deadline={timers?.finalPaymentDeadline}
                                 colorFn={getRefundTimerColor}
                                 helperText={`You can request a refund of ${inr(holdRefundable)} (Security Deposit${holdAdvance > 0 ? ' + Advance' : ''}) while this timer runs. Note: ₹1,000 registration fee is non-refundable.`}
                                 action={
-                                    isRefundEligible && !hold.refundRequestedAt ? (
+                                    !(booking as any)?.refundRequestedAt ? (
                                         <button
                                             onClick={() => setShowRefundModal(true)}
                                             style={{ marginTop: 4, padding: "9px 16px", borderRadius: 9, border: "1.5px solid rgba(220,38,38,0.28)", background: "rgba(220,38,38,0.06)", fontFamily: "var(--font-body, sans-serif)", fontSize: "0.78rem", fontWeight: 600, color: "#dc2626", cursor: "pointer", alignSelf: "flex-start" }}
                                         >
                                             Request Refund
                                         </button>
-                                    ) : hold.refundRequestedAt ? (
+                                    ) : (booking as any)?.refundRequestedAt ? (
                                         <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.45)" }}>
                                             Refund request pending…
                                         </span>
@@ -417,11 +447,11 @@ export default function DepositStatusPage() {
 
                             {/* TIMER 2 — Payment Deadline */}
                             <LiveCountdown
-                                deadline={hold.paymentDeadline}
+                                deadline={timers?.finalPaymentDeadline}
                                 colorFn={getPaymentTimerColor}
                                 helperText="Complete your full payment before this deadline to confirm your room."
                                 action={
-                                    isPaymentWindowOpen ? (
+                                    booking?.status === "FINAL_PAYMENT_PENDING" ? (
                                         <button
                                             onClick={() => router.push("/user-onboarding/confirm")}
                                             style={{ marginTop: 4, padding: "9px 16px", borderRadius: 9, border: "none", background: GREEN, fontFamily: "var(--font-body, sans-serif)", fontSize: "0.78rem", fontWeight: 700, color: GOLD, cursor: "pointer", alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, boxShadow: "0 3px 10px rgba(31,58,45,0.15)" }}
@@ -453,17 +483,17 @@ export default function DepositStatusPage() {
                     <button
                         onClick={() => printReceipt({
                             type: "deposit",
-                            amount: hold.totalPaidAtDeposit || hold.depositAmount || 15000,
-                            transactionId: (hold as any).depositTransactionId,
-                            date: hold.depositPaidAt || hold.createdAt,
-                            status: hold.status,
-                            paymentId: hold._id,
-                            paymentMode: (hold as any).paymentMode,
-                            roomType: (hold as any).roomTypeId?.name || (hold as any).roomTypeId?.displayName,
-                            depositAmount: hold.depositAmount,
-                            registrationFee: (hold as any).registrationFeePaid,
+                            amount: (booking as any).totalPaidAtDeposit || (booking as any).depositAmount || 15000,
+                            transactionId: (booking as any).depositTransactionId,
+                            date: (booking as any).depositPaidAt || (booking as any).createdAt,
+                            status: booking?.status,
+                            paymentId: (booking as any)._id,
+                            paymentMode: (booking as any).paymentMode,
+                            roomType: (booking as any).roomTypeId?.name || (booking as any).roomTypeId?.displayName,
+                            depositAmount: (booking as any).depositAmount,
+                            registrationFee: (booking as any).registrationFeePaid,
                             advanceAmount: holdAdvance,
-                            totalPaidAtDeposit: hold.totalPaidAtDeposit,
+                            totalPaidAtDeposit: (booking as any).totalPaidAtDeposit,
                         })}
                         style={{
                             padding: "10px 20px", borderRadius: 10,

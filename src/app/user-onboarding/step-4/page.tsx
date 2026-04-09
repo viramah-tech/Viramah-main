@@ -214,7 +214,7 @@ export default function Step4Page() {
             }
 
             markStepComplete(4);
-            router.push("/user-onboarding/track-selection");
+            router.push("/user-onboarding/deposit");
         } catch (err) {
             const message = err instanceof Error ? err.message : "Failed to proceed. Please try again.";
             setError(message);

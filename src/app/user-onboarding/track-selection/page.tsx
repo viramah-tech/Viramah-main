@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
     CreditCard, Check, ArrowRight, Loader2, AlertCircle,
-    Shield, Zap, Clock, Sparkles,
+    Zap, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
@@ -64,23 +64,20 @@ const TRACK_DETAILS: Record<string, {
         ],
         badge: "Flexible",
     },
-    booking: {
-        icon: Shield,
-        color: "#6b4c8a",
-        features: [
-            "Pay security deposit + registration now",
-            "Optional advance payment (credited later)",
-            "Choose Full or Two-Part plan after booking",
-            "Room reserved immediately",
-        ],
-        badge: "Reserve First",
-    },
 };
 
 export default function TrackSelectionPage() {
     const router = useRouter();
     const { token } = useAuth();
     const { state } = useOnboarding();
+    const { bookingId } = state;
+
+    useEffect(() => {
+        if (!bookingId) {
+            router.replace("/user-onboarding/deposit-status");
+        }
+    }, [bookingId, router]);
+
     const addOns = {
         transport: !!state.step3?.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "transport")?.enabled,
         mess: !!state.step3?.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "lunch")?.enabled,
@@ -90,7 +87,6 @@ export default function TrackSelectionPage() {
     const [error, setError] = useState<string | null>(null);
     const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
-    const [advanceAmount, setAdvanceAmount] = useState(0);
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -123,19 +119,11 @@ export default function TrackSelectionPage() {
 
         try {
             let preview: any;
-            if (selectedTrack === "booking") {
-                preview = await apiFetch<{ data: { plan: any } }>("/api/payment/plan/booking", {
-                    method: "POST",
-                    token,
-                    body: { advance: advanceAmount, addOns },
-                });
-            } else {
-                preview = await apiFetch<{ data: { plan: any } }>("/api/payment/plan/select-track", {
-                    method: "POST",
-                    token,
-                    body: { trackId: selectedTrack, addOns },
-                });
-            }
+            preview = await apiFetch<{ data: { plan: any } }>("/api/payment/plan/select-track", {
+                method: "POST",
+                token,
+                body: { trackId: selectedTrack, addOns, bookingId },
+            });
             router.push("/user-onboarding/confirm");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to select track");
@@ -166,9 +154,8 @@ export default function TrackSelectionPage() {
     }
 
     const tracks = [
-        { id: "full", name: "Full Payment", phases: 1 },
+        { id: "full",    name: "Full Payment",     phases: 1 },
         { id: "twopart", name: "Two-Part Payment", phases: 2 },
-        { id: "booking", name: "Booking First", phases: 0 },
     ];
 
     return (
@@ -297,33 +284,6 @@ export default function TrackSelectionPage() {
                                 </div>
                             </button>
 
-                            {/* Advance input for booking track */}
-                            {isSelected && track.id === "booking" && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-                                    style={{ overflow: "hidden", marginTop: 12, padding: "16px 20px", background: "rgba(107,76,138,0.04)", border: "1px solid rgba(107,76,138,0.15)", borderRadius: 14 }}
-                                >
-                                    <label style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(31,58,45,0.45)", display: "block", marginBottom: 8 }}>
-                                        Optional advance payment (credited to final amount)
-                                    </label>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.9rem", color: "rgba(31,58,45,0.5)" }}>₹</span>
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            step={1000}
-                                            placeholder="0"
-                                            value={advanceAmount || ""}
-                                            onChange={(e) => setAdvanceAmount(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-                                            style={{
-                                                flex: 1, background: "#fff", border: "1.5px solid rgba(31,58,45,0.15)",
-                                                borderRadius: 10, padding: "10px 14px", fontFamily: "var(--font-mono, monospace)",
-                                                fontSize: "0.9rem", color: GREEN, outline: "none",
-                                            }}
-                                        />
-                                    </div>
-                                </motion.div>
-                            )}
                         </motion.div>
                     );
                 })}
