@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
     CreditCard, Check, ArrowRight, Loader2, AlertCircle,
-    Zap, Sparkles,
+    Zap, Sparkles, Shield,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
@@ -165,6 +165,50 @@ export default function TrackSelectionPage() {
                 <StepBadge icon={CreditCard} label="Payment Track" />
                 <StepTitle>Choose your payment plan</StepTitle>
                 <StepSubtitle>Select how you would like to pay for your stay at Viramah.</StepSubtitle>
+            </motion.div>
+
+            {/* Booking Credit Banner — explains how the ₹16,180 already paid flows into the plan */}
+            <motion.div variants={itemVariants}>
+                <div style={{
+                    background: "linear-gradient(135deg, rgba(31,58,45,0.05) 0%, rgba(216,181,106,0.08) 100%)",
+                    border: "1.5px solid rgba(216,181,106,0.3)",
+                    borderRadius: 14,
+                    padding: "16px 18px",
+                    display: "flex",
+                    gap: 14,
+                    alignItems: "flex-start",
+                }}>
+                    <div style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: "rgba(31,58,45,0.08)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                        <Shield size={18} color={GREEN} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <p style={{
+                            fontFamily: "var(--font-mono, monospace)",
+                            fontSize: "0.58rem",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.18em",
+                            color: "rgba(31,58,45,0.5)",
+                            fontWeight: 700,
+                            margin: "0 0 6px",
+                        }}>
+                            Booking fee already received — ₹16,180
+                        </p>
+                        <p style={{
+                            fontFamily: "var(--font-body, sans-serif)",
+                            fontSize: "0.82rem",
+                            color: "rgba(31,58,45,0.7)",
+                            lineHeight: 1.55,
+                            margin: 0,
+                        }}>
+                            <strong style={{ color: GREEN }}>₹1,180</strong> (registration + GST) will be credited to your first installment.{" "}
+                            <strong style={{ color: GREEN }}>₹15,000</strong> (security deposit) is held as a refundable balance and is excluded from the amounts below.
+                        </p>
+                    </div>
+                </div>
             </motion.div>
 
             {/* Error Banner */}
