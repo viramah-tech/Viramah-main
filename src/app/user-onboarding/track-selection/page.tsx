@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { useBookingStatus } from "@/hooks/useBookingStatus";
 import { apiFetch } from "@/lib/api";
 import {
     StepBadge, StepTitle, StepSubtitle,
@@ -71,12 +72,21 @@ export default function TrackSelectionPage() {
     const { token } = useAuth();
     const { state } = useOnboarding();
     const { bookingId } = state;
+    const { booking, isLoading: bookingLoading } = useBookingStatus();
 
+    // V3 Guard: Only allow access when booking is BOOKING_CONFIRMED
+    // If no bookingId or booking not confirmed, redirect to deposit flow
     useEffect(() => {
+        if (bookingLoading) return; // Wait for status to load
         if (!bookingId) {
+            router.replace("/user-onboarding/deposit");
+            return;
+        }
+        // Booking exists but not yet confirmed — send back to status page
+        if (booking && booking.status !== "BOOKING_CONFIRMED" && booking.status !== "FINAL_PAYMENT_PENDING") {
             router.replace("/user-onboarding/deposit-status");
         }
-    }, [bookingId, router]);
+    }, [bookingId, booking, bookingLoading, router]);
 
     const addOns = {
         transport: !!state.step3?.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "transport")?.enabled,

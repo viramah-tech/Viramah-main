@@ -14,9 +14,10 @@ import { useAuth } from "@/context/AuthContext";
 import {
   FieldLabel, FieldInput, FieldError, NavButton,
   StepBadge, StepTitle, StepSubtitle, FormCard,
-  containerVariants, itemVariants,
+  containerVariants, itemVariants, SelectionButton
 } from "@/components/onboarding/FormComponents";
 import { PAYMENT_CONFIG } from "@/config/paymentConfig";
+import { DualBillDisplay } from "@/components/onboarding/DualBillDisplay";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -142,10 +143,12 @@ export default function BookingFeePage() {
 
   const [localBookingId,   setLocalBookingId]   = useState<string | null>(null);
   const [priceLockExpiry,  setPriceLockExpiry]   = useState<string | null>(null);
+  const [bookingData, setBookingData] = useState<any>(null);
   const [initiating,       setInitiating]        = useState(true);
   const [initError,        setInitError]         = useState<string | null>(null);
 
   const [transactionId, setTransactionId] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("UPI");
   const [receipt,       setReceipt]       = useState<{ name: string; preview: string } | null>(null);
   const [submitting,    setSubmitting]    = useState(false);
   const [globalError,   setGlobalError]  = useState<string | null>(null);
@@ -180,7 +183,7 @@ export default function BookingFeePage() {
           transport: !!(state.step3?.addOns?.find((a) => a.id === "transport" && a.enabled)),
         };
 
-        const res = await apiFetch<{ data: { booking: { _id: string; timers: { priceLockExpiry: string } } } }>(
+        const res = await apiFetch<{ data: { booking: any } }>(
           "/api/v1/bookings",
           {
             method: "POST",
@@ -192,20 +195,22 @@ export default function BookingFeePage() {
         const b = res.data.booking;
         setLocalBookingId(b._id);
         setBookingId(b._id);
+        setBookingData(b);
         setPriceLockExpiry(b.timers?.priceLockExpiry ?? null);
       } catch (e) {
         // If already has active booking (409), fetch existing status
         const msg = e instanceof Error ? e.message : "";
         if (msg.includes("already have an active booking") || (e as any)?.status === 409) {
           try {
-            const statusRes = await apiFetch<{ data: { booking: { _id: string; timers: { priceLockExpiry: string } } } }>(
+            const statusRes = await apiFetch<{ data: { booking: any } }>(
               "/api/v1/bookings/my-booking",
               { token }
             );
-            const existing = statusRes.data?.booking;
+            const existing = statusRes.data;
             if (existing) {
-              setLocalBookingId(existing._id);
-              setBookingId(existing._id);
+              setLocalBookingId(existing.bookingId || existing._id);
+              setBookingId(existing.bookingId || existing._id);
+              setBookingData(existing);
               setPriceLockExpiry(existing.timers?.priceLockExpiry ?? null);
               return;
             }
@@ -247,7 +252,7 @@ export default function BookingFeePage() {
         body: {
           transactionId: transactionId.trim(),
           receiptUrl,
-          paymentMethod: "UPI",
+          paymentMethod,
         },
       });
 
@@ -334,41 +339,58 @@ export default function BookingFeePage() {
 
       {/* Breakdown */}
       <motion.div variants={itemVariants}>
-        <FormCard>
-          <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(31,58,45,0.4)", fontWeight: 700, margin: "0 0 14px" }}>
-            Booking fee breakdown
-          </p>
-          {([
-            ["Security Deposit (refundable)", "₹15,000"],
-            ["Registration Fee", "₹1,000"],
-            ["GST on Registration (18%)", "₹180"],
-          ] as [string, string][]).map(([label, val]) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(31,58,45,0.06)" }}>
-              <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", color: "rgba(31,58,45,0.65)" }}>{label}</span>
-              <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.82rem", fontWeight: 700, color: GREEN }}>{val}</span>
-            </div>
-          ))}
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 0" }}>
-            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 700, color: GREEN }}>Total</span>
-            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "1rem", fontWeight: 700, color: GREEN }}>₹16,180</span>
-          </div>
-        </FormCard>
+        {bookingData && bookingData.displayBills ? (
+          <DualBillDisplay bookingData={bookingData.displayBills} />
+        ) : (
+          <FormCard>
+            <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(31,58,45,0.4)", fontWeight: 700, margin: "0 0 14px" }}>
+              Loading bill data...
+            </p>
+          </FormCard>
+        )}
       </motion.div>
 
-      {/* Bank Details */}
+      {/* Payment Method Details */}
       <motion.div variants={itemVariants}>
         <FormCard>
-          <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, margin: "0 0 14px" }}>
-            Transfer ₹16,180 to:
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 200px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, margin: 0 }}>
+              Payment Method
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <SelectionButton label="UPI" selected={paymentMethod === "UPI"} onClick={() => setPaymentMethod("UPI")} />
+              <SelectionButton label="Bank" selected={paymentMethod === "BANK_TRANSFER"} onClick={() => setPaymentMethod("BANK_TRANSFER")} />
+              <SelectionButton label="Cash" selected={paymentMethod === "CASH"} onClick={() => setPaymentMethod("CASH")} />
+            </div>
+          </div>
+          
+          {paymentMethod === "UPI" && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 200px" }}>
+                {([
+                  ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName],
+                  ["UPI ID",       PAYMENT_CONFIG.BANK_DETAILS.upiId],
+                ] as [string, string][]).map(([label, val]) => (
+                  <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.72rem", fontWeight: 700, color: GREEN }}>{val}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 120, height: 120, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
+                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", marginTop: 6, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
+              </div>
+            </div>
+          )}
+
+          {paymentMethod === "BANK_TRANSFER" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {([
-                ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName],
-                ["Account No",   PAYMENT_CONFIG.BANK_DETAILS.accountNo],
-                ["IFSC",         PAYMENT_CONFIG.BANK_DETAILS.ifsc],
-                ["Bank",         PAYMENT_CONFIG.BANK_DETAILS.bank],
-                ["UPI ID",       PAYMENT_CONFIG.BANK_DETAILS.upiId],
+                ["Account Name",   PAYMENT_CONFIG.BANK_DETAILS.accountName],
+                ["Account No",     PAYMENT_CONFIG.BANK_DETAILS.accountNo],
+                ["IFSC",           PAYMENT_CONFIG.BANK_DETAILS.ifsc],
+                ["Bank",           PAYMENT_CONFIG.BANK_DETAILS.bank],
               ] as [string, string][]).map(([label, val]) => (
                 <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
                   <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>
@@ -376,11 +398,15 @@ export default function BookingFeePage() {
                 </div>
               ))}
             </div>
-            <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-              <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 120, height: 120, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
-              <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", marginTop: 6, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
+          )}
+
+          {paymentMethod === "CASH" && (
+            <div style={{ padding: "12px", background: "rgba(216,181,106,0.1)", borderRadius: 8, border: "1px dashed rgba(216,181,106,0.4)" }}>
+              <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: GREEN, margin: 0, textAlign: "center" }}>
+                Please deposit the cash at our office. Upload the official Cash Receipt image below as proof of payment.
+              </p>
             </div>
-          </div>
+          )}
         </FormCard>
       </motion.div>
 
