@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { apiFetch } from "@/lib/api";
+import { PUBLIC_API } from "@/lib/apiEndpoints";
 
 export interface AuthUser {
     _id: string;
@@ -97,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const refreshPromise = (async () => {
             try {
-                const res = await apiFetch<{ data: AuthUser }>("/api/public/auth/me", {
+                const res = await apiFetch<{ data: AuthUser }>(PUBLIC_API.auth.me, {
                     token: currentToken,
                 });
                 setUser(res.data);
@@ -127,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (email: string, password: string): Promise<AuthUser> => {
         const res = await apiFetch<{ data: { token: string; user: AuthUser } }>(
-            "/api/public/auth/login",
+            PUBLIC_API.auth.login,
             { method: "POST", body: { email, password } }
         );
         const { token: newToken, user: newUser } = res.data;
@@ -139,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signup = async (name: string, email: string, password: string): Promise<AuthUser> => {
         const res = await apiFetch<{ data: { token: string; user: AuthUser } }>(
-            "/api/public/auth/register",
+            PUBLIC_API.auth.register,
             { method: "POST", body: { name, email, password } }
         );
         const { token: newToken, user: newUser } = res.data;
@@ -157,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("viramah_token");
         setToken(null);
         setUser(null);
-        apiFetch("/api/public/auth/logout", { method: "POST" }).catch(() => {});
+        apiFetch(PUBLIC_API.auth.logout, { method: "POST" }).catch(() => {});
     };
 
     const updateUser = (userData: Partial<AuthUser>) => {

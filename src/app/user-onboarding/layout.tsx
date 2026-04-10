@@ -494,7 +494,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                             )}
                             <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
                                 <div style={{ width: 32, height: 32 }}>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    { }
                                     <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                                 </div>
                                 <span

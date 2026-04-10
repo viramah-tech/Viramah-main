@@ -74,6 +74,13 @@ const STATUS_CONFIG = {
         title: "Booking window has expired",
         subtitle: "Your 21-day payment window has closed. The room has been released. Contact us if you have questions.",
     },
+    rejected: {
+        icon: XCircle, iconColor: "#dc2626", iconBg: "rgba(220,38,38,0.08)",
+        badge: "Payment Rejected", badgeColor: "#dc2626",
+        badgeBg: "rgba(220,38,38,0.06)", badgeBorder: "rgba(220,38,38,0.18)",
+        title: "Your booking payment was rejected",
+        subtitle: "Admin has rejected your payment proof. Please re-submit your booking payment with valid proof.",
+    },
 } as const;
 
 // ── Live Countdown Timer ──────────────────────────────────────────────────────
@@ -325,6 +332,7 @@ export default function DepositStatusPage() {
             case "FINAL_PAYMENT_PENDING": return "active";
             case "FULLY_PAID":            return "converted";
             case "CANCELLED":             return "expired";
+            case "REJECTED":           return "rejected";
             default:                       return "pending_approval";
         }
     };
@@ -398,6 +406,26 @@ export default function DepositStatusPage() {
                                     })}
                                 </p>
                             )}
+                        </div>
+                    )}
+                    {booking?.status === "FINAL_PAYMENT_PENDING" && (
+                        <div style={{ marginTop: 16 }}>
+                            <button
+                                onClick={() => router.push("/user-onboarding/confirm")}
+                                style={{ padding: "14px 28px", borderRadius: 12, border: "none", background: GREEN, color: GOLD, fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, boxShadow: "0 4px 20px rgba(31,58,45,0.25)" }}
+                            >
+                                Complete the Payment <ArrowRight size={14} />
+                            </button>
+                        </div>
+                    )}
+                    {booking?.status === "REJECTED" && (
+                        <div style={{ marginTop: 16 }}>
+                            <button
+                                onClick={() => router.push("/user-onboarding/deposit")}
+                                style={{ padding: "14px 28px", borderRadius: 12, border: "none", background: "#dc2626", color: "#fff", fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, boxShadow: "0 4px 16px rgba(220,38,38,0.2)" }}
+                            >
+                                Re-submit Booking Payment
+                            </button>
                         </div>
                     )}
                 </motion.div>

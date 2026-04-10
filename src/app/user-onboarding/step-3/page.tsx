@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { apiFetch } from "@/lib/api";
+import { PUBLIC_API } from "@/lib/apiEndpoints";
 import { usePricingConfig } from "@/hooks/usePricingConfig";
 import { ROOMS as STATIC_ROOMS, type RoomType } from "@/data/rooms";
 import { ROOM_TYPE_MAP } from "@/config/paymentConfig";
@@ -440,7 +441,7 @@ export default function Step3Page() {
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const res = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string; basePrice?: number; discountedPrice?: number; pricing?: { original: number; discounted: number }; availableSeats: number; isActive: boolean }> } }>("/api/public/rooms");
+                const res = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string; basePrice?: number; discountedPrice?: number; pricing?: { original: number; discounted: number }; availableSeats: number; isActive: boolean }> } }>(PUBLIC_API.rooms.list);
                 if (res?.data?.roomTypes) {
                     const mapped = STATIC_ROOMS.map(staticRoom => {
                         const backendName = ROOM_TYPE_MAP[staticRoom.id];
@@ -501,7 +502,7 @@ export default function Step3Page() {
             const backendRoomName = ROOM_TYPE_MAP[step3.selectedRoom.id] || "";
             const roomsRes = await apiFetch<{
                 data: { roomTypes: Array<{ _id: string; name: string; availableSeats: number }> };
-            }>("/api/public/rooms");
+            }>(PUBLIC_API.rooms.list);
 
             const matchingRoom = roomsRes.data.roomTypes.find(
                 (r) => r.name === backendRoomName && r.availableSeats > 0
@@ -517,7 +518,7 @@ export default function Step3Page() {
             const messPackage = hasLunch ? "full-board" : "partial-board";
             const hasTransport = step3.addOns.find((a) => a.id === "transport")?.enabled;
 
-            await apiFetch("/api/public/onboarding/step-3", {
+            await apiFetch(PUBLIC_API.onboarding.step(3), {
                 method: "PATCH",
                 body: { roomTypeId: matchingRoom._id, roomTypeName: backendRoomName, messPackage, transportEnabled: !!hasTransport },
             });

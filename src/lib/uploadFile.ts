@@ -1,3 +1,5 @@
+import { PUBLIC_API } from "@/lib/apiEndpoints";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /**
@@ -33,7 +35,14 @@ export async function uploadFile(
             ? localStorage.getItem("viramah_token")
             : null;
 
-    const res = await fetch(`${API_BASE}/api/public/upload/${type}`, {
+    const uploadPath =
+        type === "document"
+            ? PUBLIC_API.upload.document
+            : type === "photo"
+                ? PUBLIC_API.upload.photo
+                : PUBLIC_API.upload.receipt;
+
+    const res = await fetch(`${API_BASE}${uploadPath}`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
@@ -45,7 +54,7 @@ export async function uploadFile(
     try {
         data = text ? JSON.parse(text) : {};
     } catch (parseError) {
-        console.error(`[uploadFile] JSON Parse Error for ${API_BASE}/api/public/upload/${type}:`, text.substring(0, 100));
+        console.error(`[uploadFile] JSON Parse Error for ${API_BASE}${uploadPath}:`, text.substring(0, 100));
         throw new Error(`Upload failed to parse JSON from ${API_BASE}...`);
     }
 
@@ -66,7 +75,7 @@ export async function deleteUploadedFile(fileUrl: string): Promise<void> {
             ? localStorage.getItem("viramah_token")
             : null;
 
-    const res = await fetch(`${API_BASE}/api/public/upload/file`, {
+    const res = await fetch(`${API_BASE}${PUBLIC_API.upload.file}`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",

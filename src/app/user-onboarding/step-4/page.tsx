@@ -14,6 +14,7 @@ import {
     NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
     containerVariants, itemVariants
 } from "@/components/onboarding/FormComponents";
+import { PUBLIC_API } from "@/lib/apiEndpoints";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -147,7 +148,7 @@ const ID_LABELS: Record<string, string> = {
 
 export default function Step4Page() {
     const router = useRouter();
-    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saving } = useOnboarding();
+    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saving, hydrating } = useOnboarding();
     const { user } = useAuth();
     const { step1, step2, step3 } = state;
     const [submitting, setSubmitting] = useState(false);
@@ -156,13 +157,14 @@ export default function Step4Page() {
     const agreements = user?.agreements ?? null;
 
     useEffect(() => {
+        if (hydrating) return;
         if (!canAccessStep(4)) {
             setRedirecting(true);
             router.replace("/user-onboarding/step-3");
         }
-    }, [canAccessStep, router]);
+    }, [canAccessStep, hydrating, router]);
 
-    if (redirecting) {
+    if (redirecting || hydrating) {
         return null;
     }
 
@@ -185,7 +187,7 @@ export default function Step4Page() {
             // This is the natural completion point — all profile data has been reviewed.
             // The track-selection backend requires onboardingStatus='completed'.
             try {
-                await apiFetch("/api/public/onboarding/confirm", { method: "POST" });
+                await apiFetch(PUBLIC_API.onboarding.confirm, { method: "POST" });
             } catch (confirmErr) {
                 const msg = confirmErr instanceof Error ? confirmErr.message : "";
                 // Allow if already completed (idempotent)
@@ -233,13 +235,13 @@ export default function Step4Page() {
                         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                             {step1.idFront && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    { }
                                     <img src={step1.idFront.preview} alt="ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
                             {step1.idBack && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    { }
                                     <img src={step1.idBack.preview} alt="ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
@@ -271,13 +273,13 @@ export default function Step4Page() {
                         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                             {step2.parentIdFront && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    { }
                                     <img src={step2.parentIdFront.preview} alt="Guardian ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
                             {step2.parentIdBack && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    { }
                                     <img src={step2.parentIdBack.preview} alt="Guardian ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}

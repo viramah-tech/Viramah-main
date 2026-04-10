@@ -6,13 +6,18 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
+    "dev:turbo": "next dev",
     "build": "next build",
     "start": "next start",
     "clean": "node -e \"const fs=require('fs');fs.existsSync('.next')&&fs.rmSync('.next',{recursive:true,force:true});console.log('Cleaned .next')\"",
+    "clean:deep": "node -e \"const fs=require('fs');['.next','node_modules/.cache'].forEach(p=>{if(fs.existsSync(p))fs.rmSync(p,{recursive:true,force:true});});console.log('Deep clean complete')\"",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    "content-audit": "node scripts/content_audit.js"
+    "content-audit": "node scripts/content_audit.js",
+    "verify:imports": "node scripts/checkLocalImports.js",
+    "verify:api-contract": "node scripts/verify_api_contract.js",
+    "verify:rename": "npm run verify:imports && npm run verify:api-contract && npm run type-check && npm run build"
   },
   "dependencies": {
     "@react-email/components": "^1.0.8",

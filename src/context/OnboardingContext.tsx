@@ -5,6 +5,7 @@ import {
     ReactNode,
 } from "react";
 import { apiFetch } from "@/lib/api";
+import { PUBLIC_API } from "@/lib/apiEndpoints";
 import { useAuth } from "@/context/AuthContext";
 
 // ── Types ────────────────────────────────────────────────────
@@ -298,12 +299,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         (async () => {
             try {
                 // Fetch status and rooms
-                const statusRes = await apiFetch<OnboardingStatusResponse>("/api/public/onboarding/status");
+                const statusRes = await apiFetch<OnboardingStatusResponse>(PUBLIC_API.onboarding.status);
                 const d = statusRes.data;
 
                 let fetchedRooms: RoomApiRecord[] = [];
                 try {
-                    const roomsRes = await apiFetch<RoomsResponse>("/api/public/rooms");
+                    const roomsRes = await apiFetch<RoomsResponse>(PUBLIC_API.rooms.list);
                     fetchedRooms = roomsRes.data?.roomTypes || [];
                 } catch (e) {
                     console.error("Failed to fetch rooms during hydration:", e);
@@ -497,8 +498,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 const method = step === 0 ? "POST" : "PATCH";
                 const path =
                     step === 0
-                        ? "/api/public/onboarding/confirm"
-                        : `/api/public/onboarding/step-${step}`;
+                        ? PUBLIC_API.onboarding.confirm
+                        : PUBLIC_API.onboarding.step(step as 1 | 2 | 3 | 4);
 
                 await apiFetch(path, { method, body: payload });
             } finally {
