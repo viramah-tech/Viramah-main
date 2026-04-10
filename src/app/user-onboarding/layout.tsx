@@ -238,9 +238,8 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
 export default function RoomBookingLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { loading, isAuthenticated } = useAuth();
+    const { loading, isAuthenticated, user } = useAuth();
     const currentStep = getStepFromPath(pathname);
-    const isTermsPage  = false;
     const isPostFlow   = currentStep >= 7; // deposit-status, payment-status
     const [isScrolled, setIsScrolled] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
@@ -269,24 +268,16 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
                 const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-                // Fetch BOTH data sources in parallel (single network round-trip)
-                const [meRes, holdRes] = await Promise.allSettled([
-                    fetch(`${apiBase}/api/public/auth/me`, { headers }),
-                    fetch(`${apiBase}/api/public/deposits/status`, { headers }),
-                ]);
+                const holdRes = await fetch(`${apiBase}/api/public/deposits/status`, { headers });
 
                 if (cancelled) return;
 
-                // Parse responses safely
-                let userData = null;
+                // Parse response safely
+                const userData = user;
                 let holdData = null;
 
-                if (meRes.status === "fulfilled" && meRes.value.ok) {
-                    const meJson = await meRes.value.json();
-                    userData = meJson?.data;
-                }
-                if (holdRes.status === "fulfilled" && holdRes.value.ok) {
-                    const holdJson = await holdRes.value.json();
+                if (holdRes.ok) {
+                    const holdJson = await holdRes.json();
                     holdData = holdJson?.data?.hold;
                 }
 
@@ -322,7 +313,6 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                 // PRIORITY 2: Payment/onboarding lifecycle redirect
                 if (userData && !isExcludedFrom(LIFECYCLE_EXCLUDED)) {
                     const ps = userData.paymentStatus;
-                    const os = userData.onboardingStatus;
                     const dvs = userData.documentVerificationStatus;
                     const ms = userData.moveInStatus;
 
@@ -356,44 +346,28 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
 
         return () => { cancelled = true; }; // Cleanup — prevent stale redirects
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loading, isAuthenticated, pathname]);
+    }, [loading, isAuthenticated, pathname, user]);
 
     // Terms acceptance guard:
     // If the user hasn't accepted T&C, redirect to /user-onboarding/terms.
     // This prevents skipping the acceptance step by navigating directly to step-2 etc.
     useEffect(() => {
-        if (loading || !isAuthenticated) return;
+        if (loading || !isAuthenticated || !user) return;
         if (pathname.includes("/user-onboarding/terms")) return; // already there — don't loop
 
-        const checkTermsAccepted = async () => {
-            try {
-                const token = typeof window !== "undefined" ? localStorage.getItem("viramah_token") : null;
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/public/auth/me`,
-                    { headers: token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : {} }
-                );
-                if (!res.ok) return; // If auth fails, the auth guard above handles it
-                const data = await res.json();
+        // Contact verification guard: redirect to /verify-contact if email not verified
+        const emailVerified = user?.verification?.emailVerified;
+        if (!emailVerified) {
+            router.replace("/verify-contact");
+            return;
+        }
 
-                // Contact verification guard: redirect to /verify-contact if email not verified
-                const emailVerified = data?.data?.verification?.emailVerified;
-                if (!emailVerified) {
-                    router.replace("/verify-contact");
-                    return;
-                }
-
-                const agreed = data?.data?.agreements?.termsAccepted;
-                if (!agreed) {
-                    router.replace("/user-onboarding/terms");
-                }
-            } catch {
-                // Non-critical: if check fails, don't block the user
-            }
-        };
-
-        checkTermsAccepted();
+        const agreed = user?.agreements?.termsAccepted;
+        if (!agreed) {
+            router.replace("/user-onboarding/terms");
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loading, isAuthenticated, pathname]);
+    }, [loading, isAuthenticated, pathname, user]);
 
     useEffect(() => {
         let ticking = false;
@@ -520,6 +494,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                             )}
                             <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
                                 <div style={{ width: 32, height: 32 }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                                 </div>
                                 <span

@@ -1,8 +1,56 @@
 import React from "react";
-import { Shield, Clock, Info } from "lucide-react";
+import { Shield, Info } from "lucide-react";
+
+interface BillLine {
+  label: string;
+  amount: number;
+}
+
+interface DeductionCredit {
+  amount: number;
+  description?: string;
+}
+
+interface BookingBill {
+  totalPayable: number;
+  breakdown: BillLine[];
+}
+
+interface RoomRentBreakdown {
+  tenure: number;
+  subtotal: number;
+  discountPercent: number;
+  discountAmount: number;
+  gstAmount: number;
+}
+
+interface OptionalService {
+  total: number;
+}
+
+interface FullTenureBill {
+  roomRent: RoomRentBreakdown;
+  mess?: OptionalService | null;
+  transport?: OptionalService | null;
+  deductions?: {
+    securityDeposit?: { label?: string; amount?: number };
+    referralCredits?: DeductionCredit[];
+    otherCredits?: DeductionCredit[];
+  };
+  totalAfterDeductions: number;
+}
+
+interface ProjectedFinalBill {
+  fullTenure?: FullTenureBill;
+}
+
+export interface DisplayBillsData {
+  bookingBill?: BookingBill;
+  projectedFinalBill?: ProjectedFinalBill;
+}
 
 interface DualBillProps {
-  bookingData: any; // We can type this later. Passed from booking.displayBills
+  bookingData: DisplayBillsData | null;
 }
 
 const GREEN = "#1F3A2D";
@@ -13,8 +61,18 @@ export const DualBillDisplay: React.FC<DualBillProps> = ({ bookingData }) => {
 
   const { bookingBill, projectedFinalBill } = bookingData;
 
-  if (!bookingBill || !projectedFinalBill) return null;
+  if (!bookingBill || !projectedFinalBill || !projectedFinalBill.fullTenure) return null;
   const ft = projectedFinalBill.fullTenure;
+  const messTotal = ft.mess?.total ?? 0;
+  const transportTotal = ft.transport?.total ?? 0;
+  
+  if (!ft?.roomRent) return null;
+
+  const formatCurrency = (val: unknown) => {
+    const num = Number(val);
+    if (val === null || val === undefined || Number.isNaN(num)) return "0";
+    return Number(val).toLocaleString();
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, marginBottom: 32 }}>
@@ -33,16 +91,16 @@ export const DualBillDisplay: React.FC<DualBillProps> = ({ bookingData }) => {
           </h3>
         </div>
         <div style={{ padding: 20 }}>
-          {bookingBill.breakdown.map((item: any, idx: number) => (
+          {bookingBill?.breakdown?.map((item: BillLine, idx: number) => (
             <div key={idx} style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
               <span style={{ color: "rgba(31,58,45,0.7)", fontSize: "0.95rem" }}>{item.label}</span>
-              <span style={{ fontWeight: 500, color: GREEN, fontSize: "0.95rem" }}>₹{item.amount.toLocaleString()}</span>
+              <span style={{ fontWeight: 500, color: GREEN, fontSize: "0.95rem" }}>₹{formatCurrency(item.amount)}</span>
             </div>
           ))}
           <div style={{ borderTop: "1px dashed rgba(31,58,45,0.2)", margin: "16px 0" }}></div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontWeight: 600, color: GREEN, fontSize: "1.1rem" }}>Total Payable Now</span>
-            <span style={{ fontWeight: 700, color: GREEN, fontSize: "1.3rem" }}>₹{bookingBill.totalPayable.toLocaleString()}</span>
+            <span style={{ fontWeight: 700, color: GREEN, fontSize: "1.3rem" }}>₹{formatCurrency(bookingBill.totalPayable)}</span>
           </div>
         </div>
       </div>
@@ -67,32 +125,32 @@ export const DualBillDisplay: React.FC<DualBillProps> = ({ bookingData }) => {
           <h4 style={{ margin: "0 0 10px 0", color: GREEN, fontSize: "0.95rem" }}>Room Rent ({ft.roomRent.tenure} months)</h4>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
             <span style={{ color: "rgba(31,58,45,0.7)", fontSize: "0.9rem" }}>Base Rent</span>
-            <span style={{ color: GREEN, fontSize: "0.9rem" }}>₹{ft.roomRent.subtotal.toLocaleString()}</span>
+            <span style={{ color: GREEN, fontSize: "0.9rem" }}>₹{formatCurrency(ft.roomRent.subtotal)}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, color: "#16a34a" }}>
             <span style={{ fontSize: "0.9rem" }}>Discount ({ft.roomRent.discountPercent}%)</span>
-            <span style={{ fontSize: "0.9rem" }}>-₹{ft.roomRent.discountAmount.toLocaleString()}</span>
+            <span style={{ fontSize: "0.9rem" }}>-₹{formatCurrency(ft.roomRent.discountAmount)}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
             <span style={{ color: "rgba(31,58,45,0.7)", fontSize: "0.9rem" }}>GST ({ft.roomRent.gstAmount ? '18%' : '0%'})</span>
-            <span style={{ color: GREEN, fontSize: "0.9rem" }}>₹{(ft.roomRent.gstAmount || 0).toLocaleString()}</span>
+            <span style={{ color: GREEN, fontSize: "0.9rem" }}>₹{formatCurrency(ft.roomRent.gstAmount || 0)}</span>
           </div>
         </div>
 
         {/* Services */}
-        {(ft.mess?.total > 0 || ft.transport?.total > 0) && (
+        {(messTotal > 0 || transportTotal > 0) && (
            <div style={{ marginBottom: 16, paddingTop: 16, borderTop: "1px solid rgba(31,58,45,0.1)" }}>
              <h4 style={{ margin: "0 0 10px 0", color: GREEN, fontSize: "0.95rem" }}>Selected Services</h4>
-             {ft.mess?.total > 0 && (
+             {messTotal > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                   <span style={{ color: "rgba(31,58,45,0.7)", fontSize: "0.9rem" }}>Mess (Lump sum)</span>
-                  <span style={{ color: GREEN, fontSize: "0.9rem" }}>₹{ft.mess.total.toLocaleString()}</span>
+                  <span style={{ color: GREEN, fontSize: "0.9rem" }}>₹{formatCurrency(messTotal)}</span>
                 </div>
              )}
-             {ft.transport?.total > 0 && (
+             {transportTotal > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                   <span style={{ color: "rgba(31,58,45,0.7)", fontSize: "0.9rem" }}>Transport (Lump sum)</span>
-                  <span style={{ color: GREEN, fontSize: "0.9rem" }}>₹{ft.transport.total.toLocaleString()}</span>
+                  <span style={{ color: GREEN, fontSize: "0.9rem" }}>₹{formatCurrency(transportTotal)}</span>
                 </div>
              )}
            </div>
@@ -102,19 +160,19 @@ export const DualBillDisplay: React.FC<DualBillProps> = ({ bookingData }) => {
         <div style={{ marginBottom: 16, paddingTop: 16, borderTop: "1px solid rgba(31,58,45,0.1)" }}>
           <h4 style={{ margin: "0 0 10px 0", color: GREEN, fontSize: "0.95rem" }}>Deductions & Credits</h4>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, color: "#16a34a" }}>
-            <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>{ft.deductions.securityDeposit.label}</span>
-            <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>-₹{ft.deductions.securityDeposit.amount.toLocaleString()}</span>
+            <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>{ft.deductions?.securityDeposit?.label || 'Security Deposit'}</span>
+            <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>-₹{formatCurrency(ft.deductions?.securityDeposit?.amount || 15000)}</span>
           </div>
-          {ft.deductions.referralCredits?.map((cred: any, idx: number) => (
+          {ft.deductions?.referralCredits?.map((cred: DeductionCredit, idx: number) => (
              <div key={idx} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, color: "#16a34a" }}>
                <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>{cred.description || 'Referral Credit'}</span>
-               <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>-₹{cred.amount.toLocaleString()}</span>
+               <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>-₹{formatCurrency(cred.amount)}</span>
              </div>
           ))}
-          {ft.deductions.otherCredits?.map((cred: any, idx: number) => (
+          {ft.deductions?.otherCredits?.map((cred: DeductionCredit, idx: number) => (
              <div key={idx} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, color: "#16a34a" }}>
                <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>{cred.description || 'Other Credit'}</span>
-               <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>-₹{cred.amount.toLocaleString()}</span>
+               <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>-₹{formatCurrency(cred.amount)}</span>
              </div>
           ))}
         </div>
@@ -123,7 +181,7 @@ export const DualBillDisplay: React.FC<DualBillProps> = ({ bookingData }) => {
         
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", padding: "12px 16px", borderRadius: 8, border: `1px solid rgba(31,58,45,0.1)` }}>
           <span style={{ fontWeight: 600, color: GREEN, fontSize: "1rem" }}>Projected Final Amount</span>
-          <span style={{ fontWeight: 700, color: GREEN, fontSize: "1.2rem" }}>₹{ft.totalAfterDeductions.toLocaleString()}</span>
+          <span style={{ fontWeight: 700, color: GREEN, fontSize: "1.2rem" }}>₹{formatCurrency(ft.totalAfterDeductions)}</span>
         </div>
       </div>
     </div>

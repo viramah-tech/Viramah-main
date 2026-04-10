@@ -581,12 +581,14 @@ export function SecondaryButton({
 // ── Motion Variants ──────────────────────────────────────────
 
 export const containerVariants = {
-    hidden: { opacity: 0 },
+    // Keep hidden visually visible to avoid hydration-related opacity lockups on reload.
+    hidden: { opacity: 1 },
     visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
 };
 
 export const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    // Use a no-op hidden state so sections never get stuck at opacity 0.
+    hidden: { y: 0, opacity: 1 },
     visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] } },
 };
 

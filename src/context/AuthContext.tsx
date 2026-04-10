@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { apiFetch } from "@/lib/api";
 
 export interface AuthUser {
@@ -72,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const refreshInFlightRef = useRef<Promise<void> | null>(null);
 
     // Initialize token from localStorage on mount
     useEffect(() => {
@@ -89,17 +90,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoading(false);
             return;
         }
+        if (refreshInFlightRef.current) {
+            await refreshInFlightRef.current;
+            return;
+        }
+
+        const refreshPromise = (async () => {
+            try {
+                const res = await apiFetch<{ data: AuthUser }>("/api/public/auth/me", {
+                    token: currentToken,
+                });
+                setUser(res.data);
+            } catch {
+                localStorage.removeItem("viramah_token");
+                setUser(null);
+                setToken(null);
+            } finally {
+                setLoading(false);
+            }
+        })();
+
+        refreshInFlightRef.current = refreshPromise;
         try {
-            const res = await apiFetch<{ data: AuthUser }>("/api/public/auth/me", {
-                token: currentToken,
-            });
-            setUser(res.data);
-        } catch {
-            localStorage.removeItem("viramah_token");
-            setUser(null);
-            setToken(null);
+            await refreshPromise;
         } finally {
-            setLoading(false);
+            refreshInFlightRef.current = null;
         }
     }, [token]);
 

@@ -8,7 +8,7 @@ import {
     ArrowRight, RotateCcw, Shield, X, Printer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useBookingStatus } from "@/hooks/useBookingStatus";
+import { useBookingStatus, type V3Booking } from "@/hooks/useBookingStatus";
 import BookingTimeline from "@/components/BookingTimeline";
 import { getDaysHoursRemaining } from "@/utils/deadlineUtils";
 import { apiFetch } from "@/lib/api";
@@ -19,6 +19,22 @@ const GREEN = "#1F3A2D";
 const GOLD  = "#D8B56A";
 const inr = (n: number | null | undefined) =>
     n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`;
+
+type BookingWithExtras = V3Booking & {
+    advanceAmount?: number;
+    refundableAmount?: number;
+    totalPaidAtDeposit?: number;
+    refundRequestedAt?: string;
+    depositAmount?: number;
+    registrationFeePaid?: number;
+    depositTransactionId?: string;
+    depositPaidAt?: string;
+    paymentMode?: string;
+    roomTypeId?: {
+        name?: string;
+        displayName?: string;
+    };
+};
 
 // ── Status Banner Config ──────────────────────────────────────────────────────
 
@@ -318,9 +334,10 @@ export default function DepositStatusPage() {
     const StatusIcon = cfg.icon;
     const isActive = booking?.status === "BOOKING_CONFIRMED" || booking?.status === "FINAL_PAYMENT_PENDING";
     const holdStatus = mappedStatus as "pending_approval" | "active" | "converted" | "refunded" | "expired";
+    const bookingData = booking as BookingWithExtras | null;
 
-    const holdAdvance = (booking as any).advanceAmount || 0;
-    const holdRefundable = (booking as any).refundableAmount ?? (15000 + holdAdvance);
+    const holdAdvance = bookingData?.advanceAmount || 0;
+    const holdRefundable = bookingData?.refundableAmount ?? (15000 + holdAdvance);
 
     return (
         <>
@@ -328,7 +345,7 @@ export default function DepositStatusPage() {
             <style>{pulseStyle}</style>
 
             <motion.div
-                variants={containerVariants} initial="hidden" animate="visible"
+                variants={containerVariants} initial={false} animate="visible"
                 style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 80 }}
             >
                 {/* Status Banner */}
@@ -389,8 +406,8 @@ export default function DepositStatusPage() {
                 <motion.div variants={itemVariants} style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.08)", padding: "20px 16px", boxShadow: "0 2px 12px rgba(31,58,45,0.05)" }}>
                     <BookingTimeline
                         currentStatus={holdStatus}
-                        depositTotal={(booking as any)?.totalPaidAtDeposit ?? booking?.financials?.totalBookingAmount}
-                        advanceAmount={(booking as any)?.advanceAmount}
+                        depositTotal={bookingData?.totalPaidAtDeposit ?? booking?.financials?.totalBookingAmount}
+                        advanceAmount={bookingData?.advanceAmount}
                     />
                 </motion.div>
 
@@ -430,14 +447,14 @@ export default function DepositStatusPage() {
                                 colorFn={getRefundTimerColor}
                                 helperText={`You can request a refund of ${inr(holdRefundable)} (Security Deposit${holdAdvance > 0 ? ' + Advance' : ''}) while this timer runs. Note: ₹1,000 registration fee is non-refundable.`}
                                 action={
-                                    !(booking as any)?.refundRequestedAt ? (
+                                    !bookingData?.refundRequestedAt ? (
                                         <button
                                             onClick={() => setShowRefundModal(true)}
                                             style={{ marginTop: 4, padding: "9px 16px", borderRadius: 9, border: "1.5px solid rgba(220,38,38,0.28)", background: "rgba(220,38,38,0.06)", fontFamily: "var(--font-body, sans-serif)", fontSize: "0.78rem", fontWeight: 600, color: "#dc2626", cursor: "pointer", alignSelf: "flex-start" }}
                                         >
                                             Request Refund
                                         </button>
-                                    ) : (booking as any)?.refundRequestedAt ? (
+                                    ) : bookingData?.refundRequestedAt ? (
                                         <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.45)" }}>
                                             Refund request pending…
                                         </span>
@@ -483,17 +500,17 @@ export default function DepositStatusPage() {
                     <button
                         onClick={() => printReceipt({
                             type: "deposit",
-                            amount: (booking as any).totalPaidAtDeposit || (booking as any).depositAmount || 15000,
-                            transactionId: (booking as any).depositTransactionId,
-                            date: (booking as any).depositPaidAt || (booking as any).createdAt,
+                            amount: bookingData?.totalPaidAtDeposit || bookingData?.depositAmount || 15000,
+                            transactionId: bookingData?.depositTransactionId,
+                            date: bookingData?.depositPaidAt || bookingData?.createdAt || new Date().toISOString(),
                             status: booking?.status,
-                            paymentId: (booking as any)._id,
-                            paymentMode: (booking as any).paymentMode,
-                            roomType: (booking as any).roomTypeId?.name || (booking as any).roomTypeId?.displayName,
-                            depositAmount: (booking as any).depositAmount,
-                            registrationFee: (booking as any).registrationFeePaid,
+                            paymentId: bookingData?._id,
+                            paymentMode: bookingData?.paymentMode,
+                            roomType: bookingData?.roomTypeId?.name || bookingData?.roomTypeId?.displayName,
+                            depositAmount: bookingData?.depositAmount,
+                            registrationFee: bookingData?.registrationFeePaid,
                             advanceAmount: holdAdvance,
-                            totalPaidAtDeposit: (booking as any).totalPaidAtDeposit,
+                            totalPaidAtDeposit: bookingData?.totalPaidAtDeposit,
                         })}
                         style={{
                             padding: "10px 20px", borderRadius: 10,

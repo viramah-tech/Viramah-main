@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Shield, User } from "lucide-react";
+import { ArrowRight, Shield } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { uploadFile, deleteUploadedFile } from "@/lib/uploadFile";
 import {
@@ -124,7 +124,7 @@ export default function Step1Page() {
     const idLabel = ID_TYPES.find((t) => t.value === step1.idType)?.label ?? "ID";
 
     return (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+        <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
                 <StepBadge icon={Shield} label="Identity Verification" />

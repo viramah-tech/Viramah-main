@@ -48,6 +48,10 @@ interface PhaseData {
     netRent: number;
     nonRentalTotal: number;
     advanceCreditApplied: number;
+    computed?: {
+        breakdown: BreakdownLine[];
+        finalAmount: number;
+    };
 }
 
 interface PlanData {
@@ -147,6 +151,7 @@ function ScreenshotUpload({
                 {screenshot ? (
                     <div style={{ position: "relative", maxWidth: 300, borderRadius: 12, overflow: "hidden", border: `2px solid ${GREEN}` }}>
                         {screenshot.preview.startsWith("data:") ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={screenshot.preview} alt="Receipt" style={{ width: "100%", height: "auto", display: "block" }} />
                         ) : (
                             <div style={{ padding: 20, textAlign: "center", background: "rgba(31,58,45,0.03)" }}>
@@ -307,7 +312,7 @@ export default function ConfirmPage() {
                 const res = await apiFetch<PlanResponse>("/api/payment/plan/me");
                 if (cancelled) return;
 
-                let p = res?.data?.plan as PlanData | null;
+                const p = res?.data?.plan as PlanData | null;
                 if (!p) {
                     throw new Error("No active payment plan found. Please select a track.");
                 }
@@ -315,8 +320,8 @@ export default function ConfirmPage() {
                 setPlan(p);
 
                 // Handle Track 3 Booking (no phases yet)
-                if (p.trackId === "booking" && !p.chosenTrackId && (p as any).bookingAmount) {
-                    const bookingData = (p as any).bookingAmount;
+                if (p.trackId === "booking" && !p.chosenTrackId && p.bookingAmount) {
+                    const bookingData = p.bookingAmount;
                     setActivePhase(1); // logical default for UI
                     setBreakdown(bookingData.breakdown || []);
                     setFinalAmount(bookingData.finalAmount || 0);
@@ -328,7 +333,7 @@ export default function ConfirmPage() {
                     const phaseToUse = payablePhase || p.phases[0];
                     if (phaseToUse) {
                         setActivePhase(phaseToUse.phaseNumber);
-                        const computedData = (phaseToUse as any).computed || phaseToUse;
+                        const computedData = phaseToUse.computed || phaseToUse;
                         setBreakdown(computedData.breakdown || []);
                         setFinalAmount(computedData.finalAmount || 0);
                     }
@@ -486,7 +491,7 @@ export default function ConfirmPage() {
     // Loading state
     if (planLoading) {
         return (
-            <motion.div variants={containerVariants} initial="hidden" animate="visible"
+            <motion.div variants={containerVariants} initial={false} animate="visible"
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "80px 0" }}>
                 <Loader2 size={32} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
                 <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.5)" }}>
@@ -500,7 +505,7 @@ export default function ConfirmPage() {
     // Error state
     if (planError) {
         return (
-            <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ padding: "60px 0", textAlign: "center" }}>
+            <motion.div variants={containerVariants} initial={false} animate="visible" style={{ padding: "60px 0", textAlign: "center" }}>
                 <AlertCircle size={40} color="#dc2626" style={{ marginBottom: 16 }} />
                 <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "1rem", color: "#dc2626" }}>{planError}</p>
                 <button
@@ -514,7 +519,7 @@ export default function ConfirmPage() {
     }
 
     return (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
+        <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
                 <StepBadge icon={CreditCard} label="Payment" />
@@ -658,6 +663,7 @@ export default function ConfirmPage() {
                                         ))}
                                     </div>
                                     <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 100, height: 100, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
                                         <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.5rem", marginTop: 4, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
                                     </div>

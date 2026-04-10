@@ -250,7 +250,7 @@ function PaymentCard({ payment, hasAdvance }: { payment: PaymentRecord; hasAdvan
                         paymentId: payment.paymentId,
                         paymentMode: payment.paymentMode,
                         installmentNumber: payment.installmentNumber,
-                        breakdown: b as Record<string, any> || undefined,
+                        breakdown: (b as Record<string, unknown>) || undefined,
                         depositCredited: payment.depositCredited,
                     })}
                     style={{
@@ -439,31 +439,17 @@ function MetaItem({ label, value }: { label: string; value: string }) {
 export default function PaymentStatusPage() {
     const { state, setStatus } = useOnboarding();
     const { user, updateUser } = useAuth();
-
-    // AUDIT FIX PS-1: Direct fetch on mount prevents stale context window
-    const [freshUser, setFreshUser] = useState<AuthUser | null>(null);
-
-    useEffect(() => {
-        const fetchFresh = async () => {
-            try {
-                const res = await apiFetch<{ data: AuthUser }>("/api/public/auth/me");
-                setFreshUser(res.data);
-            } catch {
-                // Fall back to context user — WebSocket will correct
-            }
-        };
-        fetchFresh();
-    }, []);
-
-    // Use freshUser if available, fall back to context
-    const effectiveUser = freshUser ?? user;
+    const effectiveUser = user;
+    const paymentStatus = effectiveUser?.paymentStatus;
+    const documentVerificationStatus = effectiveUser?.documentVerificationStatus;
+    const moveInStatus = effectiveUser?.moveInStatus;
 
     // Map backend lifecycle fields to onboarding status
     useEffect(() => {
-        if (!effectiveUser) return;
-        const ps = effectiveUser.paymentStatus;
-        const dvs = effectiveUser.documentVerificationStatus;
-        const ms = effectiveUser.moveInStatus;
+        if (!paymentStatus) return;
+        const ps = paymentStatus;
+        const dvs = documentVerificationStatus;
+        const ms = moveInStatus;
 
         if (ps === "rejected") {
             setStatus("pending");
@@ -476,13 +462,12 @@ export default function PaymentStatusPage() {
         } else if (ps === "pending") {
             setStatus("payment_submitted");
         }
-    }, [effectiveUser?.paymentStatus, effectiveUser?.documentVerificationStatus, effectiveUser?.moveInStatus, setStatus]);
+    }, [paymentStatus, documentVerificationStatus, moveInStatus, setStatus]);
 
     // Real-time: listen for user updates
     const handleSocketEvent = useCallback((event: string, data: unknown) => {
         if (event === "user:updated" && data) {
             updateUser(data as Partial<AuthUser>);
-            setFreshUser(data as AuthUser);
         }
     }, [updateUser]);
     useSocket(user?._id, handleSocketEvent);
@@ -561,7 +546,7 @@ export default function PaymentStatusPage() {
     return (
         <motion.div
             variants={containerVariants}
-            initial="hidden"
+            initial={false}
             animate="visible"
             style={{
                 display: "flex", flexDirection: "column", gap: 28,

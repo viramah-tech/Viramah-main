@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-    Receipt, ArrowRight, ArrowLeft, Loader2, AlertCircle,
+    Receipt, ArrowLeft, Loader2, AlertCircle,
     Check, Minus, Plus, CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -37,6 +37,10 @@ interface PhaseData {
     netRent: number;
     nonRentalTotal: number;
     advanceCreditApplied: number;
+    computed?: {
+        breakdown: BreakdownLine[];
+        finalAmount: number;
+    };
 }
 
 interface PlanData {
@@ -78,7 +82,7 @@ export default function PaymentBreakdownPage() {
         const fetchPlan = async () => {
             try {
                 const res = await apiFetch<PlanResponse>("/api/payment/plan/me", { token });
-                let p = res?.data?.plan ?? null;
+                const p = res?.data?.plan ?? null;
 
                 if (!p) {
                     setError("No payment plan found. Please select a track first.");
@@ -88,7 +92,7 @@ export default function PaymentBreakdownPage() {
                 setPlan(p);
                 // Default to first pending/unpaid phase
                 const firstPending = p.phases?.find(
-                    (ph: any) => ph.status === "pending" || ph.status === "overdue"
+                    (ph) => ph.status === "pending" || ph.status === "overdue"
                 );
                 if (firstPending) setActivePhase(firstPending.phaseNumber);
             } catch (err) {
@@ -103,7 +107,7 @@ export default function PaymentBreakdownPage() {
     if (loading) {
         return (
             <motion.div
-                variants={containerVariants} initial="hidden" animate="visible"
+                variants={containerVariants} initial={false} animate="visible"
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "80px 0" }}
             >
                 <Loader2 size={32} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
@@ -117,7 +121,7 @@ export default function PaymentBreakdownPage() {
 
     if (error || !plan) {
         return (
-            <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ padding: "60px 0", textAlign: "center" }}>
+            <motion.div variants={containerVariants} initial={false} animate="visible" style={{ padding: "60px 0", textAlign: "center" }}>
                 <AlertCircle size={40} color="#dc2626" style={{ marginBottom: 16 }} />
                 <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "1rem", color: "#dc2626" }}>
                     {error || "No payment plan found. Please select a track first."}
@@ -133,7 +137,7 @@ export default function PaymentBreakdownPage() {
     }
 
     const currentPhase = plan.phases.find((p) => p.phaseNumber === activePhase);
-    const computedPhase = (currentPhase as any)?.computed;
+    const computedPhase = currentPhase?.computed;
     const breakdown: BreakdownLine[] = computedPhase?.breakdown || currentPhase?.breakdown || [];
     const trackLabel =
         plan.trackId === "full" ? "Full Payment" :
@@ -143,7 +147,7 @@ export default function PaymentBreakdownPage() {
     const canProceed = currentPhase && ["pending", "overdue"].includes(currentPhase.status);
 
     return (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 32 }}>
+        <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 32 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
                 <StepBadge icon={Receipt} label="Breakdown" />

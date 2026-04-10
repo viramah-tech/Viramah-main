@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,10 +17,54 @@ import {
   containerVariants, itemVariants, SelectionButton
 } from "@/components/onboarding/FormComponents";
 import { PAYMENT_CONFIG } from "@/config/paymentConfig";
-import { DualBillDisplay } from "@/components/onboarding/DualBillDisplay";
+import { DualBillDisplay, type DisplayBillsData } from "@/components/onboarding/DualBillDisplay";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
+
+interface BookingRecord {
+  _id?: string;
+  bookingId?: string;
+  timers?: {
+    priceLockExpiry?: string | null;
+  };
+  displayBills?: DisplayBillsData;
+}
+
+interface RoomTypeRecord {
+  _id: string;
+  name: string;
+}
+
+const getErrorStatus = (err: unknown): number | undefined => {
+  if (!err || typeof err !== "object") return undefined;
+  const status = (err as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
+};
+
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  if (err instanceof Error) return err.message;
+  return fallback;
+};
+
+const pickBooking = (payload: unknown): BookingRecord | null => {
+  if (!payload || typeof payload !== "object") return null;
+  const obj = payload as Record<string, unknown>;
+
+  if (obj.booking && typeof obj.booking === "object") {
+    return obj.booking as BookingRecord;
+  }
+
+  if (obj.data && typeof obj.data === "object") {
+    const dataObj = obj.data as Record<string, unknown>;
+    if (dataObj.booking && typeof dataObj.booking === "object") {
+      return dataObj.booking as BookingRecord;
+    }
+    return dataObj as BookingRecord;
+  }
+
+  return obj as BookingRecord;
+};
 
 // ── ReceiptUpload ─────────────────────────────────────────────────────────────
 
@@ -67,6 +111,7 @@ function ReceiptUpload({
       <div style={{ marginTop: 8 }}>
         {file ? (
           <div style={{ position: "relative", maxWidth: 300, borderRadius: 12, overflow: "hidden", border: `2px solid ${GREEN}` }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={file.preview} alt="Receipt" style={{ width: "100%", height: "auto", display: "block" }} />
             <button
               onClick={handleRemove}
@@ -138,14 +183,15 @@ function usePriceLockCountdown(expiryIso: string | null) {
 
 export default function BookingFeePage() {
   const router = useRouter();
-  const { token } = useAuth();
-  const { state, setBookingId } = useOnboarding();
+  const { token, loading: authLoading } = useAuth();
+  const { state, setBookingId, hydrating: contextHydrating } = useOnboarding();
 
   const [localBookingId,   setLocalBookingId]   = useState<string | null>(null);
   const [priceLockExpiry,  setPriceLockExpiry]   = useState<string | null>(null);
-  const [bookingData, setBookingData] = useState<any>(null);
+  const [bookingData, setBookingData] = useState<BookingRecord | null>(null);
   const [initiating,       setInitiating]        = useState(true);
   const [initError,        setInitError]         = useState<string | null>(null);
+  const [initLog,          setInitLog]           = useState<string[]>([]); // For debugging visibility
 
   const [transactionId, setTransactionId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("UPI");
@@ -156,74 +202,155 @@ export default function BookingFeePage() {
   const [focused,       setFocused]      = useState<string | null>(null);
 
   const countdown = usePriceLockCountdown(priceLockExpiry);
+  const initLock = useRef<string | null>(null);
+  const selectedAddOns = useMemo(() => state.step3?.addOns ?? [], [state.step3?.addOns]);
+  const selectedRoomId = state.step3?.selectedRoom?.id ?? "";
+  const selectedRoomBackendId = state.step3?.selectedRoom?.backendId ?? "";
+  const addOnSignature = selectedAddOns
+    .map((a) => `${a.id}:${a.enabled ? 1 : 0}`)
+    .join("|");
 
   // Initiate booking on mount
   useEffect(() => {
     const initiate = async () => {
+      if (contextHydrating || authLoading) return;
+      
+      const runKey = `${token || "no-token"}_${state.bookingId || localBookingId || "none"}_${selectedRoomId}_${selectedRoomBackendId}_${addOnSignature}`;
+      if (initLock.current === runKey) return;
+      initLock.current = runKey;
+
+      setInitiating(true);
+      setInitError(null);
+      const log = (msg: string) => setInitLog(prev => [...prev.slice(-3), msg]);
+
       try {
-        // If we already have a bookingId from context, just fetch the timer
-        if (state.bookingId) {
-          const res = await apiFetch<{ data: { timers: { priceLockExpiry: string } } }>(
-            `/api/v1/bookings/${state.bookingId}/timer`,
-            { token }
-          );
-          setLocalBookingId(state.bookingId);
-          setPriceLockExpiry(res.data?.timers?.priceLockExpiry ?? null);
-          return;
-        }
+        log("Synchronizing booking...");
+        
+        let currentBooking: BookingRecord | null = null;
+        let currentBookingId: string | null = state.bookingId || localBookingId;
 
-        const roomTypeId = state.step3?.selectedRoom?.backendId;
-        if (!roomTypeId) {
-          setInitError("Room not selected. Please go back to step 3.");
-          return;
-        }
-
-        const addOnsEnabled = {
-          mess:      !!(state.step3?.addOns?.find((a) => a.id === "mess" && a.enabled)),
-          transport: !!(state.step3?.addOns?.find((a) => a.id === "transport" && a.enabled)),
-        };
-
-        const res = await apiFetch<{ data: { booking: any } }>(
-          "/api/v1/bookings",
-          {
-            method: "POST",
-            token,
-            body: { roomTypeId, addOns: addOnsEnabled },
-          }
-        );
-
-        const b = res.data.booking;
-        setLocalBookingId(b._id);
-        setBookingId(b._id);
-        setBookingData(b);
-        setPriceLockExpiry(b.timers?.priceLockExpiry ?? null);
-      } catch (e) {
-        // If already has active booking (409), fetch existing status
-        const msg = e instanceof Error ? e.message : "";
-        if (msg.includes("already have an active booking") || (e as any)?.status === 409) {
+        // 1. Resolve existing booking by ID
+        if (currentBookingId) {
           try {
-            const statusRes = await apiFetch<{ data: { booking: any } }>(
-              "/api/v1/bookings/my-booking",
-              { token }
-            );
-            const existing = statusRes.data;
-            if (existing) {
-              setLocalBookingId(existing.bookingId || existing._id);
-              setBookingId(existing.bookingId || existing._id);
-              setBookingData(existing);
-              setPriceLockExpiry(existing.timers?.priceLockExpiry ?? null);
-              return;
+            log(`Checking booking ref ${currentBookingId.slice(-4)}...`);
+            const res = await apiFetch<{ data: unknown }>(`/api/v1/bookings/${currentBookingId}`, { token });
+            currentBooking = pickBooking(res.data);
+            if (currentBooking) {
+              setBookingData(currentBooking);
+              setLocalBookingId(currentBookingId);
+              setPriceLockExpiry(currentBooking.timers?.priceLockExpiry ?? null);
+            }
+          } catch (e: unknown) {
+             if (getErrorStatus(e) === 404) {
+               log("Stale session found. Clearing...");
+               setBookingId(""); 
+               currentBookingId = null;
+             }
+          }
+        }
+
+        // 2. Fallback to active booking discovery
+        if (!currentBooking) {
+          try {
+            log("Discovering active session...");
+            const sRes = await apiFetch<{ data: unknown }>("/api/v1/bookings/my-booking", { token });
+            currentBooking = pickBooking(sRes.data);
+            if (currentBooking && (currentBooking._id || currentBooking.bookingId)) {
+               const bId = currentBooking._id || currentBooking.bookingId;
+               if (bId) {
+                 setLocalBookingId(bId);
+                 setBookingId(bId);
+                 setBookingData(currentBooking);
+                 setPriceLockExpiry(currentBooking.timers?.priceLockExpiry ?? null);
+               }
             }
           } catch {}
         }
-        setInitError(msg || "Failed to initiate booking");
+
+        // 3. Last Resort: Create new booking
+        if (!currentBooking) {
+           let rid = selectedRoomBackendId;
+          
+          // Recovery for missing backendId
+           if (!rid && selectedRoomId) {
+             log("Resolving room details...");
+             const MAP: Record<string, string> = { "nexus-plus": "NEXUS", "collective-plus": "COLLECTIVE", "axis": "AXIS", "studio": "AXIS+" };
+             const bn = MAP[selectedRoomId];
+             if (bn) {
+               const rr = await apiFetch<{ data: { roomTypes: RoomTypeRecord[] } }>("/api/public/rooms");
+               rid = rr.data?.roomTypes?.find((r) => r.name === bn)?._id ?? "";
+             }
+          }
+
+          if (!rid) {
+            // Patient check: maybe hydration is lagging
+            if (contextHydrating) return;
+            // Short wait for state to settle
+            await new Promise(r => setTimeout(r, 600));
+            rid = selectedRoomBackendId;
+          }
+
+          if (!rid) {
+            throw new Error(`Room synchronization failed. Please go back to Step 3 and click 'Continue' again to re-sync.`);
+          }
+
+          log("Finalizing booking...");
+          try {
+            const addOns = {
+              mess: !!selectedAddOns.find((a) => a.id === "mess" && a.enabled),
+              transport: !!selectedAddOns.find((a) => a.id === "transport" && a.enabled),
+            };
+            const cRes = await apiFetch<{ data: unknown }>("/api/v1/bookings", {
+              method: "POST", token, body: { roomTypeId: rid, addOns }
+            });
+            const b = pickBooking(cRes.data);
+            if (b) {
+               const bId = b._id || b.bookingId;
+               if (bId) {
+                 setLocalBookingId(bId);
+                 setBookingId(bId);
+                 setBookingData(b);
+                 setPriceLockExpiry(b.timers?.priceLockExpiry ?? null);
+               }
+            }
+           } catch (e: unknown) {
+             if (getErrorStatus(e) === 409) {
+                log("Resolving conflict...");
+               const sRes = await apiFetch<{ data: unknown }>("/api/v1/bookings/my-booking", { token });
+               const ex = pickBooking(sRes.data);
+                if (ex) {
+                  const exId = ex._id || ex.bookingId;
+                  if (exId) {
+                    setLocalBookingId(exId);
+                    setBookingId(exId);
+                    setBookingData(ex);
+                    setPriceLockExpiry(ex.timers?.priceLockExpiry ?? null);
+                  }
+                }
+             } else throw e;
+          }
+        }
+        } catch (err: unknown) {
+         console.error("Init Error:", err);
+          setInitError(getErrorMessage(err, "Initialization failed."));
       } finally {
-        setInitiating(false);
+         setInitiating(false);
       }
     };
+
     initiate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [
+    contextHydrating,
+    authLoading,
+    token,
+    state.bookingId,
+    localBookingId,
+    selectedRoomId,
+    selectedRoomBackendId,
+    addOnSignature,
+    selectedAddOns,
+    setBookingId,
+  ]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -269,13 +396,18 @@ export default function BookingFeePage() {
   if (initiating) {
     return (
       <motion.div
-        variants={containerVariants} initial="hidden" animate="visible"
+        variants={containerVariants} initial={false} animate="visible"
         style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, padding: "80px 0" }}
       >
         <Loader2 size={32} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
-        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.5)" }}>
-          Preparing your booking...
-        </span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.7)", fontWeight: 600 }}>
+            Initializing booking...
+          </span>
+          <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.35)", textAlign: "center", maxWidth: 250 }}>
+            {initLog[initLog.length - 1] || "Connecting to server..."}
+          </span>
+        </div>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </motion.div>
     );
@@ -284,7 +416,7 @@ export default function BookingFeePage() {
   if (initError) {
     return (
       <motion.div
-        variants={containerVariants} initial="hidden" animate="visible"
+        variants={containerVariants} initial={false} animate="visible"
         style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "60px 0" }}
       >
         <AlertCircle size={32} color="#dc2626" />
@@ -301,9 +433,13 @@ export default function BookingFeePage() {
     );
   }
 
+  // Add a unique key to the container to force a clean re-animation when booking data is loaded
+  const displayKey = bookingData?._id || (initiating ? 'loading' : 'empty');
+
   return (
     <motion.div
-      variants={containerVariants} initial="hidden" animate="visible"
+      key={displayKey}
+      variants={containerVariants} initial={false} animate="visible"
       style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 32 }}
     >
       {/* Header */}
@@ -378,6 +514,7 @@ export default function BookingFeePage() {
                 ))}
               </div>
               <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="UPI QR Code" style={{ width: 120, height: 120, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }} />
                 <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", marginTop: 6, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
               </div>

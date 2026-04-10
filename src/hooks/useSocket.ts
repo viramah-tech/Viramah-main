@@ -11,7 +11,10 @@ export function useSocket(
 ) {
     const socketRef = useRef<Socket | null>(null);
     const onEventRef = useRef(onEvent);
-    onEventRef.current = onEvent;
+    
+    useEffect(() => {
+        onEventRef.current = onEvent;
+    }, [onEvent]);
 
     useEffect(() => {
         const socket = io(SOCKET_URL, {

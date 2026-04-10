@@ -65,9 +65,50 @@ export interface PaymentData {
     screenshot: UploadedFile | null;
 }
 
-export interface Step4Data {
-    // Gender and address moved to Step1Data.
-    // Interface kept for backward compatibility with state shape.
+export type Step4Data = Record<string, unknown>;
+
+interface OnboardingStatusApiData {
+    name?: string;
+    idType?: string;
+    idNumber?: string;
+    dateOfBirth?: string;
+    documents?: {
+        photo?: string;
+        idProof?: string;
+        addressProof?: string;
+    };
+    emergencyContact?: {
+        name?: string;
+        phone?: string;
+        relation?: string;
+        alternatePhone?: string;
+    };
+    selectedRoomType?: string;
+    paymentStatus?: string;
+    onboardingStatus?: string;
+    documentVerificationStatus?: string;
+    moveInStatus?: string;
+    gender?: string;
+    address?: string;
+}
+
+interface RoomApiRecord {
+    _id: string;
+    name: string;
+    pricing?: {
+        discounted?: number;
+    };
+    discountedPrice?: number;
+}
+
+interface OnboardingStatusResponse {
+    data: OnboardingStatusApiData;
+}
+
+interface RoomsResponse {
+    data: {
+        roomTypes: RoomApiRecord[];
+    };
 }
 
 export type OnboardingStatus = "pending" | "payment_submitted" | "doc_verification_pending" | "move_in_pending" | "move_in_approved";
@@ -241,7 +282,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 step3: { 
                     ...INITIAL_STATE.step3, 
                     ...cached.step3,
-                    // Force overwrite cached prices/names to match latest definitions
                     addOns: cached.step3?.addOns?.map(cachedAddon => {
                         const defaultMatch = DEFAULT_ADD_ONS.find(da => da.id === cachedAddon.id);
                         return defaultMatch 
@@ -257,67 +297,23 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         // 2. Attempt backend hydration (async, best-effort)
         (async () => {
             try {
-                const res = await apiFetch<{
-                    data: {
-                        onboardingStatus: string;
-                        name: string;
-                        dateOfBirth: string;
-                        idType: string;
-                        idNumber: string;
-                        documents: { idProof: string; addressProof: string; photo: string };
-                        emergencyContact: { name: string; phone: string; relation: string; alternatePhone?: string };
-                        parentDocuments: { idType: string; idNumber: string; idFront: string; idBack: string };
-                        selectedRoomType: string;
-                        roomNumber: string;
-                        roomType: string;
-                        messPackage: string;
-                        selectedAddOns: { transport: boolean; mess: boolean; messLumpSum: boolean };
-                        gender: string;
-                        address: string;
-                        paymentStatus: string;
-                    };
-                }>("/api/public/onboarding/status");
+                // Fetch status and rooms
+                const statusRes = await apiFetch<OnboardingStatusResponse>("/api/public/onboarding/status");
+                const d = statusRes.data;
 
-                let fetchedRooms: { _id: string; name: string; basePrice?: number; discountedPrice?: number; pricing?: { discounted: number } }[] = [];
+                let fetchedRooms: RoomApiRecord[] = [];
                 try {
-                    const roomsRes = await apiFetch<{ data: { roomTypes: { _id: string; name: string; basePrice?: number; discountedPrice?: number; pricing?: { discounted: number } }[] } }>("/api/public/rooms");
-                    fetchedRooms = roomsRes.data.roomTypes || [];
+                    const roomsRes = await apiFetch<RoomsResponse>("/api/public/rooms");
+                    fetchedRooms = roomsRes.data?.roomTypes || [];
                 } catch (e) {
                     console.error("Failed to fetch rooms during hydration:", e);
                 }
 
-                const d = res.data as {
-                    onboardingStatus: string;
-                    name: string;
-                    dateOfBirth: string;
-                    idType: string;
-                    idNumber: string;
-                    documents: { idProof: string; addressProof: string; photo: string };
-                    emergencyContact: { name: string; phone: string; relation: string };
-                    parentDocuments: { idType: string; idNumber: string; idFront: string; idBack: string };
-                    selectedRoomType: string;
-                    roomNumber: string;
-                    roomType: string;
-                    messPackage: string;
-                    selectedAddOns: { transport: boolean; mess: boolean; messLumpSum: boolean };
-                    gender: string;
-                    address: string;
-                    paymentStatus: string;
-                    documentVerificationStatus: string;
-                    moveInStatus: string;
-                };
                 const completedSteps: number[] = [];
-
-                // Infer completed steps from backend data
-                // Step 1 includes: KYC docs, gender, address
                 if (d.documents?.idProof) completedSteps.push(1);
                 if (d.emergencyContact?.name && d.emergencyContact?.phone) completedSteps.push(2);
                 if (d.selectedRoomType) completedSteps.push(3);
-                // Step 4 is the review/summary step — it doesn't create new data.
-                // It's considered complete if:
-                //   (a) The user has filled gender + address (now saved in step 1), OR
-                //   (b) Steps 1-3 are all done (review prerequisites met), OR
-                //   (c) The user has already submitted a payment/deposit (onboarding progressed past step 4)
+
                 const steps123Done = completedSteps.includes(1) && completedSteps.includes(2) && completedSteps.includes(3);
                 const paymentProgressed = d.paymentStatus === "pending" || d.paymentStatus === "approved"
                     || d.onboardingStatus === "completed" || d.onboardingStatus === "in-progress";
@@ -328,147 +324,72 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 setState((prev) => {
                     const merged: OnboardingState = {
                         ...prev,
-                        completedSteps: [
-                            ...new Set([...prev.completedSteps, ...completedSteps]),
-                        ],
+                        completedSteps: [...new Set([...prev.completedSteps, ...completedSteps])],
                     };
 
-                    // Restore Step 1: KYC text fields from backend
+                    // Step 1: KYC
                     if (d.name || d.idNumber) {
                         merged.step1 = {
-                            ...prev.step1,
-                            fullName: d.name || prev.step1.fullName,
-                            dateOfBirth: d.dateOfBirth ? d.dateOfBirth.split("T")[0] : prev.step1.dateOfBirth,
-                            idType: d.idType || prev.step1.idType,
-                            idNumber: d.idNumber || prev.step1.idNumber,
+                            ...merged.step1,
+                            fullName: d.name || merged.step1.fullName,
+                            dateOfBirth: d.dateOfBirth ? d.dateOfBirth.split("T")[0] : merged.step1.dateOfBirth,
+                            idType: d.idType || merged.step1.idType,
+                            idNumber: d.idNumber || merged.step1.idNumber,
                         };
                     }
+                    if (d.documents?.photo) merged.step1.profilePhoto = { name: "photo", preview: d.documents.photo };
+                    if (d.documents?.idProof) merged.step1.idFront = { name: "id-front", preview: d.documents.idProof };
+                    if (d.documents?.addressProof) merged.step1.idBack = { name: "id-back", preview: d.documents.addressProof };
+                    merged.step1.gender = d.gender || merged.step1.gender || "";
+                    merged.step1.address = d.address || merged.step1.address || "";
 
-                    // Restore uploaded documents from backend if saved
-                    if (d.documents?.photo && !prev.step1.profilePhoto) {
-                        merged.step1 = {
-                            ...merged.step1,
-                            profilePhoto: { name: "profile-photo", preview: d.documents.photo },
-                        };
-                    }
-                    if (d.documents?.idProof && !prev.step1.idFront) {
-                        merged.step1 = {
-                            ...merged.step1,
-                            idFront: { name: "id-front", preview: d.documents.idProof },
-                        };
-                    }
-                    if (d.documents?.addressProof && !prev.step1.idBack) {
-                        merged.step1 = {
-                            ...merged.step1,
-                            idBack: { name: "id-back", preview: d.documents.addressProof },
-                        };
-                    }
-
-                    // Restore Step 2: emergency contact + parent docs + uploaded images
+                    // Step 2: Emergency
                     if (d.emergencyContact?.name) {
                         merged.step2 = {
-                            ...prev.step2,
-                            emergencyName: d.emergencyContact.name || prev.step2.emergencyName,
-                            emergencyPhone: d.emergencyContact.phone || prev.step2.emergencyPhone,
-                            emergencyRelation: d.emergencyContact.relation || prev.step2.emergencyRelation,
-                            alternatePhone: d.emergencyContact.alternatePhone || prev.step2.alternatePhone,
-                            parentIdType: d.parentDocuments?.idType || prev.step2.parentIdType,
-                            parentIdNumber: d.parentDocuments?.idNumber || prev.step2.parentIdNumber,
-                        };
-                    }
-                    if (d.parentDocuments?.idFront && !prev.step2.parentIdFront) {
-                        merged.step2 = {
                             ...merged.step2,
-                            parentIdFront: { name: "parent-id-front", preview: d.parentDocuments.idFront },
-                        };
-                    }
-                    if (d.parentDocuments?.idBack && !prev.step2.parentIdBack) {
-                        merged.step2 = {
-                            ...merged.step2,
-                            parentIdBack: { name: "parent-id-back", preview: d.parentDocuments.idBack },
+                            emergencyName: d.emergencyContact.name,
+                            emergencyPhone: d.emergencyContact.phone || merged.step2.emergencyPhone,
+                            emergencyRelation: d.emergencyContact.relation || merged.step2.emergencyRelation,
+                            alternatePhone: d.emergencyContact.alternatePhone || "",
                         };
                     }
 
-                    // Restore Step 3: room selection from backend
+                    // Step 3: Room
                     if (d.selectedRoomType) {
-                        try {
-                            const backendRoom = fetchedRooms.find(r => r.name === d.selectedRoomType);
-                            // Reverse-map backend name to frontend room ID
-                            const REVERSE_ROOM_MAP: Record<string, string> = {
-                                "NEXUS": "nexus-plus",
-                                "COLLECTIVE": "collective-plus",
-                                "AXIS": "axis",
-                                "AXIS+": "studio",
-                                "VIRAMAH Nexus": "nexus-plus",
-                                "VIRAMAH Collective": "collective-plus",
-                                "VIRAMAH Axis": "axis",
-                                "VIRAMAH Axis+": "studio",
-                            };
-                            const discPrice = backendRoom?.pricing?.discounted ?? backendRoom?.discountedPrice ?? 0;
-                            const frontendId = REVERSE_ROOM_MAP[d.selectedRoomType] || d.selectedRoomType.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                            const roomInfo = {
+                        const REVERSE_ROOM_MAP: Record<string, string> = {
+                            "NEXUS": "nexus-plus", "COLLECTIVE": "collective-plus", "AXIS": "axis", "AXIS+": "studio",
+                            "VIRAMAH Nexus": "nexus-plus", "VIRAMAH Collective": "collective-plus",
+                            "VIRAMAH Axis": "axis", "VIRAMAH Axis+": "studio"
+                        };
+                        const backendRoom = fetchedRooms.find(r => r.name === d.selectedRoomType);
+                        const discPrice = backendRoom?.pricing?.discounted ?? backendRoom?.discountedPrice ?? 0;
+                        const frontendId = REVERSE_ROOM_MAP[d.selectedRoomType] || d.selectedRoomType.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                        
+                        merged.step3 = {
+                            ...merged.step3,
+                            selectedRoom: {
                                 id: frontendId,
-                                backendId: backendRoom?._id,
+                                backendId: backendRoom?._id || merged.step3.selectedRoom?.backendId,
                                 title: backendRoom?.name || d.selectedRoomType,
                                 type: backendRoom?.name || d.selectedRoomType,
-                                priceLabel: `₹${discPrice.toLocaleString()}`,
-                            };
-                            merged.step3 = {
-                                ...prev.step3,
-                                selectedRoom: {
-                                    id: roomInfo.id,
-                                    backendId: roomInfo.backendId,
-                                    title: roomInfo.title,
-                                    type: roomInfo.type,
-                                    price: discPrice,
-                                    priceLabel: roomInfo.priceLabel,
-                                },
-                            };
-                            // Restore add-on state from messPackage
-                            if (d.messPackage === "full-board") {
-                                merged.step3.addOns = merged.step3.addOns.map((a) =>
-                                    a.id === "lunch" ? { ...a, enabled: true } : a
-                                );
+                                price: discPrice || merged.step3.selectedRoom?.price || 0,
+                                priceLabel: `₹${(discPrice || merged.step3.selectedRoom?.price || 0).toLocaleString()}`,
                             }
-                            // Restore transport add-on from backend selectedAddOns
-                            if (d.selectedAddOns?.transport) {
-                                merged.step3.addOns = merged.step3.addOns.map((a) =>
-                                    a.id === "transport" ? { ...a, enabled: true } : a
-                                );
-                            }
-                        } catch (e) {
-                            console.error("Error processing room info:", e);
-                        }
+                        };
                     }
 
-                    // AUDIT FIX S1-1: Unconditional gender & address restoration.
-                    // Pre-migration users may have empty values — we MUST still initialize
-                    // step1.gender and step1.address so the form fields render correctly
-                    // and validation can catch missing data before confirmOnboarding.
-                    merged.step1 = {
-                        ...merged.step1,
-                        gender: d.gender || merged.step1?.gender || "",
-                        address: d.address || merged.step1?.address || "",
-                    };
-
-                    // Map backend status to frontend status (full lifecycle)
-                    if (d.onboardingStatus === "completed") {
-                        merged.status = "payment_submitted";
-                    }
-                    if (d.paymentStatus === "approved" && d.documentVerificationStatus === "pending") {
-                        merged.status = "doc_verification_pending";
-                    }
-                    if (d.paymentStatus === "approved" && d.documentVerificationStatus === "approved" && d.moveInStatus === "not_started") {
-                        merged.status = "move_in_pending";
-                    }
-                    if (d.paymentStatus === "approved" && d.documentVerificationStatus === "approved" && d.moveInStatus === "completed") {
-                        merged.status = "move_in_approved";
+                    // Status
+                    if (d.onboardingStatus === "completed") merged.status = "payment_submitted";
+                    if (d.paymentStatus === "approved") {
+                        if (d.documentVerificationStatus === "pending") merged.status = "doc_verification_pending";
+                        else if (d.moveInStatus === "not_started") merged.status = "move_in_pending";
+                        else if (d.moveInStatus === "completed") merged.status = "move_in_approved";
                     }
 
                     return merged;
                 });
-            } catch {
-                // Not logged in or network error — continue with localStorage data
+            } catch (err) {
+                console.error("Backend hydration failed:", err);
             } finally {
                 setHydrating(false);
             }

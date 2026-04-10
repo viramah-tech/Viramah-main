@@ -115,7 +115,7 @@ export default function TrackSelectionPage() {
             </div>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <div style={{ background: "rgba(216,181,106,0.1)", p: 8, borderRadius: 8, padding: 10 }}>
+            <div style={{ background: "rgba(216,181,106,0.1)", borderRadius: 8, padding: 10 }}>
               <Star size={24} color={GOLD} />
             </div>
             <div>
@@ -168,7 +168,7 @@ export default function TrackSelectionPage() {
             </div>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <div style={{ background: "rgba(31,58,45,0.05)", p: 8, borderRadius: 8, padding: 10 }}>
+            <div style={{ background: "rgba(31,58,45,0.05)", borderRadius: 8, padding: 10 }}>
               <Calendar size={24} color={GREEN} />
             </div>
             <div>

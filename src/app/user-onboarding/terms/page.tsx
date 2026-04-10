@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Shield, FileText, Lock, AlertTriangle, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { Shield, FileText, Lock, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -106,17 +106,13 @@ function ScrollableDoc({
 // ── Checkbox with scroll warning ──────────────────────────────────────────────
 
 function ConsentCheckbox({
-    id,
     label,
     checked,
     onChange,
-    scrollPct,
 }: {
-    id: string;
     label: React.ReactNode;
     checked: boolean;
     onChange: (v: boolean) => void;
-    scrollPct: number;
 }) {
     const handleChange = () => {
         onChange(!checked);
@@ -153,8 +149,6 @@ export default function TermsAndConditionsPage() {
 
     const [termsChecked,   setTermsChecked]   = useState(false);
     const [privacyChecked, setPrivacyChecked] = useState(false);
-    const [termsScroll,    setTermsScroll]    = useState(0);
-    const [privacyScroll,  setPrivacyScroll]  = useState(0);
     const [submitting,     setSubmitting]     = useState(false);
 
     const bothChecked = termsChecked && privacyChecked;
@@ -185,7 +179,7 @@ export default function TermsAndConditionsPage() {
     return (
         <motion.div
             variants={containerVariants}
-            initial="hidden"
+            initial={false}
             animate="visible"
             style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 48 }}
         >
@@ -201,16 +195,14 @@ export default function TermsAndConditionsPage() {
             {/* Terms & Conditions */}
             <motion.div variants={itemVariants}>
                 <FormCard>
-                    <ScrollableDoc title="Terms & Conditions" icon={FileText} onScrollProgress={setTermsScroll}>
+                    <ScrollableDoc title="Terms & Conditions" icon={FileText} onScrollProgress={() => {}}>
                         <TermsContent />
                     </ScrollableDoc>
                     <div style={{ borderTop: "1px solid rgba(31,58,45,0.07)", paddingTop: 14, marginTop: 14 }}>
                         <ConsentCheckbox
-                            id="terms-cb"
                             label={<>I have read and agree to the <strong>Terms &amp; Conditions</strong> ({TERMS_VERSION})</>}
                             checked={termsChecked}
                             onChange={setTermsChecked}
-                            scrollPct={termsScroll}
                         />
                     </div>
                 </FormCard>
@@ -219,16 +211,14 @@ export default function TermsAndConditionsPage() {
             {/* Privacy Policy */}
             <motion.div variants={itemVariants}>
                 <FormCard>
-                    <ScrollableDoc title="Privacy Policy" icon={Lock} onScrollProgress={setPrivacyScroll}>
+                    <ScrollableDoc title="Privacy Policy" icon={Lock} onScrollProgress={() => {}}>
                         <PrivacyContent />
                     </ScrollableDoc>
                     <div style={{ borderTop: "1px solid rgba(31,58,45,0.07)", paddingTop: 14, marginTop: 14 }}>
                         <ConsentCheckbox
-                            id="privacy-cb"
                             label={<>I have read and agree to the <strong>Privacy Policy</strong> ({PRIVACY_VERSION})</>}
                             checked={privacyChecked}
                             onChange={setPrivacyChecked}
-                            scrollPct={privacyScroll}
                         />
                     </div>
                 </FormCard>
@@ -322,7 +312,7 @@ function TermsContent() {
             </Section>
 
             <Section title="4. Payment">
-                All payments are processed in Indian Rupees (INR). Published prices include 12% GST. Viramah reserves the right to update pricing with 30 days' notice.
+                All payments are processed in Indian Rupees (INR). Published prices include 12% GST. Viramah reserves the right to update pricing with 30 days&apos; notice.
             </Section>
 
             <Section title="5. Room Allocation">
@@ -330,7 +320,7 @@ function TermsContent() {
             </Section>
 
             <Section title="6. House Rules">
-                Residents must comply with Viramah's house rules communicated at move-in. Violation may result in immediate termination of residency without refund of any remaining tenure amount.
+                Residents must comply with Viramah&apos;s house rules communicated at move-in. Violation may result in immediate termination of residency without refund of any remaining tenure amount.
             </Section>
 
             <Section title="7. Intellectual Property">

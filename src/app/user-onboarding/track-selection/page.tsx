@@ -18,8 +18,6 @@ import {
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
-const inr = (n: number | null | undefined) =>
-    n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`;
 
 interface TrackConfig {
     trackId: string;
@@ -35,6 +33,13 @@ interface ConfigResponse {
         tracks: TrackConfig[];
         discountConfigs: Array<{ trackId: string; defaultDiscountRate: number; isActive: boolean }>;
     };
+}
+
+interface PlanSummary {
+    _id?: string;
+    planId?: string;
+    trackId: string;
+    chosenTrackId: string | null;
 }
 
 const TRACK_DETAILS: Record<string, {
@@ -103,7 +108,7 @@ export default function TrackSelectionPage() {
             try {
                 // Check if user already has an active plan in the DB
                 try {
-                    const planRes = await apiFetch<{ data: { plan: any } }>("/api/payment/plan/me", { token });
+                    const planRes = await apiFetch<{ data: { plan: PlanSummary | null } }>("/api/payment/plan/me", { token });
                     if (planRes?.data?.plan) {
                         // User already has a persisted plan — go to confirm to pay against it
                         router.replace("/user-onboarding/confirm");
@@ -128,8 +133,7 @@ export default function TrackSelectionPage() {
         setError(null);
 
         try {
-            let preview: any;
-            preview = await apiFetch<{ data: { plan: any } }>("/api/payment/plan/select-track", {
+            await apiFetch<{ data: { plan: PlanSummary } }>("/api/payment/plan/select-track", {
                 method: "POST",
                 token,
                 body: { trackId: selectedTrack, addOns, bookingId },
@@ -151,7 +155,7 @@ export default function TrackSelectionPage() {
     if (loading) {
         return (
             <motion.div
-                variants={containerVariants} initial="hidden" animate="visible"
+                variants={containerVariants} initial={false} animate="visible"
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "80px 0" }}
             >
                 <Loader2 size={32} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
@@ -169,7 +173,7 @@ export default function TrackSelectionPage() {
     ];
 
     return (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 32 }}>
+        <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 32 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
                 <StepBadge icon={CreditCard} label="Payment Track" />

@@ -422,7 +422,7 @@ function AddOnCard({
 
 export default function Step3Page() {
     const router = useRouter();
-    const { state, updateStep3, toggleAddOn, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saving } = useOnboarding();
+    const { state, updateStep3, toggleAddOn, markStepComplete, canAccessStep, getTotalCost, saving } = useOnboarding();
     const { config: pricingCfg } = usePricingConfig();
     const { step3 } = state;
     const [error, setError] = useState("");
@@ -522,6 +522,14 @@ export default function Step3Page() {
                 body: { roomTypeId: matchingRoom._id, roomTypeName: backendRoomName, messPackage, transportEnabled: !!hasTransport },
             });
 
+            // AUDIT FIX: Force backendId into React Context so Deposit page has it
+            updateStep3({
+                selectedRoom: {
+                    ...step3.selectedRoom,
+                    backendId: matchingRoom._id,
+                }
+            });
+
             markStepComplete(3);
             router.push("/user-onboarding/step-4");
         } catch (err) {
@@ -533,10 +541,9 @@ export default function Step3Page() {
     };
 
     const totalCost = getTotalCost();
-    const addOnsTotal = getAddOnsTotal();
 
     return (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+        <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
                 <StepBadge icon={Home} label="Room Selection" />

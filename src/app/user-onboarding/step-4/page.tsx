@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-    ArrowLeft, ArrowRight, Shield, Phone, Home, Check, Pencil,
-    Plus, CreditCard, FileText, Lock, AlertTriangle,
+    ArrowLeft, Shield, Phone, Home, Check, Pencil,
+    Plus, CreditCard, AlertTriangle,
 } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import {
     NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
-    containerVariants, itemVariants, FormCard, FieldLabel, FieldInput, FieldError, SelectionButton
+    containerVariants, itemVariants
 } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
@@ -25,7 +26,6 @@ function ReviewCard({
     iconColor,
     title,
     subtitle,
-    editStep,
     onEdit,
     children,
 }: {
@@ -34,7 +34,6 @@ function ReviewCard({
     iconColor: string;
     title: string;
     subtitle: string;
-    editStep: string;
     onEdit: () => void;
     children: React.ReactNode;
 }) {
@@ -148,30 +147,13 @@ const ID_LABELS: Record<string, string> = {
 
 export default function Step4Page() {
     const router = useRouter();
-    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saveStepToBackend, saving } = useOnboarding();
+    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saving } = useOnboarding();
+    const { user } = useAuth();
     const { step1, step2, step3 } = state;
     const [submitting, setSubmitting] = useState(false);
-    const [attempted, setAttempted] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
     const [error, setError] = useState("");
     const [redirecting, setRedirecting] = useState(false);
-    const [agreements, setAgreements] = useState<{
-        termsAccepted: boolean;
-        termsAcceptedAt: string | null;
-        termsVersion: string | null;
-        privacyPolicyAccepted: boolean;
-        privacyPolicyAcceptedAt: string | null;
-        privacyPolicyVersion: string | null;
-    } | null>(null);
-
-    const fetchAgreements = useCallback(async () => {
-        try {
-            const res = await apiFetch<{ data: { agreements: typeof agreements } }>("/api/public/auth/me");
-            if (res?.data?.agreements) setAgreements(res.data.agreements);
-        } catch { /* non-critical */ }
-    }, []);
-
-    useEffect(() => { fetchAgreements(); }, [fetchAgreements]);
+    const agreements = user?.agreements ?? null;
 
     useEffect(() => {
         if (!canAccessStep(4)) {
@@ -194,7 +176,6 @@ export default function Step4Page() {
     };
 
     const handleConfirm = async () => {
-        setAttempted(true);
         if (!validate()) return;
         
         setSubmitting(true);
@@ -224,7 +205,7 @@ export default function Step4Page() {
     };
 
     return (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
+        <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
                 <StepBadge icon={Check} label="Review &amp; Confirm" />
@@ -242,7 +223,6 @@ export default function Step4Page() {
                     iconColor={GREEN}
                     title="Personal Details"
                     subtitle="Step 2 — Identity Verification"
-                    editStep="/user-onboarding/step-1"
                     onEdit={() => router.push("/user-onboarding/step-1")}
                 >
                     <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -253,11 +233,13 @@ export default function Step4Page() {
                         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                             {step1.idFront && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={step1.idFront.preview} alt="ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
                             {step1.idBack && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={step1.idBack.preview} alt="ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
@@ -274,7 +256,6 @@ export default function Step4Page() {
                     iconColor={GOLD}
                     title="Emergency Contact"
                     subtitle="Step 3 — Guardian Details"
-                    editStep="/user-onboarding/step-2"
                     onEdit={() => router.push("/user-onboarding/step-2")}
                 >
                     <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -290,11 +271,13 @@ export default function Step4Page() {
                         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                             {step2.parentIdFront && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={step2.parentIdFront.preview} alt="Guardian ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
                             {step2.parentIdBack && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={step2.parentIdBack.preview} alt="Guardian ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
@@ -311,7 +294,6 @@ export default function Step4Page() {
                     iconColor={GREEN}
                     title="Room Selected"
                     subtitle="Step 4 — Room & Services"
-                    editStep="/user-onboarding/step-3"
                     onEdit={() => router.push("/user-onboarding/step-3")}
                 >
                     <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 2 }}>

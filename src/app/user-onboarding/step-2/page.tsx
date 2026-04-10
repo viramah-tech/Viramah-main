@@ -123,7 +123,7 @@ export default function Step2Page() {
     const parentIdLabel = ID_TYPES.find((t) => t.value === step2.parentIdType)?.label ?? "ID";
 
     return (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+        <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
                 <StepBadge icon={Phone} label="Emergency Contact" />
