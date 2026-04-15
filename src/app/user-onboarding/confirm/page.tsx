@@ -662,11 +662,11 @@ export default function ConfirmPage() {
                     return;
                 }
 
-                // 3. Fetch installment data
-                await fetchInstallment(b._id, 1);
-
-                // 4. Fetch services
-                await fetchServices(b._id);
+                // 3. Fetch installment + services in parallel (each handles its own errors)
+                await Promise.all([
+                    fetchInstallment(b._id, 1),
+                    fetchServices(b._id),
+                ]);
             } catch (err) {
                 if (cancelled) return;
                 const msg = err instanceof Error ? err.message : "Failed to load payment data";
@@ -684,14 +684,14 @@ export default function ConfirmPage() {
         return () => { cancelled = true; };
     }, [token, router, fetchInstallment, fetchServices]);
 
-    // Access guard
+    // Access guard — if frontend state says this step is blocked, redirect.
+    // The main data-fetch effect above will re-validate against the backend
+    // and surface any track-not-selected state via its own redirect.
     useEffect(() => {
         if (!canAccessStep(5)) {
-            apiFetch("/api/v1/bookings/my-booking", { token }).catch(() => {
-                router.replace("/user-onboarding/track-selection");
-            });
+            router.replace("/user-onboarding/track-selection");
         }
-    }, [canAccessStep, router, token]);
+    }, [canAccessStep, router]);
 
     // Handle installment tab change
     const handleInstallmentTabChange = async (instNum: number) => {

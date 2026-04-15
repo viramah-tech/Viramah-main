@@ -71,11 +71,17 @@ export default function Phase2Banner() {
         checkPhase2();
     }, [token]);
 
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        setNow(Date.now());
+    }, [phase2]);
+
     if (!phase2 || dismissed) return null;
 
     const dueDate = new Date(phase2.dueDate);
-    const isOverdue = dueDate < new Date();
-    const daysLeft = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const isOverdue = dueDate.getTime() < now;
+    const daysLeft = Math.ceil((dueDate.getTime() - now) / (1000 * 60 * 60 * 24));
 
     return (
         <AnimatePresence>

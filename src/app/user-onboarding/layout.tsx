@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { OnboardingProvider } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api";
 
 const BOOKING_STEPS = [
     { id: 1, label: "Agreements", description: "Terms & Policies" },
@@ -244,130 +245,84 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
     const [isScrolled, setIsScrolled] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
 
-    // Auth guard: redirect to login if not authenticated
+    // ── Unified lifecycle guard ─────────────────────────────────────────────
+    // One ordered check — replaces three racing useEffects. Priority chain:
+    //   1. Not authenticated → /login
+    //   2. Email not verified → /verify-contact
+    //   3. Terms not accepted → /user-onboarding/terms
+    //   4. Active/pending deposit hold → /user-onboarding/deposit-status
+    //   5. Fully onboarded → /student/dashboard
+    //   6. Payment submitted → /user-onboarding/payment-status
+    //   7. Default → stay
     useEffect(() => {
-        if (!loading && !isAuthenticated) {
-            router.push("/login");
-        }
-    }, [loading, isAuthenticated, router]);
-
-    // ── AUDIT FIX L-1: Unified lifecycle + hold guard (single useEffect) ────
-    // Replaces two separate async guards that could race and redirect to
-    // different pages simultaneously. Priority chain (highest first):
-    //   1. Active deposit hold → /deposit-status
-    //   2. Payment/onboarding lifecycle → /payment-status or /student/dashboard
-    //   3. Default → stay on current page
-    useEffect(() => {
-        if (loading || !isAuthenticated) return;
+        if (loading) return;
 
         let cancelled = false;
 
-        const runLifecycleGuard = async () => {
+        const run = async () => {
+            if (!isAuthenticated) {
+                router.replace("/login");
+                return;
+            }
+            if (!user) return;
+
+            // Email verification
+            if (!user.verification?.emailVerified) {
+                router.replace("/verify-contact");
+                return;
+            }
+
+            // Terms acceptance
+            if (!user.agreements?.termsAccepted && !pathname.includes("/user-onboarding/terms")) {
+                router.replace("/user-onboarding/terms");
+                return;
+            }
+
+            // Fetch deposit hold (uses apiFetch → proper 401 handling + shared token logic)
+            let holdStatus: string | undefined;
             try {
-                const token = typeof window !== "undefined" ? localStorage.getItem("viramah_token") : null;
-                const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-                const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-                const holdRes = await fetch(`${apiBase}/api/public/deposits/status`, { headers });
-
+                const res = await apiFetch<{ data?: { hold?: { status?: string } } }>(
+                    "/api/public/deposits/status"
+                );
                 if (cancelled) return;
+                holdStatus = res.data?.hold?.status;
+            } catch {
+                // Network/401 — don't redirect on error, let the page render
+                return;
+            }
 
-                // Parse response safely
-                const userData = user;
-                let holdData = null;
+            const HOLD_EXCLUDED = ["/deposit-status", "/confirm"];
+            const LIFECYCLE_EXCLUDED = ["/deposit-status", "/payment-status"];
+            const isExcluded = (list: string[]) =>
+                list.some((p) => pathname.includes(p));
 
-                if (holdRes.ok) {
-                    const holdJson = await holdRes.json();
-                    holdData = holdJson?.data?.hold;
-                }
+            // Priority: deposit hold
+            if (
+                (holdStatus === "active" || holdStatus === "pending_approval") &&
+                !isExcluded(HOLD_EXCLUDED)
+            ) {
+                router.replace("/user-onboarding/deposit-status");
+                return;
+            }
 
-                if (cancelled) return;
-
-                const currentPath = pathname;
-
-                // Pages excluded from guards (terminal pages where user should stay)
-                const HOLD_EXCLUDED = ["/deposit-status", "/confirm"];
-                const LIFECYCLE_EXCLUDED = ["/deposit-status", "/payment-status"];
-
-                const isExcludedFrom = (exclusions: string[]) =>
-                    exclusions.some((p) => currentPath.includes(p.replace("/user-onboarding", "")));
-
-                // PRIORITY 1 (HIGHEST): Active deposit hold → deposit-status
-                if (
-                    holdData?.status === "active" &&
-                    !isExcludedFrom(HOLD_EXCLUDED)
-                ) {
-                    router.replace("/user-onboarding/deposit-status");
-                    return; // Stop — do not evaluate further guards
-                }
-
-                // Pending approval hold → deposit-status
-                if (
-                    holdData?.status === "pending_approval" &&
-                    !currentPath.includes("deposit-status")
-                ) {
-                    router.replace("/user-onboarding/deposit-status");
+            // Priority: onboarding lifecycle
+            if (!isExcluded(LIFECYCLE_EXCLUDED)) {
+                const { paymentStatus: ps, documentVerificationStatus: dvs, moveInStatus: ms } = user;
+                if (ps === "approved" && dvs === "approved" && ms === "completed") {
+                    router.replace("/student/dashboard");
                     return;
                 }
-
-                // PRIORITY 2: Payment/onboarding lifecycle redirect
-                if (userData && !isExcludedFrom(LIFECYCLE_EXCLUDED)) {
-                    const ps = userData.paymentStatus;
-                    const dvs = userData.documentVerificationStatus;
-                    const ms = userData.moveInStatus;
-
-                    // Fully onboarded resident → student dashboard
-                    if (ps === "approved" && dvs === "approved" && ms === "completed") {
-                        router.replace("/student/dashboard");
-                        return;
-                    }
-                    // Payment submitted/approved → payment-status
-                    // BUT only if user does NOT have an active/pending deposit hold
-                    // (those are handled by priority 1 above — user needs to complete payment on /confirm)
-                    if (ps === "pending" || ps === "approved") {
-                        const holdIsActiveOrPending = holdData?.status === "active" || holdData?.status === "pending_approval";
-                        if (!holdIsActiveOrPending) {
-                            router.replace("/user-onboarding/payment-status");
-                            return;
-                        }
-                    }
+                const holdIsLive = holdStatus === "active" || holdStatus === "pending_approval";
+                if ((ps === "pending" || ps === "approved") && !holdIsLive) {
+                    router.replace("/user-onboarding/payment-status");
+                    return;
                 }
-
-                // PRIORITY 3: Default — no redirect needed, stay on current page
-            } catch (err) {
-                // Guard fetch failed — do NOT redirect, let user stay on page.
-                // Silent fail is correct: better to show the page than redirect
-                // incorrectly due to a network error.
-                console.error("[Layout Guard] Failed to run lifecycle check:", err);
             }
         };
 
-        runLifecycleGuard();
-
-        return () => { cancelled = true; }; // Cleanup — prevent stale redirects
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loading, isAuthenticated, pathname, user]);
-
-    // Terms acceptance guard:
-    // If the user hasn't accepted T&C, redirect to /user-onboarding/terms.
-    // This prevents skipping the acceptance step by navigating directly to step-2 etc.
-    useEffect(() => {
-        if (loading || !isAuthenticated || !user) return;
-        if (pathname.includes("/user-onboarding/terms")) return; // already there — don't loop
-
-        // Contact verification guard: redirect to /verify-contact if email not verified
-        const emailVerified = user?.verification?.emailVerified;
-        if (!emailVerified) {
-            router.replace("/verify-contact");
-            return;
-        }
-
-        const agreed = user?.agreements?.termsAccepted;
-        if (!agreed) {
-            router.replace("/user-onboarding/terms");
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loading, isAuthenticated, pathname, user]);
+        run();
+        return () => { cancelled = true; };
+    }, [loading, isAuthenticated, pathname, user, router]);
 
     useEffect(() => {
         let ticking = false;

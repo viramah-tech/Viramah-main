@@ -86,7 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const refreshUser = useCallback(async () => {
-        const currentToken = token || localStorage.getItem("viramah_token");
+        const currentToken = typeof window !== "undefined"
+            ? localStorage.getItem("viramah_token")
+            : null;
         if (!currentToken) {
             setLoading(false);
             return;
@@ -117,9 +119,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } finally {
             refreshInFlightRef.current = null;
         }
-    }, [token]);
+    }, []);
 
-    // Fetch user data when token changes
+    // Fetch user data when token becomes available
     useEffect(() => {
         if (token) {
             refreshUser();

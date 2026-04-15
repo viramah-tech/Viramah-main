@@ -68,11 +68,25 @@ export interface PaymentData {
 
 export type Step4Data = Record<string, unknown>;
 
-interface OnboardingStatusApiData {
+// ── Server status shape ──────────────────────────────────────
+
+interface ServerOnboardingStatus {
+    // New server-authoritative fields
+    currentStep: number | 'completed';
+    nextAllowedStep: number | null;
+    completedSteps: number[];
+    canProceed: boolean;
+    display: {
+        progressPercent: number;
+        stepLabel: string;
+    };
+
+    // Existing fields (for form pre-fill)
+    onboardingStatus: string;
     name?: string;
+    dateOfBirth?: string;
     idType?: string;
     idNumber?: string;
-    dateOfBirth?: string;
     documents?: {
         photo?: string;
         idProof?: string;
@@ -84,33 +98,24 @@ interface OnboardingStatusApiData {
         relation?: string;
         alternatePhone?: string;
     };
+    parentDocuments?: {
+        idType?: string;
+        idNumber?: string;
+        idFront?: string;
+        idBack?: string;
+    };
     selectedRoomType?: string;
-    paymentStatus?: string;
-    onboardingStatus?: string;
-    documentVerificationStatus?: string;
-    moveInStatus?: string;
+    roomTypeId?: string;
+    messPackage?: string;
+    selectedAddOns?: { transport: boolean; mess: boolean; messLumpSum: boolean };
     gender?: string;
     address?: string;
+    paymentStatus?: string;
+    documentVerificationStatus?: string;
+    moveInStatus?: string;
 }
 
-interface RoomApiRecord {
-    _id: string;
-    name: string;
-    pricing?: {
-        discounted?: number;
-    };
-    discountedPrice?: number;
-}
-
-interface OnboardingStatusResponse {
-    data: OnboardingStatusApiData;
-}
-
-interface RoomsResponse {
-    data: {
-        roomTypes: RoomApiRecord[];
-    };
-}
+// ── Legacy state shape (backward compat for consumers) ──────
 
 export type OnboardingStatus = "pending" | "payment_submitted" | "doc_verification_pending" | "move_in_pending" | "move_in_approved";
 
@@ -172,35 +177,16 @@ const INITIAL_STATE: OnboardingState = {
     bookingStatus: null,
 };
 
-// ── localStorage helpers (user-scoped) ──────────────────────
-
-function getStorageKey(userId?: string): string | null {
-    return userId ? `viramah_onboarding_${userId}` : null;
-}
-
-function loadFromStorage(key: string | null): OnboardingState | null {
-    if (!key) return null;
-    try {
-        const raw = localStorage.getItem(key);
-        if (!raw) return null;
-        return JSON.parse(raw) as OnboardingState;
-    } catch {
-        return null;
-    }
-}
-
-function saveToStorage(key: string | null, state: OnboardingState) {
-    if (!key) return;
-    try {
-        localStorage.setItem(key, JSON.stringify(state));
-    } catch {
-        // Storage full or unavailable — silently ignore
-    }
-}
-
 // ── Context ──────────────────────────────────────────────────
 
 interface OnboardingContextType {
+    // ── NEW: Server-authoritative state ──────────────────────
+    serverStatus: ServerOnboardingStatus | null;
+    loading: boolean;
+    error: string | null;
+    refresh: () => Promise<void>;
+
+    // ── LEGACY: Backward-compatible API (consumers still use these) ──
     state: OnboardingState;
     hydrating: boolean;
     saving: boolean;
@@ -223,6 +209,10 @@ interface OnboardingContextType {
 }
 
 const OnboardingContext = createContext<OnboardingContextType>({
+    serverStatus: null,
+    loading: true,
+    error: null,
+    refresh: async () => {},
     state: INITIAL_STATE,
     hydrating: true,
     saving: false,
@@ -244,166 +234,129 @@ const OnboardingContext = createContext<OnboardingContextType>({
     setBookingStatus: () => {},
 });
 
+// ── Helpers: build legacy state from server response ─────────
+
+function buildStateFromServer(d: ServerOnboardingStatus): OnboardingState {
+    const state = { ...INITIAL_STATE };
+
+    // Step 1: KYC
+    state.step1 = {
+        ...state.step1,
+        fullName: d.name || "",
+        dateOfBirth: d.dateOfBirth ? String(d.dateOfBirth).split("T")[0] : "",
+        idType: d.idType || "aadhaar",
+        idNumber: d.idNumber || "",
+        gender: d.gender || "",
+        address: d.address || "",
+    };
+    if (d.documents?.photo) state.step1.profilePhoto = { name: "photo", preview: d.documents.photo };
+    if (d.documents?.idProof) state.step1.idFront = { name: "id-front", preview: d.documents.idProof };
+    if (d.documents?.addressProof) state.step1.idBack = { name: "id-back", preview: d.documents.addressProof };
+
+    // Step 2: Emergency
+    if (d.emergencyContact?.name) {
+        state.step2 = {
+            ...state.step2,
+            emergencyName: d.emergencyContact.name,
+            emergencyPhone: d.emergencyContact.phone || "",
+            emergencyRelation: d.emergencyContact.relation || "",
+            alternatePhone: d.emergencyContact.alternatePhone || "",
+        };
+    }
+    if (d.parentDocuments) {
+        state.step2.parentIdType = d.parentDocuments.idType || "aadhaar";
+        state.step2.parentIdNumber = d.parentDocuments.idNumber || "";
+        if (d.parentDocuments.idFront) state.step2.parentIdFront = { name: "parent-id-front", preview: d.parentDocuments.idFront };
+        if (d.parentDocuments.idBack) state.step2.parentIdBack = { name: "parent-id-back", preview: d.parentDocuments.idBack };
+    }
+
+    // Step 3: Room
+    if (d.selectedRoomType) {
+        state.step3.selectedRoom = {
+            id: d.selectedRoomType.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            backendId: d.roomTypeId || undefined,
+            title: d.selectedRoomType,
+            type: d.selectedRoomType,
+            price: 0,
+            priceLabel: "",
+        };
+    }
+    if (d.selectedAddOns) {
+        state.step3.addOns = DEFAULT_ADD_ONS.map(a => ({
+            ...a,
+            enabled: a.id === "transport" ? !!d.selectedAddOns?.transport : a.id === "lunch" ? !!d.selectedAddOns?.mess : false,
+        }));
+    }
+
+    // Completed steps come from server now
+    state.completedSteps = d.completedSteps || [];
+
+    // Derive legacy status
+    if (d.onboardingStatus === "completed") state.status = "payment_submitted";
+    if (d.paymentStatus === "approved") {
+        if (d.documentVerificationStatus === "pending") state.status = "doc_verification_pending";
+        else if (d.moveInStatus === "not_started") state.status = "move_in_pending";
+        else if (d.moveInStatus === "completed") state.status = "move_in_approved";
+    }
+
+    return state;
+}
+
 // ── Provider ─────────────────────────────────────────────────
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
+    // Server state (source of truth)
+    const [serverStatus, setServerStatus] = useState<ServerOnboardingStatus | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Legacy state (derived from server, with local overrides for form input)
     const [state, setState] = useState<OnboardingState>(INITIAL_STATE);
-    const [hydrating, setHydrating] = useState(true);
     const [saving, setSaving] = useState(false);
-    const didHydrate = useRef(false);
+    const abortRef = useRef<AbortController | null>(null);
+
     const { user } = useAuth();
-    const storageKeyRef = useRef<string | null>(null);
 
-    // Update storage key when user changes
-    useEffect(() => {
-        storageKeyRef.current = getStorageKey(user?._id);
-    }, [user?._id]);
+    // ── Server fetch (the ONLY data source) ──────────────────
+    const refresh = useCallback(async () => {
+        abortRef.current?.abort();
+        const ac = new AbortController();
+        abortRef.current = ac;
+        setLoading(true);
+        try {
+            const res = await apiFetch<{ data: ServerOnboardingStatus }>(
+                PUBLIC_API.onboarding.status,
+                { method: 'GET' }
+            );
+            if (ac.signal.aborted) return;
+            const d = res.data;
+            setServerStatus(d);
+            setState(prev => ({
+                ...buildStateFromServer(d),
+                // Preserve ephemeral local edits (bookingId, payment form state)
+                bookingId: prev.bookingId,
+                bookingStatus: prev.bookingStatus,
+                payment: prev.payment.method ? prev.payment : INITIAL_STATE.payment,
+            }));
+            setError(null);
+        } catch (e) {
+            if (ac.signal.aborted) return;
+            setError(e instanceof Error ? e.message : 'Failed to load status');
+        } finally {
+            if (!ac.signal.aborted) setLoading(false);
+        }
+    }, []);
 
-    // ── Hydration: wait for user, then localStorage + backend ──
+    // Hydrate on mount when user is available
     useEffect(() => {
-        if (didHydrate.current) return;
         if (!user?._id) {
-            // No user yet — skip localStorage, just finish hydrating
-            setHydrating(false);
+            setLoading(false);
             return;
         }
-        didHydrate.current = true;
+        refresh();
+    }, [user?._id, refresh]);
 
-        const storageKey = getStorageKey(user._id);
-        storageKeyRef.current = storageKey;
-
-        // 1. Immediate restore from user-scoped localStorage (instant)
-        const cached = loadFromStorage(storageKey);
-        if (cached) {
-            setState({
-                ...INITIAL_STATE,
-                ...cached,
-                step1: { ...INITIAL_STATE.step1, ...cached.step1 },
-                step2: { ...INITIAL_STATE.step2, ...cached.step2 },
-                step3: { 
-                    ...INITIAL_STATE.step3, 
-                    ...cached.step3,
-                    addOns: cached.step3?.addOns?.map(cachedAddon => {
-                        const defaultMatch = DEFAULT_ADD_ONS.find(da => da.id === cachedAddon.id);
-                        return defaultMatch 
-                            ? { ...cachedAddon, price: defaultMatch.price, name: defaultMatch.name }
-                            : cachedAddon;
-                    }) || DEFAULT_ADD_ONS,
-                },
-                step4: { ...INITIAL_STATE.step4, ...cached.step4 },
-                payment: { ...INITIAL_STATE.payment, ...cached.payment },
-            });
-        }
-
-        // 2. Attempt backend hydration (async, best-effort)
-        (async () => {
-            try {
-                // Fetch status and rooms
-                const statusRes = await apiFetch<OnboardingStatusResponse>(PUBLIC_API.onboarding.status);
-                const d = statusRes.data;
-
-                let fetchedRooms: RoomApiRecord[] = [];
-                try {
-                    const roomsRes = await apiFetch<RoomsResponse>(PUBLIC_API.rooms.list);
-                    fetchedRooms = roomsRes.data?.roomTypes || [];
-                } catch (e) {
-                    console.error("Failed to fetch rooms during hydration:", e);
-                }
-
-                const completedSteps: number[] = [];
-                if (d.documents?.idProof) completedSteps.push(1);
-                if (d.emergencyContact?.name && d.emergencyContact?.phone) completedSteps.push(2);
-                if (d.selectedRoomType) completedSteps.push(3);
-
-                const steps123Done = completedSteps.includes(1) && completedSteps.includes(2) && completedSteps.includes(3);
-                const paymentProgressed = d.paymentStatus === "pending" || d.paymentStatus === "approved"
-                    || d.onboardingStatus === "completed" || d.onboardingStatus === "in-progress";
-                if ((d.gender && d.address) || steps123Done || paymentProgressed) {
-                    completedSteps.push(4);
-                }
-
-                setState((prev) => {
-                    const merged: OnboardingState = {
-                        ...prev,
-                        completedSteps: [...new Set([...prev.completedSteps, ...completedSteps])],
-                    };
-
-                    // Step 1: KYC
-                    if (d.name || d.idNumber) {
-                        merged.step1 = {
-                            ...merged.step1,
-                            fullName: d.name || merged.step1.fullName,
-                            dateOfBirth: d.dateOfBirth ? d.dateOfBirth.split("T")[0] : merged.step1.dateOfBirth,
-                            idType: d.idType || merged.step1.idType,
-                            idNumber: d.idNumber || merged.step1.idNumber,
-                        };
-                    }
-                    if (d.documents?.photo) merged.step1.profilePhoto = { name: "photo", preview: d.documents.photo };
-                    if (d.documents?.idProof) merged.step1.idFront = { name: "id-front", preview: d.documents.idProof };
-                    if (d.documents?.addressProof) merged.step1.idBack = { name: "id-back", preview: d.documents.addressProof };
-                    merged.step1.gender = d.gender || merged.step1.gender || "";
-                    merged.step1.address = d.address || merged.step1.address || "";
-
-                    // Step 2: Emergency
-                    if (d.emergencyContact?.name) {
-                        merged.step2 = {
-                            ...merged.step2,
-                            emergencyName: d.emergencyContact.name,
-                            emergencyPhone: d.emergencyContact.phone || merged.step2.emergencyPhone,
-                            emergencyRelation: d.emergencyContact.relation || merged.step2.emergencyRelation,
-                            alternatePhone: d.emergencyContact.alternatePhone || "",
-                        };
-                    }
-
-                    // Step 3: Room
-                    if (d.selectedRoomType) {
-                        const REVERSE_ROOM_MAP: Record<string, string> = {
-                            "NEXUS": "nexus-plus", "COLLECTIVE": "collective-plus", "AXIS": "axis", "AXIS+": "studio",
-                            "VIRAMAH Nexus": "nexus-plus", "VIRAMAH Collective": "collective-plus",
-                            "VIRAMAH Axis": "axis", "VIRAMAH Axis+": "studio"
-                        };
-                        const backendRoom = fetchedRooms.find(r => r.name === d.selectedRoomType);
-                        const discPrice = backendRoom?.pricing?.discounted ?? backendRoom?.discountedPrice ?? 0;
-                        const frontendId = REVERSE_ROOM_MAP[d.selectedRoomType] || d.selectedRoomType.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                        
-                        merged.step3 = {
-                            ...merged.step3,
-                            selectedRoom: {
-                                id: frontendId,
-                                backendId: backendRoom?._id || merged.step3.selectedRoom?.backendId,
-                                title: backendRoom?.name || d.selectedRoomType,
-                                type: backendRoom?.name || d.selectedRoomType,
-                                price: discPrice || merged.step3.selectedRoom?.price || 0,
-                                priceLabel: `₹${(discPrice || merged.step3.selectedRoom?.price || 0).toLocaleString()}`,
-                            }
-                        };
-                    }
-
-                    // Status
-                    if (d.onboardingStatus === "completed") merged.status = "payment_submitted";
-                    if (d.paymentStatus === "approved") {
-                        if (d.documentVerificationStatus === "pending") merged.status = "doc_verification_pending";
-                        else if (d.moveInStatus === "not_started") merged.status = "move_in_pending";
-                        else if (d.moveInStatus === "completed") merged.status = "move_in_approved";
-                    }
-
-                    return merged;
-                });
-            } catch (err) {
-                console.error("Backend hydration failed:", err);
-            } finally {
-                setHydrating(false);
-            }
-        })();
-    }, [user?._id]);
-
-    // ── Persist to user-scoped localStorage on every state change ──
-    useEffect(() => {
-        if (hydrating) return;
-        saveToStorage(storageKeyRef.current, state);
-    }, [state, hydrating]);
-
-    // ── Step update helpers ──────────────────────────────────
+    // ── Legacy step update helpers (ephemeral form input only) ──
 
     const updateStep1 = useCallback((data: Partial<Step1Data>) => {
         setState((prev) => ({ ...prev, step1: { ...prev.step1, ...data } }));
@@ -437,13 +390,9 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         }));
     }, []);
 
-    const markStepComplete = useCallback((step: number) => {
-        setState((prev) => ({
-            ...prev,
-            completedSteps: prev.completedSteps.includes(step)
-                ? prev.completedSteps
-                : [...prev.completedSteps, step],
-        }));
+    // markStepComplete is now a no-op — server derives completion from field presence
+    const markStepComplete = useCallback((_step: number) => {
+        // Server is source of truth; call refresh() after saving to get updated completedSteps
     }, []);
 
     const isStepComplete = useCallback(
@@ -451,6 +400,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         [state.completedSteps]
     );
 
+    // canAccessStep now reads from server-derived completedSteps
     const canAccessStep = useCallback(
         (step: number) => {
             if (step === 1) return true;
@@ -484,13 +434,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
     const resetOnboarding = useCallback(() => {
         setState(INITIAL_STATE);
-        const key = storageKeyRef.current;
-        if (key) {
-            try { localStorage.removeItem(key); } catch { /* ignore */ }
-        }
+        setServerStatus(null);
     }, []);
 
-    // ── Save step to backend (called from step pages) ────────
+    // ── Save step to backend, then refresh server state ────────
     const saveStepToBackend = useCallback(
         async (step: number, payload: Record<string, unknown>) => {
             setSaving(true);
@@ -502,18 +449,24 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                         : PUBLIC_API.onboarding.step(step as 1 | 2 | 3 | 4);
 
                 await apiFetch(path, { method, body: payload });
+                // Refresh from server to get updated completedSteps, currentStep, etc.
+                await refresh();
             } finally {
                 setSaving(false);
             }
         },
-        []
+        [refresh]
     );
 
     return (
         <OnboardingContext.Provider
             value={{
+                serverStatus,
+                loading,
+                error,
+                refresh,
                 state,
-                hydrating,
+                hydrating: loading,
                 saving,
                 updateStep1,
                 updateStep2,

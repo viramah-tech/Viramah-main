@@ -1,5 +1,3 @@
-"use client";
-
 import { Container } from "@/components/layout/Container";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";

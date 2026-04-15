@@ -238,9 +238,11 @@ export function HeroSection() {
 
     // ── Detect hover capability ─────────────────────────────
     useEffect(() => {
-        setCanHover(
-            window.matchMedia("(hover: hover) and (pointer: fine)").matches
-        );
+        const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
+        const handler = (e: MediaQueryListEvent | MediaQueryList) => setCanHover(e.matches);
+        handler(mql);
+        mql.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
+        return () => mql.removeEventListener("change", handler as (e: MediaQueryListEvent) => void);
     }, []);
 
     // ── Mobile Tap-to-Pause Handler ───────────────────────

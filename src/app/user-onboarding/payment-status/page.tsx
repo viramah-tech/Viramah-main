@@ -10,7 +10,6 @@ import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth, type AuthUser } from "@/context/AuthContext";
 import { useSocket } from "@/hooks/useSocket";
 import { apiFetch } from "@/lib/api";
-import { printReceipt } from "@/utils/printReceipt";
 import { containerVariants, itemVariants } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
@@ -238,21 +237,12 @@ function PaymentCard({ payment, hasAdvance }: { payment: PaymentRecord; hasAdvan
                 )}
             </div>
 
-            {/* Print Receipt Button */}
+            {/* Download Receipt Button */}
             <div style={{ padding: "0 20px 14px" }}>
-                <button
-                    onClick={() => printReceipt({
-                        type: "payment",
-                        amount: payment.amount,
-                        transactionId: payment.transactionId,
-                        date: payment.createdAt,
-                        status: payment.status,
-                        paymentId: payment.paymentId,
-                        paymentMode: payment.paymentMode,
-                        installmentNumber: payment.installmentNumber,
-                        breakdown: (b as Record<string, unknown>) || undefined,
-                        depositCredited: payment.depositCredited,
-                    })}
+                <a
+                    href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/v1/receipts/${payment._id}.pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                         padding: "6px 14px", borderRadius: 8,
                         border: "1.5px solid rgba(31,58,45,0.15)",
@@ -262,10 +252,11 @@ function PaymentCard({ payment, hasAdvance }: { payment: PaymentRecord; hasAdvan
                         color: GREEN, cursor: "pointer",
                         display: "inline-flex", alignItems: "center", gap: 6,
                         textTransform: "uppercase", letterSpacing: "0.1em",
+                        textDecoration: "none",
                     }}
                 >
-                    <Printer size={12} /> Print Receipt
-                </button>
+                    <Printer size={12} /> Download Receipt
+                </a>
             </div>
 
             {/* Deposit credit banner */}

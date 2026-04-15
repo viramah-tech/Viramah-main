@@ -43,6 +43,10 @@ export function RoomCard({
     const roomRotateX = useTransform(mouseY, [-0.5, 0.5], [5, -5]);
     const roomRotateZ = useTransform(mouseX, [-0.5, 0.5], [-10, 10]);
 
+    // Derived transforms for the 3D room fallback (hoisted from JSX to satisfy rules-of-hooks)
+    const roomComposedRotateX = useTransform(roomRotateX, (v) => 60 + v);
+    const roomComposedRotateZ = useTransform(roomRotateZ, (v) => 45 + v);
+
     function handleMouseMove(event: React.MouseEvent<HTMLDivElement>) {
         const rect = event.currentTarget.getBoundingClientRect();
         const width = rect.width;
@@ -227,8 +231,8 @@ export function RoomCard({
                             className="w-[280px] h-[280px] relative scale-[0.82]"
                             style={{
                                 transformStyle: "preserve-3d",
-                                rotateX: useTransform(roomRotateX, (v) => 60 + v),
-                                rotateZ: useTransform(roomRotateZ, (v) => 45 + v),
+                                rotateX: roomComposedRotateX,
+                                rotateZ: roomComposedRotateZ,
                             }}
                         >
                             {/* Floor */}

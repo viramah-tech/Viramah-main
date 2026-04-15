@@ -204,7 +204,7 @@ export default function BookingFeePage() {
   const [billsData, setBillsData] = useState<DisplayBillsData | null>(null);
   const [initiating,       setInitiating]        = useState(true);
   const [initError,        setInitError]         = useState<string | null>(null);
-  const [initLog,          setInitLog]           = useState<string[]>([]); // For debugging visibility
+  const [initStatus,       setInitStatus]        = useState<string>("Connecting to server...");
 
   const [transactionId, setTransactionId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("UPI");
@@ -236,9 +236,17 @@ export default function BookingFeePage() {
       setInitiating(true);
       setInitError(null);
       const log = (msg: string) => {
-        setInitLog(prev => [...prev.slice(-3), msg]);
+        setInitStatus(msg);
         debugLog(msg);
       };
+
+      // Fail-safe: if init hangs > 15s, surface an error instead of spinning forever
+      const timeoutId = setTimeout(() => {
+        if (initLock.current === runKey) {
+          setInitError("Connection timed out. Please check your network and try again.");
+          setInitiating(false);
+        }
+      }, 15000);
 
       try {
         debugLog("init_start", {
@@ -418,6 +426,7 @@ export default function BookingFeePage() {
         debugLog("init_error", err);
         setInitError(getErrorMessage(err, "Initialization failed."));
       } finally {
+        clearTimeout(timeoutId);
         setInitiating(false);
       }
     };
@@ -486,7 +495,7 @@ export default function BookingFeePage() {
             Initializing booking...
           </span>
           <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.35)", textAlign: "center", maxWidth: 250 }}>
-            {initLog[initLog.length - 1] || "Connecting to server..."}
+            {initStatus}
           </span>
         </div>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>

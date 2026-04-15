@@ -1,5 +1,3 @@
-"use client";
-
 import { Container } from "@/components/layout/Container";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
@@ -7,57 +5,61 @@ import { SearchBar } from "@/components/search/SearchBar";
 import { RoomCard } from "@/components/ui/RoomCard";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
-
-import { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api";
 import { ROOMS as STATIC_ROOMS, type RoomType } from "@/data/rooms";
 
-export default function RoomsPage() {
-    const [rooms, setRooms] = useState<RoomType[]>(STATIC_ROOMS);
+export const revalidate = 60;
 
-    useEffect(() => {
-        const ROOM_NAME_MAP: Record<string, string> = {
-            "nexus-plus": "NEXUS",
-            "collective-plus": "COLLECTIVE",
-            "axis": "AXIS",
-            "studio": "AXIS+",
-        };
-        const fetchRooms = async () => {
-            try {
-                const res = await apiFetch<{ data: { roomTypes: { name: string; basePrice?: number; discountedPrice?: number; pricing?: { original: number; discounted: number }; availableSeats: number }[] } }>("/api/public/rooms");
-                if (res?.data?.roomTypes) {
-                    const mapped = STATIC_ROOMS.map(staticRoom => {
-                        const backendName = ROOM_NAME_MAP[staticRoom.id];
-                        const beRoom = res.data.roomTypes.find(r => r.name === backendName);
-                        if (beRoom) {
-                            const origPrice = beRoom.pricing?.original ?? beRoom.basePrice ?? staticRoom.price;
-                            const discPrice = beRoom.pricing?.discounted ?? beRoom.discountedPrice ?? staticRoom.price;
-                            return {
-                                ...staticRoom,
-                                price: discPrice,
-                                priceLabel: `₹${discPrice.toLocaleString()}`,
-                                originalPrice: `₹${origPrice.toLocaleString()}`,
-                                tag: beRoom.availableSeats > 0 ? staticRoom.tag : 'Sold Out',
-                            };
-                        }
-                        return staticRoom;
-                    });
-                    setRooms(mapped);
-                }
-            } catch (err) {
-                console.error("Failed to fetch rooms:", err);
-            }
-        };
-        fetchRooms();
-    }, []);
-    
+const ROOM_NAME_MAP: Record<string, string> = {
+    "nexus-plus": "NEXUS",
+    "collective-plus": "COLLECTIVE",
+    "axis": "AXIS",
+    "studio": "AXIS+",
+};
+
+interface BackendRoomType {
+    name: string;
+    basePrice?: number;
+    discountedPrice?: number;
+    pricing?: { original: number; discounted: number };
+    availableSeats: number;
+}
+
+async function fetchRooms(): Promise<RoomType[]> {
+    const base = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:5000";
+    try {
+        const res = await fetch(`${base}/api/public/rooms`, { next: { revalidate: 60 } });
+        if (!res.ok) return STATIC_ROOMS;
+        const json = (await res.json()) as { data?: { roomTypes?: BackendRoomType[] } };
+        const beRooms = json?.data?.roomTypes;
+        if (!beRooms) return STATIC_ROOMS;
+
+        return STATIC_ROOMS.map((staticRoom) => {
+            const beRoom = beRooms.find((r) => r.name === ROOM_NAME_MAP[staticRoom.id]);
+            if (!beRoom) return staticRoom;
+            const origPrice = beRoom.pricing?.original ?? beRoom.basePrice ?? staticRoom.price;
+            const discPrice = beRoom.pricing?.discounted ?? beRoom.discountedPrice ?? staticRoom.price;
+            return {
+                ...staticRoom,
+                price: discPrice,
+                priceLabel: `₹${discPrice.toLocaleString()}`,
+                originalPrice: `₹${origPrice.toLocaleString()}`,
+                tag: beRoom.availableSeats > 0 ? staticRoom.tag : "Sold Out",
+            };
+        });
+    } catch {
+        return STATIC_ROOMS;
+    }
+}
+
+export default async function RoomsPage() {
+    const rooms = await fetchRooms();
+
     return (
         <main className="min-h-screen flex flex-col" style={{ background: "var(--luxury-green)" }}>
             <Navigation />
 
             {/* Hero Header */}
             <section className="pt-36 pb-16 relative overflow-hidden">
-                {/* Subtle background texture */}
                 <div
                     className="absolute inset-0 opacity-5"
                     style={{
@@ -88,7 +90,6 @@ export default function RoomsPage() {
                             Thoughtfully designed spaces for focused individuals. Every layout is curated for deep work, rest, and community.
                         </p>
 
-                        {/* Stats row */}
                         <div className="flex gap-10 mt-10">
                             {[
                                 { label: "Studio & 1BHK Types", value: "7" },
@@ -115,20 +116,16 @@ export default function RoomsPage() {
                 </Container>
             </section>
 
-            {/* Search Bar */}
             <section className="relative z-20 pb-12">
                 <Container>
                     <SearchBar />
                 </Container>
             </section>
 
-            {/* Divider */}
             <div className="w-full" style={{ height: "1px", background: "linear-gradient(to right, transparent, var(--gold-antique), transparent)", opacity: 0.3 }} />
 
-            {/* Results Grid */}
             <section className="py-16">
                 <Container>
-                    {/* Section label */}
                     <div className="flex items-center justify-between mb-10">
                         <span
                             className="font-mono text-[0.7rem] uppercase tracking-[0.25em]"
@@ -166,7 +163,6 @@ export default function RoomsPage() {
                 </Container>
             </section>
 
-            {/* Bottom CTA band */}
             <section
                 className="py-16 mt-8"
                 style={{

@@ -1,5 +1,3 @@
-"use client";
-
 import { Container } from "@/components/layout/Container";
 import Image from "next/image";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";

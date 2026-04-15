@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import { Container } from "@/components/layout/Container";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
@@ -26,8 +23,6 @@ const FAQS = [
 ];
 
 export function FAQSection() {
-    const [openIndex, setOpenIndex] = useState<number | null>(0);
-
     return (
         <section className="faq-section">
             <Container>
@@ -44,12 +39,8 @@ export function FAQSection() {
 
                     <div className="faq-list">
                         {FAQS.map((faq, i) => (
-                            <div
-                                key={i}
-                                className={`faq-item ${openIndex === i ? 'faq-item-open' : ''}`}
-                                onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                            >
-                                <div className="faq-question">
+                            <details key={i} className="faq-item" open={i === 0}>
+                                <summary className="faq-question">
                                     <span>{faq.q}</span>
                                     <div className="faq-icon">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -57,13 +48,13 @@ export function FAQSection() {
                                             <line x1="5" y1="12" x2="19" y2="12" />
                                         </svg>
                                     </div>
-                                </div>
+                                </summary>
                                 <div className="faq-answer">
                                     <div className="faq-answer-inner">
                                         {faq.a}
                                     </div>
                                 </div>
-                            </div>
+                            </details>
                         ))}
                     </div>
                 </div>

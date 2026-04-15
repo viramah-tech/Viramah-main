@@ -110,8 +110,8 @@ export default function TrackSelectionPage() {
                 try {
                     const planRes = await apiFetch<{ data: { plan: PlanSummary | null } }>("/api/payment/plan/me", { token });
                     if (planRes?.data?.plan) {
-                        // User already has a persisted plan — go to confirm to pay against it
-                        router.replace("/user-onboarding/confirm");
+                        // User already has a persisted plan — go to breakdown (NOT /confirm, which creates loops)
+                        router.replace("/user-onboarding/payment-breakdown");
                         return;
                     }
                 } catch { /* No plan — continue to track selection */ }

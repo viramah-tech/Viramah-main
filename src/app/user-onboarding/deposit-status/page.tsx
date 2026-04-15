@@ -12,7 +12,6 @@ import { useBookingStatus, type V3Booking } from "@/hooks/useBookingStatus";
 import BookingTimeline from "@/components/BookingTimeline";
 import { getDaysHoursRemaining } from "@/utils/deadlineUtils";
 import { apiFetch } from "@/lib/api";
-import { printReceipt } from "@/utils/printReceipt";
 import { containerVariants, itemVariants } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
@@ -523,23 +522,12 @@ export default function DepositStatusPage() {
                     </p>
                 </motion.div>
 
-                {/* Print Receipt Button */}
+                {/* Download Deposit Receipt */}
                 <motion.div variants={itemVariants} style={{ textAlign: "center" }}>
-                    <button
-                        onClick={() => printReceipt({
-                            type: "deposit",
-                            amount: bookingData?.totalPaidAtDeposit || bookingData?.depositAmount || 15000,
-                            transactionId: bookingData?.depositTransactionId,
-                            date: bookingData?.depositPaidAt || bookingData?.createdAt || new Date().toISOString(),
-                            status: booking?.status,
-                            paymentId: bookingData?._id,
-                            paymentMode: bookingData?.paymentMode,
-                            roomType: bookingData?.roomTypeId?.name || bookingData?.roomTypeId?.displayName,
-                            depositAmount: bookingData?.depositAmount,
-                            registrationFee: bookingData?.registrationFeePaid,
-                            advanceAmount: holdAdvance,
-                            totalPaidAtDeposit: bookingData?.totalPaidAtDeposit,
-                        })}
+                    <a
+                        href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/v1/profile/me.pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         style={{
                             padding: "10px 20px", borderRadius: 10,
                             border: "1.5px solid rgba(31,58,45,0.18)",
@@ -549,10 +537,11 @@ export default function DepositStatusPage() {
                             color: GREEN, cursor: "pointer",
                             display: "inline-flex", alignItems: "center", gap: 8,
                             textTransform: "uppercase", letterSpacing: "0.12em",
+                            textDecoration: "none",
                         }}
                     >
-                        <Printer size={14} /> Print Deposit Receipt
-                    </button>
+                        <Printer size={14} /> Download Profile PDF
+                    </a>
                 </motion.div>
 
                 {/* Referral Banner */}

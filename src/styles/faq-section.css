@@ -45,9 +45,16 @@
     transition: all 0.3s ease;
 }
 
-.faq-item-open .faq-icon {
+.faq-item-open .faq-icon,
+details.faq-item[open] .faq-icon {
     transform: rotate(45deg);
 }
+
+details.faq-item > summary {
+    list-style: none;
+    cursor: pointer;
+}
+details.faq-item > summary::-webkit-details-marker { display: none; }
 
 .faq-question {
     padding: 2.2rem 0;
@@ -78,7 +85,8 @@
     transition: max-height 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.faq-item-open .faq-answer {
+.faq-item-open .faq-answer,
+details.faq-item[open] .faq-answer {
     max-height: 300px;
 }
 
