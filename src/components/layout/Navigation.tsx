@@ -4,7 +4,7 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, memo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 
 interface NavLink {
@@ -19,33 +19,6 @@ const NAV_LINKS: NavLink[] = [
     { label: "About", labelAlt: "Story", href: "/about" },
     { label: "Events", labelAlt: "Gather", href: "/events" },
 ];
-
-// Clock Component - Isolated to prevent parent re-renders
-const ClockDisplay = memo(function ClockDisplay() {
-    const [currentTime, setCurrentTime] = useState<string>("00:00:00");
-
-    useEffect(() => {
-        const updateTime = () => {
-            const now = new Date();
-            // Show HH:MM only — updating per-minute saves 59/60 renders vs per-second
-            const timeStr =
-                now.getHours().toString().padStart(2, '0') + ":" +
-                now.getMinutes().toString().padStart(2, '0');
-            setCurrentTime(timeStr);
-        };
-
-        updateTime();
-        const interval = setInterval(updateTime, 60000); // every minute, not every second
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <div className="hidden lg:flex flex-col border-l border-gold/20 pl-4 ml-2">
-            <span className="font-mono text-[0.65rem] text-ink/50" suppressHydrationWarning>{currentTime}</span>
-            <span className="font-mono text-[0.65rem] text-gold">IST+5:30</span>
-        </div>
-    );
-});
 
 export function Navigation() {
     const [scrolled, setScrolled] = useState(false);

@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
     Wallet, UtensilsCrossed, Dumbbell, Bell, Calendar,
     ArrowRight, TrendingUp, Wrench, ChevronRight,
-    Zap, Droplets, Wifi, Sparkles, MoreHorizontal,
     Clock, CheckCircle2, AlertCircle, Plus
 } from "lucide-react";
 import { useAuth, type AuthUser } from "@/context/AuthContext";
@@ -72,47 +71,7 @@ export default function StudentDashboard() {
     const [hoveredAction, setHoveredAction] = useState<string | null>(null);
     const { user, updateUser, loading } = useAuth();
     const router = useRouter();
-
-    // Access gate: redirect if lifecycle not complete
-    useEffect(() => {
-        if (loading) return;
-        if (!user) {
-            router.replace("/login");
-            return;
-        }
-        const canAccess =
-            user.paymentStatus === "approved" &&
-            user.documentVerificationStatus === "approved" &&
-            user.moveInStatus === "completed";
-        if (!canAccess) {
-            // Check deposit hold status before deciding where to redirect
-            const checkAndRedirect = async () => {
-                try {
-                    const token = typeof window !== "undefined" ? localStorage.getItem("viramah_token") : null;
-                    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-                    const res = await fetch(`${apiBase}/api/public/deposits/status`, {
-                        headers: token ? { Authorization: `Bearer ${token}` } : {},
-                    });
-                    if (res.ok) {
-                        const data = await res.json();
-                        const hold = data?.data?.hold;
-                        if (hold?.status === "active") {
-                            router.replace("/user-onboarding/deposit-status");
-                            return;
-                        }
-                        if (hold?.status === "pending_approval") {
-                            router.replace("/user-onboarding/deposit-status");
-                            return;
-                        }
-                    }
-                } catch {
-                    // Fall through to default
-                }
-                router.replace("/user-onboarding/payment-status");
-            };
-            checkAndRedirect();
-        }
-    }, [user, loading, router]);
+    // Access is globally guarded by student/layout.tsx
 
     // Real-time sync: update user data when socket events arrive
     const handleSocketEvent = useCallback((event: string, data: unknown) => {
@@ -158,7 +117,7 @@ export default function StudentDashboard() {
                             marginTop: 4,
                             fontWeight: 400,
                         }}>
-                            Welcome back, {user?.name?.split(" ")[0] || "Student"}
+                            Welcome back, {user?.basicInfo?.fullName?.split(" ")[0] || "Student"}
                         </h1>
                         <p style={{
                             fontFamily: "var(--font-body, sans-serif)",

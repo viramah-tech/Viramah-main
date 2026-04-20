@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Phone, Users } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { uploadFile, deleteUploadedFile } from "@/lib/uploadFile";
+import type { GuardianForm } from "@/context/OnboardingContext";
+import { useAuth } from "@/context/AuthContext";
+import { apiPutForm } from "@/lib/api";
+import { API } from "@/lib/apiEndpoints";
+import { dataURLtoFile } from "@/lib/uploadFile";
 import {
     FieldLabel, FieldHint, FieldError, FieldInput, PhotoUpload,
     NavButton, SecondaryButton, FormCard, StepBadge, StepTitle,
@@ -16,7 +20,7 @@ const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
 
 const RELATIONS = ["Father", "Mother", "Guardian", "Other"];
-const ID_TYPES = [
+const ID_TYPES: Array<{ value: GuardianForm["idType"]; label: string }> = [
     { value: "aadhaar", label: "Aadhaar" },
     { value: "passport", label: "Passport" },
     { value: "driving_license", label: "Driving License" },
@@ -25,58 +29,55 @@ const ID_TYPES = [
 
 export default function Step2Page() {
     const router = useRouter();
-    const { state, updateStep2, markStepComplete, canAccessStep, saveStepToBackend, saving } = useOnboarding();
-    const { step2 } = state;
+    const { guardian, setGuardian } = useOnboarding();
+    const { refreshUser } = useAuth();
 
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [attempted, setAttempted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [redirecting, setRedirecting] = useState(false);
 
-    useEffect(() => {
-        if (!canAccessStep(2)) {
-            setRedirecting(true);
-            router.replace("/user-onboarding/step-1");
-        }
-    }, [canAccessStep, router]);
-
-    if (redirecting) {
-        return null;
-    }
+    // Step access restrictions removed - users can move freely
+    // useEffect(() => {
+    //     if (!canAccessStep("guardian_details")) {
+    //         router.replace("/user-onboarding/step-1");
+    //     }
+    // }, [canAccessStep, router]);
 
     const validate = (): boolean => {
         const errs: Record<string, string> = {};
-        if (!step2.emergencyName.trim()) errs.emergencyName = "Emergency contact name is required";
-        if (!step2.emergencyPhone.trim()) errs.emergencyPhone = "Phone number is required";
-        if (!step2.emergencyRelation) errs.emergencyRelation = "Please select a relationship";
-        if (!step2.parentIdNumber.trim()) errs.parentIdNumber = "Guardian ID number is required";
-        if (!step2.parentIdFront) errs.parentIdFront = "Front side of guardian ID is required";
-        if (!step2.parentIdBack) errs.parentIdBack = "Back side of guardian ID is required";
+        if (!guardian.fullName.trim()) errs.fullName = "Emergency contact name is required";
+        if (!guardian.phone.trim()) errs.phone = "Phone number is required";
+        if (!guardian.relation) errs.relation = "Please select a relationship";
+        if (!guardian.idNumber.trim()) errs.idNumber = "Guardian ID number is required";
+        if (!guardian.idFront) errs.idFront = "Front side of guardian ID is required";
+        if (!guardian.idBack) errs.idBack = "Back side of guardian ID is required";
 
         // Phone validation
-        const cleanPhone = step2.emergencyPhone.replace(/\D/g, "");
+        const cleanPhone = guardian.phone.replace(/\D/g, "");
         if (!/^\d{10}$/.test(cleanPhone)) {
-            errs.emergencyPhone = "Phone number must be exactly 10 numeric digits";
+            errs.phone = "Phone number must be exactly 10 numeric digits";
         }
 
-        if (step2.alternatePhone) {
-            const cleanAltPhone = step2.alternatePhone.replace(/\D/g, "");
+        if (!guardian.alternatePhone.trim()) {
+            errs.alternatePhone = "Alternate phone number is required";
+        } else {
+            const cleanAltPhone = guardian.alternatePhone.replace(/\D/g, "");
             if (!/^\d{10}$/.test(cleanAltPhone)) {
                 errs.alternatePhone = "Alternate phone must be exactly 10 numeric digits";
             }
         }
 
         // Parent ID validation
-        const cleanId = step2.parentIdNumber.trim();
-        if (step2.parentIdType === "aadhaar" && !/^\d{12}$/.test(cleanId.replace(/\s/g, ""))) {
-            errs.parentIdNumber = "Aadhaar must be exactly 12 numeric digits";
-        } else if (step2.parentIdType === "passport" && !/^[A-Z0-9]{8,9}$/.test(cleanId)) {
-            errs.parentIdNumber = "Passport must be 8-9 uppercase alphanumeric characters";
-        } else if (step2.parentIdType === "driving_license" && !/^[A-Z0-9]{15,16}$/.test(cleanId)) {
-            errs.parentIdNumber = "Driving License must be 15-16 uppercase alphanumeric characters";
-        } else if (step2.parentIdType === "voter_id" && !/^[A-Z0-9]{10}$/.test(cleanId)) {
-            errs.parentIdNumber = "Voter ID must be exactly 10 uppercase alphanumeric characters";
+        const cleanId = guardian.idNumber.trim();
+        if (guardian.idType === "aadhaar" && !/^\d{12}$/.test(cleanId.replace(/\s/g, ""))) {
+            errs.idNumber = "Aadhaar must be exactly 12 numeric digits";
+        } else if (guardian.idType === "passport" && !/^[A-Z0-9]{8,9}$/.test(cleanId)) {
+            errs.idNumber = "Passport must be 8-9 uppercase alphanumeric characters";
+        } else if (guardian.idType === "driving_license" && !/^[A-Z0-9]{15,16}$/.test(cleanId)) {
+            errs.idNumber = "Driving License must be 15-16 uppercase alphanumeric characters";
+        } else if (guardian.idType === "voter_id" && !/^[A-Z0-9]{10}$/.test(cleanId)) {
+            errs.idNumber = "Voter ID must be exactly 10 uppercase alphanumeric characters";
         }
 
         setErrors(errs);
@@ -89,38 +90,59 @@ export default function Step2Page() {
 
         setSubmitting(true);
         try {
-            // Upload parent/guardian ID photos to S3 (skip if already a server URL)
-            const [parentIdFrontUrl, parentIdBackUrl] = await Promise.all([
-                step2.parentIdFront?.preview?.startsWith("data:")
-                    ? uploadFile("document", step2.parentIdFront.preview, step2.parentIdFront.name)
-                    : Promise.resolve(step2.parentIdFront?.preview || ""),
-                step2.parentIdBack?.preview?.startsWith("data:")
-                    ? uploadFile("document", step2.parentIdBack.preview, step2.parentIdBack.name)
-                    : Promise.resolve(step2.parentIdBack?.preview || ""),
-            ]);
+            const formData = new FormData();
+            formData.append("fullName", guardian.fullName);
+            formData.append("relation", guardian.relation);
+            formData.append("phone", guardian.phone);
+            formData.append("alternatePhone", guardian.alternatePhone);
+            formData.append("idType", guardian.idType);
+            formData.append("idNumber", guardian.idNumber);
 
-            await saveStepToBackend(2, {
-                name: step2.emergencyName,
-                phone: step2.emergencyPhone,
-                relation: step2.emergencyRelation,
-                alternatePhone: step2.alternatePhone,
-                parentIdType: step2.parentIdType,
-                parentIdNumber: step2.parentIdNumber,
-                parentIdFront: parentIdFrontUrl,
-                parentIdBack: parentIdBackUrl,
-            });
+            // Backend expects `guardianIdFront` and `guardianIdBack` for files
+            if (guardian.idFront?.preview?.startsWith('data:')) {
+                formData.append("guardianIdFront", dataURLtoFile(guardian.idFront.preview, guardian.idFront.name));
+            }
+            if (guardian.idBack?.preview?.startsWith('data:')) {
+                formData.append("guardianIdBack", dataURLtoFile(guardian.idBack.preview, guardian.idBack.name));
+            }
 
-            markStepComplete(2);
+            await apiPutForm(API.onboarding.guardian, formData);
+            
+            // Sync with backend to advance the step before navigation guard runs.
+            await refreshUser({ force: true });
+
             router.push("/user-onboarding/step-3");
         } catch (err) {
             const message = err instanceof Error ? err.message : "Failed to save. Please try again.";
-            setErrors({ emergencyName: message });
+            const stepFromError = message.match(/current step:\s*([a-z_]+)/i)?.[1]?.toLowerCase();
+            const stepPathMap: Record<string, string> = {
+                compliance: "/user-onboarding/terms",
+                verification: "/verify-contact",
+                personal_details: "/user-onboarding/step-1",
+                guardian_details: "/user-onboarding/step-2",
+                room_selection: "/user-onboarding/step-3",
+                review: "/user-onboarding/step-4",
+                booking_payment: "/user-onboarding/deposit",
+                final_payment: "/user-onboarding/payment-breakdown",
+                completed: "/student/dashboard",
+            };
+
+            if (/requires step/i.test(message) && stepFromError && stepPathMap[stepFromError]) {
+                router.push(stepPathMap[stepFromError]);
+                return;
+            }
+
+            setErrors({ fullName: message }); // Display as global/form error
         } finally {
             setSubmitting(false);
         }
     };
 
-    const parentIdLabel = ID_TYPES.find((t) => t.value === step2.parentIdType)?.label ?? "ID";
+    const handleBack = () => {
+        router.replace("/user-onboarding/step-1");
+    };
+
+    const parentIdLabel = ID_TYPES.find((t) => t.value === guardian.idType)?.label ?? "ID";
 
     return (
         <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -143,14 +165,14 @@ export default function Step2Page() {
                             id="s2-name"
                             type="text"
                             placeholder="Parent or guardian name"
-                            value={step2.emergencyName}
-                            onChange={(e) => updateStep2({ emergencyName: e.target.value })}
+                            value={guardian.fullName}
+                            onChange={(e) => setGuardian({ fullName: e.target.value })}
                             focused={focusedField === "name"}
-                            hasError={attempted && !!errors.emergencyName}
+                            hasError={attempted && !!errors.fullName}
                             onFocus={() => setFocusedField("name")}
                             onBlur={() => setFocusedField(null)}
                         />
-                        {attempted && errors.emergencyName && <FieldError>{errors.emergencyName}</FieldError>}
+                        {attempted && errors.fullName && <FieldError>{errors.fullName}</FieldError>}
                     </div>
 
                     {/* Phone */}
@@ -160,15 +182,15 @@ export default function Step2Page() {
                             id="s2-phone"
                             type="tel"
                             placeholder="+91 98XXX XXXXX"
-                            value={step2.emergencyPhone}
-                            onChange={(e) => updateStep2({ emergencyPhone: e.target.value })}
+                            value={guardian.phone}
+                            onChange={(e) => setGuardian({ phone: e.target.value })}
                             focused={focusedField === "phone"}
-                            hasError={attempted && !!errors.emergencyPhone}
+                            hasError={attempted && !!errors.phone}
                             onFocus={() => setFocusedField("phone")}
                             onBlur={() => setFocusedField(null)}
                         />
-                        {attempted && errors.emergencyPhone ? (
-                            <FieldError>{errors.emergencyPhone}</FieldError>
+                        {attempted && errors.phone ? (
+                            <FieldError>{errors.phone}</FieldError>
                         ) : (
                             <FieldHint>Include country code (+91)</FieldHint>
                         )}
@@ -182,25 +204,25 @@ export default function Step2Page() {
                                 <SelectionButton
                                     key={rel}
                                     label={rel}
-                                    selected={step2.emergencyRelation === rel}
-                                    onClick={() => updateStep2({ emergencyRelation: rel })}
+                                    selected={guardian.relation === rel}
+                                    onClick={() => setGuardian({ relation: rel })}
                                 />
                             ))}
                         </div>
-                        {attempted && errors.emergencyRelation && <FieldError>{errors.emergencyRelation}</FieldError>}
+                        {attempted && errors.relation && <FieldError>{errors.relation}</FieldError>}
                     </div>
 
                     {/* Alternate Phone */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         <FieldLabel htmlFor="s2-alt">
-                            Alternate Phone <span style={{ opacity: 0.5, fontWeight: 400 }}>(Optional)</span>
+                            Alternate Phone
                         </FieldLabel>
                         <FieldInput
                             id="s2-alt"
                             type="tel"
                             placeholder="+91 98XXX XXXXX"
-                            value={step2.alternatePhone}
-                            onChange={(e) => updateStep2({ alternatePhone: e.target.value })}
+                            value={guardian.alternatePhone}
+                            onChange={(e) => setGuardian({ alternatePhone: e.target.value })}
                             focused={focusedField === "alt"}
                             onFocus={() => setFocusedField("alt")}
                             onBlur={() => setFocusedField(null)}
@@ -247,8 +269,8 @@ export default function Step2Page() {
                                 <SelectionButton
                                     key={type.value}
                                     label={type.label}
-                                    selected={step2.parentIdType === type.value}
-                                    onClick={() => updateStep2({ parentIdType: type.value })}
+                                    selected={guardian.idType === type.value}
+                                    onClick={() => setGuardian({ idType: type.value })}
                                     accentColor={GOLD}
                                 />
                             ))}
@@ -262,18 +284,18 @@ export default function Step2Page() {
                             id="s2-pidnum"
                             type="text"
                             placeholder="Parent/Guardian ID number"
-                            value={step2.parentIdNumber}
+                            value={guardian.idNumber}
                             onChange={(e) => {
                                 let val = e.target.value;
-                                if (step2.parentIdType !== "aadhaar") val = val.toUpperCase();
-                                updateStep2({ parentIdNumber: val });
+                                if (guardian.idType !== "aadhaar") val = val.toUpperCase();
+                                setGuardian({ idNumber: val });
                             }}
                             focused={focusedField === "pidnum"}
-                            hasError={attempted && !!errors.parentIdNumber}
+                            hasError={attempted && !!errors.idNumber}
                             onFocus={() => setFocusedField("pidnum")}
                             onBlur={() => setFocusedField(null)}
                         />
-                        {attempted && errors.parentIdNumber && <FieldError>{errors.parentIdNumber}</FieldError>}
+                        {attempted && errors.idNumber && <FieldError>{errors.idNumber}</FieldError>}
                     </div>
 
                     {/* Photo Upload */}
@@ -290,22 +312,20 @@ export default function Step2Page() {
                             <div>
                                 <PhotoUpload
                                     label="Front Side"
-                                    file={step2.parentIdFront}
-                                    onUpload={(f) => updateStep2({ parentIdFront: f })}
-                                    onRemove={() => updateStep2({ parentIdFront: null })}
-                                    onDeleteFromServer={deleteUploadedFile}
+                                    file={guardian.idFront}
+                                    onUpload={(f) => setGuardian({ idFront: f })}
+                                    onRemove={() => setGuardian({ idFront: null })}
                                 />
-                                {attempted && errors.parentIdFront && <FieldError>{errors.parentIdFront}</FieldError>}
+                                {attempted && errors.idFront && <FieldError>{errors.idFront}</FieldError>}
                             </div>
                             <div>
                                 <PhotoUpload
                                     label="Back Side"
-                                    file={step2.parentIdBack}
-                                    onUpload={(f) => updateStep2({ parentIdBack: f })}
-                                    onRemove={() => updateStep2({ parentIdBack: null })}
-                                    onDeleteFromServer={deleteUploadedFile}
+                                    file={guardian.idBack}
+                                    onUpload={(f) => setGuardian({ idBack: f })}
+                                    onRemove={() => setGuardian({ idBack: null })}
                                 />
-                                {attempted && errors.parentIdBack && <FieldError>{errors.parentIdBack}</FieldError>}
+                                {attempted && errors.idBack && <FieldError>{errors.idBack}</FieldError>}
                             </div>
                         </div>
                     </div>
@@ -314,10 +334,10 @@ export default function Step2Page() {
 
             {/* Navigation */}
             <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
-                <SecondaryButton onClick={() => router.push("/user-onboarding/step-1")}>
+                <SecondaryButton onClick={handleBack}>
                     <ArrowLeft size={16} /> Back
                 </SecondaryButton>
-                <NavButton onClick={handleContinue} disabled={submitting || saving}>
+                <NavButton onClick={handleContinue} disabled={submitting}>
                     {submitting ? "Saving..." : "Continue to Room Selection"}
                     {!submitting && <ArrowRight size={16} />}
                 </NavButton>

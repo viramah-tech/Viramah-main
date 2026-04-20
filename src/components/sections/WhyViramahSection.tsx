@@ -2,7 +2,6 @@
 
 import "@/styles/why-viramah.css";
 import { useEffect, useRef } from "react";
-import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 
 // ── USP Data ─────────────────────────────────────────────
 const USPS = [

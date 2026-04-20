@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
 
 const containerVariants = {
@@ -34,9 +34,11 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [touched, setTouched] = useState<Record<string, boolean>>({});
-    const { login, user, isAuthenticated } = useAuth();
+    const { login } = useAuth();
     const { showToast } = useToast();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectParam = searchParams.get("redirect");
 
     const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
 
@@ -47,61 +49,30 @@ export default function LoginPage() {
     const passwordError = touched.password && password.length === 0
         ? "Password is required" : "";
 
-    const getRedirectPath = async (u: {
-        onboardingStatus: string;
-        paymentStatus: string;
-        documentVerificationStatus?: string;
-        moveInStatus?: string;
-    }): Promise<string> => {
-        // Fully onboarded resident → student dashboard
-        if (
-            u.paymentStatus === "approved" &&
-            u.documentVerificationStatus === "approved" &&
-            u.moveInStatus === "completed"
-        ) {
-            return "/student/dashboard";
+    const getRedirectPath = (u: { onboarding?: { currentStep?: string }; role?: string }): string => {
+        // Admin users go to dashboard
+        if (u.role === "admin") return "/admin/dashboard";
+
+        // Use the onboarding step to route (backend enforces the state machine)
+        const STEP_TO_PATH: Record<string, string> = {
+            compliance: "/user-onboarding/terms",
+            verification: "/verify-contact",
+            personal_details: "/user-onboarding/step-1",
+            guardian_details: "/user-onboarding/step-2",
+            room_selection: "/user-onboarding/step-3",
+            review: "/user-onboarding/step-4",
+            booking_payment: "/user-onboarding/deposit",
+            final_payment: "/user-onboarding/payment-breakdown",
+            completed: (u as any)?.roomDetails?.status === "checked_in" ? "/student/dashboard" : "/student/move-in",
+        };
+
+        const currentStep = u.onboarding?.currentStep;
+        if (currentStep && currentStep in STEP_TO_PATH) {
+            return STEP_TO_PATH[currentStep];
         }
 
-        // Check for active deposit hold to determine routing
-        if (u.onboardingStatus === "completed" || u.paymentStatus === "pending" || u.paymentStatus === "approved") {
-            try {
-                const holdRes = await apiFetch<{ data: { hold: { status?: string; paymentMode?: string } | null } }>(
-                    "/api/public/deposits/status"
-                );
-                const hold = holdRes?.data?.hold;
-
-                // Active deposit hold → deposit-status (user can complete payment when ready)
-                if (hold?.status === "active") {
-                    return "/user-onboarding/deposit-status";
-                }
-                // Pending approval → waiting for admin to approve deposit
-                if (hold?.status === "pending_approval") {
-                    return "/user-onboarding/deposit-status";
-                }
-                // Hold is converted/refunded/expired or no hold → check payment lifecycle
-            } catch {
-                // If deposit check fails, fall through to payment lifecycle
-            }
-
-            // No active deposit hold — check actual payment status
-            if (u.paymentStatus === "pending" || u.paymentStatus === "approved") {
-                return "/user-onboarding/payment-status";
-            }
-        }
-
-        const anyU = u as any;
-        const hasAcceptedTerms = anyU.agreements?.termsAccepted;
-        if (!hasAcceptedTerms) return "/user-onboarding/terms";
-
-        const hasStep1 = !!(anyU.documents?.idProof || (anyU.gender && anyU.address));
-        const hasStep2 = !!anyU.emergencyContact?.name;
-        const hasStep3 = !!anyU.selectedRoomType;
-
-        if (hasStep1 && hasStep2 && hasStep3) return "/user-onboarding/step-4";
-        if (hasStep1 && hasStep2) return "/user-onboarding/step-3";
-        if (hasStep1) return "/user-onboarding/step-2";
-
-        return "/user-onboarding/step-1";
+        // Fallback to first step if something is wrong
+        return "/user-onboarding/terms";
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -124,7 +95,8 @@ export default function LoginPage() {
         try {
             const loggedInUser = await login(email, password);
             showToast("Login successful! Redirecting...", "success");
-            const path = await getRedirectPath(loggedInUser);
+            // If redirect param exists, use it; otherwise use normal redirect path
+            const path = redirectParam || getRedirectPath(loggedInUser);
             router.replace(path);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Login failed. Please try again.";
@@ -205,7 +177,7 @@ export default function LoginPage() {
                     {/* Logo + name grouped above the copy */}
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
                         <div style={{ width: 40, height: 40 }}>
-                            <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            <Image src="/logo.png" alt="Viramah Logo" width={40} height={40} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                         </div>
                         <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.4rem", color: "#F6F4EF", letterSpacing: "0.05em" }}>
                             VIRAMAH
@@ -303,7 +275,7 @@ export default function LoginPage() {
                         {/* Logo + brand name above the heading */}
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
                             <div style={{ width: 36, height: 36 }}>
-                                <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                                <Image src="/logo.png" alt="Viramah Logo" width={36} height={36} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                             </div>
                             <span
                                 style={{

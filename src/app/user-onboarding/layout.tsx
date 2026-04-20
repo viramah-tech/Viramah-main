@@ -3,32 +3,31 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { OnboardingProvider } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
-import { apiFetch } from "@/lib/api";
 
 const BOOKING_STEPS = [
     { id: 1, label: "Agreements", description: "Terms & Policies" },
-    { id: 2, label: "Identity", description: "KYC Verification" },
-    { id: 3, label: "Emergency", description: "Contact Info" },
+    { id: 2, label: "Identity", description: "Personal Details" },
+    { id: 3, label: "Guardian", description: "Contact Info" },
     { id: 4, label: "Room", description: "Select & Add-ons" },
     { id: 5, label: "Review", description: "Verify Details" },
-    { id: 6, label: "Payment", description: "Confirm Booking" },
 ];
 
+/** UI step number (for the visual stepper). Post-review flows render without the stepper. */
 function getStepFromPath(pathname: string): number {
-    if (pathname.includes("terms")) return 1;
-    if (pathname.includes("step-1")) return 2;
-    if (pathname.includes("step-2")) return 3;
-    if (pathname.includes("step-3")) return 4;
-    if (pathname.includes("step-4")) return 5;
-    if (pathname.includes("track-selection")) return 6;
-    if (pathname.includes("payment-breakdown")) return 6;
-    if (pathname.includes("confirm")) return 6;
-    if (pathname.includes("deposit")) return 7;       // deposit sub-flow (post-stepper)
-    if (pathname.includes("payment-status")) return 8; // post-flow
+    if (pathname.includes("/terms")) return 1;
+    if (pathname.includes("/step-1")) return 2;
+    if (pathname.includes("/step-2")) return 3;
+    if (pathname.includes("/step-3")) return 4;
+    if (pathname.includes("/step-4")) return 5;
+    if (pathname.includes("/confirm")) return 5;
+    if (pathname.includes("/deposit")) return 6;            // booking payment (post-stepper)
+    if (pathname.includes("/payment-breakdown")) return 7;  // final payment
+    if (pathname.includes("/payment-status")) return 8;     // post-flow
     return 1;
 }
 
@@ -239,90 +238,19 @@ function ExpandedStepper({ steps, currentStep }: { steps: typeof BOOKING_STEPS; 
 export default function RoomBookingLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { loading, isAuthenticated, user } = useAuth();
-    const currentStep = getStepFromPath(pathname);
-    const isPostFlow   = currentStep >= 7; // deposit-status, payment-status
+    const { loading, isAuthenticated } = useAuth();
+    const uiStep = getStepFromPath(pathname);
+    const isPostFlow = uiStep >= 6; // deposit, payment-breakdown, payment-status
     const [isScrolled, setIsScrolled] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
 
-    // ── Unified lifecycle guard ─────────────────────────────────────────────
-    // One ordered check — replaces three racing useEffects. Priority chain:
-    //   1. Not authenticated → /login
-    //   2. Email not verified → /verify-contact
-    //   3. Terms not accepted → /user-onboarding/terms
-    //   4. Active/pending deposit hold → /user-onboarding/deposit-status
-    //   5. Fully onboarded → /student/dashboard
-    //   6. Payment submitted → /user-onboarding/payment-status
-    //   7. Default → stay
+    // Keep only auth guard; page-to-page onboarding navigation remains unrestricted.
     useEffect(() => {
         if (loading) return;
-
-        let cancelled = false;
-
-        const run = async () => {
-            if (!isAuthenticated) {
-                router.replace("/login");
-                return;
-            }
-            if (!user) return;
-
-            // Email verification
-            if (!user.verification?.emailVerified) {
-                router.replace("/verify-contact");
-                return;
-            }
-
-            // Terms acceptance
-            if (!user.agreements?.termsAccepted && !pathname.includes("/user-onboarding/terms")) {
-                router.replace("/user-onboarding/terms");
-                return;
-            }
-
-            // Fetch deposit hold (uses apiFetch → proper 401 handling + shared token logic)
-            let holdStatus: string | undefined;
-            try {
-                const res = await apiFetch<{ data?: { hold?: { status?: string } } }>(
-                    "/api/public/deposits/status"
-                );
-                if (cancelled) return;
-                holdStatus = res.data?.hold?.status;
-            } catch {
-                // Network/401 — don't redirect on error, let the page render
-                return;
-            }
-
-            const HOLD_EXCLUDED = ["/deposit-status", "/confirm"];
-            const LIFECYCLE_EXCLUDED = ["/deposit-status", "/payment-status"];
-            const isExcluded = (list: string[]) =>
-                list.some((p) => pathname.includes(p));
-
-            // Priority: deposit hold
-            if (
-                (holdStatus === "active" || holdStatus === "pending_approval") &&
-                !isExcluded(HOLD_EXCLUDED)
-            ) {
-                router.replace("/user-onboarding/deposit-status");
-                return;
-            }
-
-            // Priority: onboarding lifecycle
-            if (!isExcluded(LIFECYCLE_EXCLUDED)) {
-                const { paymentStatus: ps, documentVerificationStatus: dvs, moveInStatus: ms } = user;
-                if (ps === "approved" && dvs === "approved" && ms === "completed") {
-                    router.replace("/student/dashboard");
-                    return;
-                }
-                const holdIsLive = holdStatus === "active" || holdStatus === "pending_approval";
-                if ((ps === "pending" || ps === "approved") && !holdIsLive) {
-                    router.replace("/user-onboarding/payment-status");
-                    return;
-                }
-            }
-        };
-
-        run();
-        return () => { cancelled = true; };
-    }, [loading, isAuthenticated, pathname, user, router]);
+        if (!isAuthenticated) {
+            router.replace("/login");
+        }
+    }, [loading, isAuthenticated, router]);
 
     useEffect(() => {
         let ticking = false;
@@ -344,8 +272,13 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
         return () => window.removeEventListener("scroll", handleScroll);
     }, [isExpanded]);
 
-    useEffect(() => {
+    // Reset stepper expansion on route change (prev-state pattern — see React docs: "Storing info from previous renders")
+    const [prevPathname, setPrevPathname] = useState(pathname);
+    if (prevPathname !== pathname) {
+        setPrevPathname(pathname);
         setIsExpanded(true);
+    }
+    useEffect(() => {
         window.scrollTo(0, 0);
     }, [pathname]);
 
@@ -422,7 +355,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                                     exit={{ opacity: 0, y: -10, transition: { duration: 0.15, delay: 0 } }}
                                     className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
                                 >
-                                    <CompactStepper steps={BOOKING_STEPS} currentStep={currentStep} />
+                                    <CompactStepper steps={BOOKING_STEPS} currentStep={uiStep} />
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -450,7 +383,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                             <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
                                 <div style={{ width: 32, height: 32 }}>
                                     { }
-                                    <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                                    <Image src="/logo.png" alt="Viramah Logo" width={32} height={32} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                                 </div>
                                 <span
                                     style={{
@@ -476,7 +409,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                                 exit={{ height: 0, opacity: 0, marginTop: 0, transition: { duration: 0.25, delay: 0, ease: "easeIn" } }}
                                 style={{ overflow: "hidden" }}
                             >
-                                <ExpandedStepper steps={BOOKING_STEPS} currentStep={currentStep} />
+                                <ExpandedStepper steps={BOOKING_STEPS} currentStep={uiStep} />
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -527,7 +460,7 @@ export default function RoomBookingLayout({ children }: { children: React.ReactN
                         color: "rgba(31,58,45,0.4)",
                     }}
                 >
-                    {isPostFlow ? "Booking Submitted" : `Step ${currentStep} of 6`}
+                    {isPostFlow ? "Booking Submitted" : `Step ${uiStep} of 5`}
                 </span>
             </footer>
         </div>

@@ -9,9 +9,10 @@ export const PAYMENT_CONFIG = {
   QR_CODE_IMAGE_PATH: "/kvinfra qr code.png"
 };
 
+/** Maps backend room type names to display labels. Keys match RoomType.name from the DB. */
 export const ROOM_TYPE_MAP: Record<string, string> = {
-  "nexus-plus": "NEXUS",
-  "collective-plus": "COLLECTIVE",
-  "axis": "AXIS",
-  "studio": "AXIS+",
+  "Axis+": "AXIS+",
+  "Axis": "AXIS",
+  "Collective": "COLLECTIVE",
+  "Nexus": "NEXUS",
 };

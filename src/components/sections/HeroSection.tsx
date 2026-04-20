@@ -3,8 +3,6 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
-import { ScheduleVisitButton } from "@/components/ui/ScheduleVisitButton";
 
 // ─── Tile Data ──────────────────────────────────────────────
 interface MarqueeTile {

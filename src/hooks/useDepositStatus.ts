@@ -45,8 +45,8 @@ export function useDepositStatus(): UseDepositStatusResult {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await apiFetch<{ data: { hold: RoomHold | null } }>(
-        "/api/public/deposits/status"
+      const res = await apiFetch<{ data: { paymentDetails: RoomHold[] | null } }>(
+        "/api/payment/status"
       );
       const fetchedHold = res?.data?.hold ?? null;
       setHold(fetchedHold);
@@ -68,9 +68,12 @@ export function useDepositStatus(): UseDepositStatusResult {
 
   // Initial fetch + poll setup
   useEffect(() => {
-    fetchStatus();
+    const initialFetchTimer = setTimeout(() => {
+      void fetchStatus();
+    }, 0);
     intervalRef.current = setInterval(fetchStatus, POLL_INTERVAL_MS);
     return () => {
+      clearTimeout(initialFetchTimer);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [fetchStatus]);

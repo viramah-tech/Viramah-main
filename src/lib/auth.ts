@@ -1,64 +1,26 @@
-// Authentication Utilities
-// Session management, role checking, RLS helpers
+import type { AuthUser } from "@/context/AuthContext";
 
-export type UserRole = "student" | "parent" | "admin" | "guest" | "user";
-
-export interface User {
-    id: string;
-    _id?: string;
-    userId?: string;
-    email: string;
-    name: string;
-    role: UserRole;
-    isAuthenticated: boolean;
-    roomNumber?: string;
-    roomType?: string;
-    onboardingStatus?: string;
-    paymentStatus?: string;
-}
+export type UserRole = "user" | "admin";
 
 export interface Session {
-    user: User | null;
+    user: AuthUser | null;
     isAuthenticated: boolean;
 }
 
-// Get current session from localStorage token
-export async function getSession(): Promise<Session> {
-    if (typeof window === "undefined") {
-        return { user: null, isAuthenticated: false };
-    }
-    const token = localStorage.getItem("viramah_token");
-    if (!token) {
-        return { user: null, isAuthenticated: false };
-    }
-    // Session is valid if token exists; AuthContext handles the actual API call
-    return { user: null, isAuthenticated: true };
+/** Checks whether a user holds the required role. */
+export function hasRole(user: AuthUser | null, requiredRole: UserRole): boolean {
+    return !!user && user.role === requiredRole;
 }
 
-// Check if user has required role
-export function hasRole(session: Session, requiredRole: UserRole): boolean {
-    if (!session.user) return false;
-    // Map 'user' role to 'student' for compatibility
-    const userRole = session.user.role === "user" ? "student" : session.user.role;
-    return userRole === requiredRole || session.user.role === requiredRole;
+/** Route a logged-in user to the right landing page based on role + onboarding state. */
+export function getRoleRedirect(user: AuthUser | null): string {
+    if (!user) return "/login";
+    if (user.role === "admin") return "/admin/dashboard";
+    if (user.onboarding?.currentStep === "completed") return "/student/dashboard";
+    return "/user-onboarding";
 }
 
-// Redirect based on role
-export function getRoleRedirect(role: UserRole): string {
-    switch (role) {
-        case "student":
-        case "user":
-            return "/student/dashboard";
-        case "parent":
-            return "/parent/dashboard";
-        case "admin":
-            return "/admin/dashboard";
-        default:
-            return "/";
-    }
-}
-
-// Check if user has completed onboarding
-export function hasCompletedOnboarding(user?: User | null): boolean {
-    return user?.onboardingStatus === "completed";
+/** Onboarding is complete when the backend moves the user into the `completed` step. */
+export function hasCompletedOnboarding(user: AuthUser | null): boolean {
+    return user?.onboarding?.currentStep === "completed";
 }

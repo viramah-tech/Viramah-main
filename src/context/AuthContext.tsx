@@ -1,179 +1,180 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
-import { apiFetch } from "@/lib/api";
-import { PUBLIC_API } from "@/lib/apiEndpoints";
+import { apiFetch, apiGet, apiPost } from "@/lib/api";
+import { API, type OnboardingStep } from "@/lib/apiEndpoints";
 
 export interface AuthUser {
     _id: string;
-    userId: string;
-    name: string;
-    email: string;
-    phone: string;
-    role: string;
-    status: string;
-    roomNumber: string;
-    roomType: string;
-    onboardingStatus: string;
-    paymentStatus: string;
-    documentVerificationStatus: string;
-    moveInStatus: string;
-    documents: {
-        idProof: string;
-        addressProof: string;
-        photo: string;
-    };
-    emergencyContact: {
-        name: string;
+    role: "user" | "admin";
+    accountStatus: "pending" | "active" | "suspended" | "blocked";
+    basicInfo: {
+        userId: string;
+        fullName?: string;
+        email: string;
         phone: string;
-        relation: string;
+        gender?: "male" | "female" | "other" | null;
+        dateOfBirth?: string;
+        /** Stored as a plain string on the backend. */
+        address?: string;
     };
-    messPackage: string;
-    selectedRoomType: string;
-    dateOfBirth: string;
-    gender: string;
-    address: string;
-    lastLogin: string;
-    createdAt: string;
-    // Contact verification
-    emailVerified?: boolean;
-    phoneVerified?: boolean;
+    profilePhoto?: { url?: string; uploadedAt?: string };
+    userIdProof?: {
+        idType?: string | null;
+        idNumber?: string;
+        frontImage?: string;
+        backImage?: string;
+    };
+    guardianDetails?: {
+        fullName?: string;
+        relation?: string;
+        phone?: string;
+        alternatePhone?: string;
+        idProof?: {
+            idType?: string | null;
+            idNumber?: string;
+            frontImage?: string;
+            backImage?: string;
+        };
+    };
+    roomDetails?: {
+        roomType?: string | null;
+        roomNumber?: string;
+        allocationDate?: string;
+        status?: "unassigned" | "assigned" | "checked_in" | "checked_out";
+        includeMess?: boolean;
+        includeTransport?: boolean;
+    };
     verification?: {
         emailVerified: boolean;
-        emailVerifiedAt: string | null;
         phoneVerified: boolean;
-        phoneVerifiedAt: string | null;
+        documentVerified: boolean;
     };
-    agreements?: {
+    onboarding: {
+        currentStep: OnboardingStep;
+        startedAt?: string;
+        completedAt?: string;
+    };
+    paymentDetails?: Array<Record<string, unknown>>;
+    paymentSummary?: Record<string, unknown>;
+    paymentDeadline?: {
+        startedAt?: string;
+        expiresAt?: string;
+        extensionRequested?: boolean;
+        extensionGrantedUntil?: string;
+    };
+    referral?: { code?: string; creditsEarned?: number };
+    compliance?: {
         termsAccepted: boolean;
-        termsAcceptedAt: string | null;
-        termsVersion: string | null;
+        termsAcceptedAt?: string;
         privacyPolicyAccepted: boolean;
-        privacyPolicyAcceptedAt: string | null;
-        privacyPolicyVersion: string | null;
     };
-    referralCode?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 interface AuthContextType {
     user: AuthUser | null;
-    token: string | null;
     loading: boolean;
     isAuthenticated: boolean;
     login: (email: string, password: string) => Promise<AuthUser>;
-    signup: (name: string, email: string, password: string) => Promise<AuthUser>;
-    logout: () => void;
-    refreshUser: () => Promise<void>;
-    updateUser: (userData: Partial<AuthUser>) => void;
+    signup: (email: string, phone: string | undefined, password: string, name?: string) => Promise<AuthUser>;
+    logout: () => Promise<void>;
+    refreshUser: (options?: { force?: boolean }) => Promise<AuthUser | null>;
+    updateUser: (patch: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+type AuthPayload = { user: AuthUser };
+
+
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
-    const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const refreshInFlightRef = useRef<Promise<void> | null>(null);
+    const refreshInFlightRef = useRef<Promise<AuthUser | null> | null>(null);
 
-    // Initialize token from localStorage on mount
-    useEffect(() => {
-        const storedToken = localStorage.getItem("viramah_token");
-        if (storedToken) {
-            setToken(storedToken);
-        } else {
-            setLoading(false);
-        }
-    }, []);
 
-    const refreshUser = useCallback(async () => {
-        const currentToken = typeof window !== "undefined"
-            ? localStorage.getItem("viramah_token")
-            : null;
-        if (!currentToken) {
-            setLoading(false);
-            return;
-        }
-        if (refreshInFlightRef.current) {
-            await refreshInFlightRef.current;
-            return;
-        }
 
-        const refreshPromise = (async () => {
+    const refreshUser = useCallback(async (options?: { force?: boolean }): Promise<AuthUser | null> => {
+        const force = !!options?.force;
+        if (force && refreshInFlightRef.current) {
             try {
-                const res = await apiFetch<{ data: AuthUser }>(PUBLIC_API.auth.me, {
-                    token: currentToken,
-                });
-                setUser(res.data);
+                await refreshInFlightRef.current;
             } catch {
-                localStorage.removeItem("viramah_token");
+                // Ignore prior failure and proceed with a fresh fetch.
+            }
+        }
+        if (!force && refreshInFlightRef.current) return refreshInFlightRef.current;
+
+        const p = (async () => {
+            try {
+                const { user: fetched } = await apiGet<AuthPayload>(API.auth.me);
+                setUser(fetched);
+                return fetched;
+            } catch {
                 setUser(null);
-                setToken(null);
+                return null;
             } finally {
                 setLoading(false);
             }
         })();
 
-        refreshInFlightRef.current = refreshPromise;
+        refreshInFlightRef.current = p;
         try {
-            await refreshPromise;
+            return await p;
         } finally {
             refreshInFlightRef.current = null;
         }
     }, []);
 
-    // Fetch user data when token becomes available
+    // Hydrate once on mount — session cookie is already in the browser if logged in.
     useEffect(() => {
-        if (token) {
-            refreshUser();
-        }
-    }, [token, refreshUser]);
+        refreshUser();
+    }, [refreshUser]);
 
     const login = async (email: string, password: string): Promise<AuthUser> => {
-        const res = await apiFetch<{ data: { token: string; user: AuthUser } }>(
-            PUBLIC_API.auth.login,
-            { method: "POST", body: { email, password } }
-        );
-        const { token: newToken, user: newUser } = res.data;
-        localStorage.setItem("viramah_token", newToken);
-        setToken(newToken);
-        setUser(newUser);
-        return newUser;
+        const { user: next } = await apiPost<AuthPayload>(API.auth.login, { email, password });
+        setUser(next);
+        return next;
     };
 
-    const signup = async (name: string, email: string, password: string): Promise<AuthUser> => {
-        const res = await apiFetch<{ data: { token: string; user: AuthUser } }>(
-            PUBLIC_API.auth.register,
-            { method: "POST", body: { name, email, password } }
-        );
-        const { token: newToken, user: newUser } = res.data;
-        localStorage.setItem("viramah_token", newToken);
-        setToken(newToken);
-        setUser(newUser);
-        return newUser;
+    const signup = async (email: string, phone: string | undefined, password: string, name?: string): Promise<AuthUser> => {
+        const body: Record<string, string> = { email, password };
+        if (phone) body.phone = phone;
+        if (name) body.name = name;
+        const { user: next } = await apiPost<AuthPayload>(API.auth.register, body);
+        setUser(next);
+        return next;
     };
 
-    const logout = () => {
-        // Clear user-scoped onboarding data to prevent cross-user leakage
-        if (user?._id) {
-            localStorage.removeItem(`viramah_onboarding_${user._id}`);
+    const logout = async (): Promise<void> => {
+        try {
+            await apiFetch(API.auth.logout, { method: "POST" });
+        } catch {
+            // ignore — cookie may already be invalid
         }
-        localStorage.removeItem("viramah_token");
-        setToken(null);
+        if (user?._id) {
+            try { localStorage.removeItem(`viramah_onboarding_${user._id}`); } catch { /* ignore */ }
+        }
         setUser(null);
-        apiFetch(PUBLIC_API.auth.logout, { method: "POST" }).catch(() => {});
     };
 
-    const updateUser = (userData: Partial<AuthUser>) => {
-        setUser((prev) => (prev ? { ...prev, ...userData } : null));
+    const updateUser = (patch: Partial<AuthUser>) => {
+        setUser((prev) => {
+            if (!prev) return null;
+            const next = { ...prev, ...patch };
+            return next;
+        });
     };
 
     return (
         <AuthContext.Provider
             value={{
                 user,
-                token,
                 loading,
-                isAuthenticated: !!user && !!token,
+                isAuthenticated: !!user,
                 login,
                 signup,
                 logout,

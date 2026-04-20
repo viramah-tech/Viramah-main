@@ -3,12 +3,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Zap, Droplets, Wifi, Sparkles, MoreHorizontal,
     Wrench, CheckCircle2, Clock, AlertCircle,
-    Plus, X, ChevronDown, Send, ArrowLeft,
-    Home, Thermometer, Lock, Tv, Wind
+    Plus, X, Send,
+    Thermometer, Lock
 } from "lucide-react";
-import Link from "next/link";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
@@ -156,7 +154,7 @@ export default function MaintenancePage() {
     const [description, setDescription] = useState("");
     const [priority, setPriority] = useState<"normal" | "high">("normal");
     const [submitted, setSubmitted] = useState(false);
-    const [activeTab, setActiveTab] = useState<"new" | "history">("new");
+    const [, setActiveTab] = useState<"new" | "history">("new");
 
     const selectedCat = CATEGORIES.find((c) => c.id === selectedCategory);
 

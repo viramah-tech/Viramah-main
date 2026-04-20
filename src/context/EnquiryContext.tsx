@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
 
 interface EnquiryContextType {
     openEnquiry: () => void;
@@ -9,8 +9,6 @@ interface EnquiryContextType {
 const EnquiryContext = createContext<EnquiryContextType>({ openEnquiry: () => { } });
 
 export function EnquiryProvider({ children }: { children: ReactNode }) {
-    const [, setOpen] = useState(false);
-
     // We expose a global event so EnquiryModal (which manages its own state)
     // can listen and open itself from anywhere.
     const openEnquiry = () => {

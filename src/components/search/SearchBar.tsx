@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, MapPin, Home, Calendar, Wallet } from "lucide-react";
+import { Search, MapPin, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchSegment {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
@@ -68,13 +68,11 @@ const headerVariants = {
 // ── Component ────────────────────────────────────────────
 export function LifeAtViramahSection() {
     const cardRefs = useRef<(HTMLElement | null)[]>([]);
-    const [canHover, setCanHover] = useState(false);
-
-    // Detect hover capability once on mount
-    useEffect(() => {
-        const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
-        setCanHover(mq.matches);
-    }, []);
+    // Lazy init reads media-query on first client render (safe: this component is "use client")
+    const [canHover] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    });
 
     // ── 3D Tilt Effect (desktop only) ──
     const handlePointerMove = useCallback(

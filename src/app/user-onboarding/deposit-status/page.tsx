@@ -9,31 +9,16 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useBookingStatus, type V3Booking } from "@/hooks/useBookingStatus";
+import { apiFetch } from "@/lib/api";
+import { API } from "@/lib/apiEndpoints";
 import BookingTimeline from "@/components/BookingTimeline";
 import { getDaysHoursRemaining } from "@/utils/deadlineUtils";
-import { apiFetch } from "@/lib/api";
 import { containerVariants, itemVariants } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
 const GOLD  = "#D8B56A";
 const inr = (n: number | null | undefined) =>
     n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`;
-
-type BookingWithExtras = V3Booking & {
-    advanceAmount?: number;
-    refundableAmount?: number;
-    totalPaidAtDeposit?: number;
-    refundRequestedAt?: string;
-    depositAmount?: number;
-    registrationFeePaid?: number;
-    depositTransactionId?: string;
-    depositPaidAt?: string;
-    paymentMode?: string;
-    roomTypeId?: {
-        name?: string;
-        displayName?: string;
-    };
-};
 
 // ── Status Banner Config ──────────────────────────────────────────────────────
 
@@ -278,21 +263,49 @@ export default function DepositStatusPage() {
     const [showRefundModal, setShowRefundModal] = useState(false);
     const [refundLoading, setRefundLoading] = useState(false);
     const [refundSuccess, setRefundSuccess] = useState(false);
+    const [extensionLoading, setExtensionLoading] = useState(false);
+    const [extensionSuccess, setExtensionSuccess] = useState(false);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     const handleRequestRefund = async () => {
         setRefundLoading(true);
+        setActionError(null);
         try {
-            await apiFetch("/api/public/deposits/request-refund", {
+            await apiFetch<{ data: { refundRequestedAt: string } }>(API.payment.refundRequest, {
                 method: "POST",
-                body: { reason: "User requested refund via dashboard" },
+                body: {
+                    reason: "User requested refund from deposit status page",
+                },
             });
             setRefundSuccess(true);
             setShowRefundModal(false);
-            refetch();
-        } catch {
+            void refetch();
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to submit refund request.";
+            setActionError(message);
             setShowRefundModal(false);
         } finally {
             setRefundLoading(false);
+        }
+    };
+
+    const handleRequestExtension = async () => {
+        setExtensionLoading(true);
+        setActionError(null);
+        try {
+            await apiFetch<{ data: { extensionRequested: boolean } }>(API.payment.extensionRequest, {
+                method: "POST",
+                body: {
+                    reason: "User requested deadline extension from deposit status page",
+                },
+            });
+            setExtensionSuccess(true);
+            void refetch();
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to submit extension request.";
+            setActionError(message);
+        } finally {
+            setExtensionLoading(false);
         }
     };
 
@@ -307,12 +320,12 @@ export default function DepositStatusPage() {
         );
     }
 
-    if (error || !booking) {
+    if (!booking) {
         return (
             <div style={{ textAlign: "center", padding: "48px 24px" }}>
                 <AlertCircle size={40} color="rgba(220,38,38,0.5)" style={{ margin: "0 auto 16px", display: "block" }} />
                 <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", color: GREEN, fontWeight: 600, marginBottom: 8 }}>
-                    {booking === null ? "No booking found" : "Failed to load status"}
+                    No booking found
                 </p>
                 <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.45)", marginBottom: 20 }}>
                     {error || "You haven't submitted a booking deposit yet."}
@@ -341,10 +354,10 @@ export default function DepositStatusPage() {
     const StatusIcon = cfg.icon;
     const isActive = booking?.status === "BOOKING_CONFIRMED" || booking?.status === "FINAL_PAYMENT_PENDING";
     const holdStatus = mappedStatus as "pending_approval" | "active" | "converted" | "refunded" | "expired";
-    const bookingData = booking as BookingWithExtras | null;
+    const bookingData: V3Booking | null = booking;
 
-    const holdAdvance = bookingData?.advanceAmount || 0;
-    const holdRefundable = bookingData?.refundableAmount ?? (15000 + holdAdvance);
+    const holdAdvance = bookingData?.financials?.advanceAmount || 0;
+    const holdRefundable = bookingData?.financials?.refundableAmount ?? (15000 + holdAdvance);
 
     return (
         <>
@@ -379,6 +392,15 @@ export default function DepositStatusPage() {
                         {cfg.subtitle}
                     </p>
 
+                    {error && (
+                        <div style={{ marginTop: 12, marginInline: "auto", maxWidth: 460, padding: "10px 12px", borderRadius: 10, background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.28)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                            <AlertCircle size={14} color="#b45309" />
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "#92400e", letterSpacing: "0.02em" }}>
+                                Live status refresh issue: {error}
+                            </span>
+                        </div>
+                    )}
+
                     {booking?.status === "FULLY_PAID" && (
                         <div style={{ marginTop: 16 }}>
                             <button
@@ -410,7 +432,7 @@ export default function DepositStatusPage() {
                     {booking?.status === "FINAL_PAYMENT_PENDING" && (
                         <div style={{ marginTop: 16 }}>
                             <button
-                                onClick={() => router.push("/user-onboarding/confirm")}
+                                onClick={() => router.push("/user-onboarding/payment-breakdown")}
                                 style={{ padding: "14px 28px", borderRadius: 12, border: "none", background: GREEN, color: GOLD, fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, boxShadow: "0 4px 20px rgba(31,58,45,0.25)" }}
                             >
                                 Complete the Payment <ArrowRight size={14} />
@@ -433,8 +455,8 @@ export default function DepositStatusPage() {
                 <motion.div variants={itemVariants} style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.08)", padding: "20px 16px", boxShadow: "0 2px 12px rgba(31,58,45,0.05)" }}>
                     <BookingTimeline
                         currentStatus={holdStatus}
-                        depositTotal={bookingData?.totalPaidAtDeposit ?? booking?.financials?.totalBookingAmount}
-                        advanceAmount={bookingData?.advanceAmount}
+                        depositTotal={booking?.financials?.totalBookingAmount}
+                        advanceAmount={booking?.financials?.advanceAmount}
                     />
                 </motion.div>
 
@@ -447,7 +469,37 @@ export default function DepositStatusPage() {
                         >
                             <CheckCircle size={16} color="#16a34a" style={{ flexShrink: 0 }} />
                             <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "#15803d", fontWeight: 500 }}>
-                                Refund request submitted. Admin will process it shortly.
+                                Refund request submitted successfully. Our team will review it and update your status.
+                            </span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Extension Success Banner */}
+                <AnimatePresence>
+                    {extensionSuccess && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }}
+                            style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}
+                        >
+                            <CheckCircle size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "#1d4ed8", fontWeight: 500 }}>
+                                Deadline extension request submitted. You will be notified once reviewed.
+                            </span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Action Error Banner */}
+                <AnimatePresence>
+                    {actionError && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }}
+                            style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}
+                        >
+                            <AlertCircle size={16} color="#dc2626" style={{ flexShrink: 0 }} />
+                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "#b91c1c", fontWeight: 500 }}>
+                                {actionError}
                             </span>
                         </motion.div>
                     )}
@@ -496,12 +548,27 @@ export default function DepositStatusPage() {
                                 helperText="Complete your full payment before this deadline to confirm your room."
                                 action={
                                     booking?.status === "FINAL_PAYMENT_PENDING" ? (
-                                        <button
-                                            onClick={() => router.push("/user-onboarding/confirm")}
-                                            style={{ marginTop: 4, padding: "9px 16px", borderRadius: 9, border: "none", background: GREEN, fontFamily: "var(--font-body, sans-serif)", fontSize: "0.78rem", fontWeight: 700, color: GOLD, cursor: "pointer", alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, boxShadow: "0 3px 10px rgba(31,58,45,0.15)" }}
-                                        >
-                                            Proceed to Payment <ArrowRight size={12} />
-                                        </button>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
+                                            {!booking?.extensionRequested ? (
+                                                <button
+                                                    onClick={handleRequestExtension}
+                                                    disabled={extensionLoading}
+                                                    style={{ marginTop: 4, padding: "8px 14px", borderRadius: 9, border: "1.5px solid rgba(37,99,235,0.28)", background: "rgba(37,99,235,0.06)", fontFamily: "var(--font-body, sans-serif)", fontSize: "0.74rem", fontWeight: 600, color: "#1d4ed8", cursor: extensionLoading ? "not-allowed" : "pointer", alignSelf: "flex-start" }}
+                                                >
+                                                    {extensionLoading ? "Requesting extension..." : "Request Deadline Extension"}
+                                                </button>
+                                            ) : (
+                                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.45)" }}>
+                                                    Extension request pending…
+                                                </span>
+                                            )}
+                                            <button
+                                                onClick={() => router.push("/user-onboarding/payment-breakdown")}
+                                                style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: GREEN, fontFamily: "var(--font-body, sans-serif)", fontSize: "0.78rem", fontWeight: 700, color: GOLD, cursor: "pointer", alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, boxShadow: "0 3px 10px rgba(31,58,45,0.15)" }}
+                                            >
+                                                Proceed to Payment <ArrowRight size={12} />
+                                            </button>
+                                        </div>
                                     ) : null
                                 }
                             />

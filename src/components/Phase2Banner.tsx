@@ -27,7 +27,7 @@ interface Phase2Info {
  */
 export default function Phase2Banner() {
     const router = useRouter();
-    const { token } = useAuth();
+    const { user } = useAuth();
     const [phase2, setPhase2] = useState<Phase2Info | null>(null);
     const [dismissed, setDismissed] = useState(false);
 
@@ -36,31 +36,21 @@ export default function Phase2Banner() {
             try {
                 const res = await apiFetch<{
                     data: {
-                        plan: {
-                            _id: string;
-                            phases: Array<{
-                                phaseNumber: number;
-                                status: string;
-                                dueDate: string | null;
-                                finalAmount: number;
-                            }>;
-                        };
+                        paymentSummary?: { grandTotal?: { remaining?: number } };
+                        paymentDeadline?: { expiresAt?: string };
                     };
-                }>("/api/payment/plan/me", { token });
+                }>("/api/payment/status");
 
-                const plan = res?.data?.plan;
-                if (!plan) return;
+                const remaining = Number(res?.data?.paymentSummary?.grandTotal?.remaining ?? 0);
+                const dueDate = res?.data?.paymentDeadline?.expiresAt;
 
-                const p2 = plan.phases.find(
-                    (p) => p.phaseNumber === 2 && ["pending", "overdue"].includes(p.status) && p.dueDate
-                );
-                if (p2) {
+                if (remaining > 0 && dueDate) {
                     setPhase2({
-                        planId: plan._id,
+                        planId: "final-payment",
                         phaseNumber: 2,
-                        dueDate: p2.dueDate!,
-                        finalAmount: p2.finalAmount,
-                        status: p2.status,
+                        dueDate,
+                        finalAmount: remaining,
+                        status: "pending",
                     });
                 }
             } catch {
@@ -68,14 +58,16 @@ export default function Phase2Banner() {
             }
         };
 
+        if (user?.onboarding?.currentStep !== "final_payment") return;
         checkPhase2();
-    }, [token]);
+    }, [user?.onboarding?.currentStep]);
 
+    // Tick every minute so the "days left" countdown stays fresh without recomputing Date.now() in render.
     const [now, setNow] = useState(() => Date.now());
-
     useEffect(() => {
-        setNow(Date.now());
-    }, [phase2]);
+        const id = setInterval(() => setNow(Date.now()), 60_000);
+        return () => clearInterval(id);
+    }, []);
 
     if (!phase2 || dismissed) return null;
 

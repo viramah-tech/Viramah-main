@@ -9,15 +9,29 @@ import {
 } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { apiFetch } from "@/lib/api";
+import { API } from "@/lib/apiEndpoints";
 import { useAuth } from "@/context/AuthContext";
 import {
     NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
     containerVariants, itemVariants
 } from "@/components/onboarding/FormComponents";
-import { PUBLIC_API } from "@/lib/apiEndpoints";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
+const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+
+interface BackendRoomType {
+    _id: string;
+    name: string;
+    displayName?: string;
+    capacity?: number;
+    basePrice?: number;
+    discountedPrice?: number;
+    pricing?: {
+        original?: number;
+        discounted?: number;
+    };
+}
 
 // ── Review Section Card ──────────────────────────────────────
 
@@ -148,59 +162,98 @@ const ID_LABELS: Record<string, string> = {
 
 export default function Step4Page() {
     const router = useRouter();
-    const { state, markStepComplete, canAccessStep, getTotalCost, getAddOnsTotal, saving, hydrating } = useOnboarding();
-    const { user } = useAuth();
-    const { step1, step2, step3 } = state;
+    const { personal, guardian, room, canAccessStep } = useOnboarding();
+    const { user, refreshUser } = useAuth();
+    
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
-    const [redirecting, setRedirecting] = useState(false);
-    const agreements = user?.agreements ?? null;
+    const [rooms, setRooms] = useState<BackendRoomType[]>([]);
 
-    useEffect(() => {
-        if (hydrating) return;
-        if (!canAccessStep(4)) {
-            setRedirecting(true);
-            router.replace("/user-onboarding/step-3");
+    const compliance = user?.compliance ?? null;
+
+    const refreshUserNonBlocking = async () => {
+        try {
+            await Promise.race([
+                refreshUser(),
+                new Promise((resolve) => setTimeout(resolve, 1500)),
+            ]);
+        } catch {
+            // Non-fatal: navigation should proceed even if background refresh fails.
         }
-    }, [canAccessStep, hydrating, router]);
-
-    if (redirecting || hydrating) {
-        return null;
-    }
-
-    const enabledAddOns = step3.addOns.filter((a) => a.enabled);
-    const totalCost = getTotalCost();
-
-    const validate = (): boolean => {
-        // Step 4 is a review step — gender/address are now collected in step 1.
-        // No additional validation needed here.
-        return true;
     };
 
+    // Step access restrictions removed - users can move freely
+    // useEffect(() => {
+    //     if (!canAccessStep("review")) {
+    //         router.replace("/user-onboarding/step-3");
+    //     }
+    // }, [canAccessStep, router]);
+
+    useEffect(() => {
+        const fetchRooms = async () => {
+            try {
+                const res = await apiFetch<{ data: { rooms?: BackendRoomType[]; roomTypes?: BackendRoomType[] } }>(API.rooms.list);
+                const fetchedRooms = res?.data?.rooms ?? res?.data?.roomTypes ?? [];
+                setRooms(Array.isArray(fetchedRooms) ? fetchedRooms : []);
+            } catch (err) {
+                console.error("Failed to fetch rooms:", err);
+            }
+        };
+        fetchRooms();
+    }, []);
+
+    // Step access restrictions removed - users can move freely
+    // if (!canAccessStep("review")) return null;
+
+    const selectedRoom = rooms.find((r) => r._id === room.roomTypeId);
+    const backendMonthlyRoomPrice = Number(
+        selectedRoom?.pricing?.discounted ??
+        selectedRoom?.discountedPrice ??
+        selectedRoom?.basePrice ??
+        0
+    );
+
+    const paymentSummaryObj =
+        user?.paymentSummary && typeof user.paymentSummary === "object"
+            ? (user.paymentSummary as Record<string, unknown>)
+            : null;
+
+    const readSummaryTotal = (key: string): number => {
+        const entry = paymentSummaryObj?.[key];
+        if (entry && typeof entry === "object") {
+            const total = (entry as { total?: unknown }).total;
+            if (typeof total === "number") return total;
+        }
+        return 0;
+    };
+
+    const roomRentTotal = readSummaryTotal("roomRent");
+    const messTotal = readSummaryTotal("messFee");
+    const transportTotal = readSummaryTotal("transportFee");
+    const grandTotal = readSummaryTotal("grandTotal");
+    const registrationFeeTotal = readSummaryTotal("registrationFee");
+    const securityDepositTotal = readSummaryTotal("securityDeposit");
+
     const handleConfirm = async () => {
-        if (!validate()) return;
-        
         setSubmitting(true);
         setError("");
         try {
-            // Mark onboarding as completed on the backend before proceeding to payment.
-            // This is the natural completion point — all profile data has been reviewed.
-            // The track-selection backend requires onboardingStatus='completed'.
-            try {
-                await apiFetch(PUBLIC_API.onboarding.confirm, { method: "POST" });
-            } catch (confirmErr) {
-                const msg = confirmErr instanceof Error ? confirmErr.message : "";
-                // Allow if already completed (idempotent)
-                if (!msg.toLowerCase().includes("already") && !msg.toLowerCase().includes("completed")) {
-                    throw confirmErr;
-                }
-            }
-
-            markStepComplete(4);
-            router.push("/user-onboarding/deposit");
+            await apiFetch(API.onboarding.confirm, { method: "POST" });
+            // Force a fresh read of user state before navigating so the guard sees booking_payment step.
+            await refreshUser({ force: true });
+            router.replace("/user-onboarding/deposit");
+            return;
         } catch (err) {
             const message = err instanceof Error ? err.message : "Failed to proceed. Please try again.";
-            setError(message);
+            // Allow if already completed (idempotent)
+            if (!message.toLowerCase().includes("already") && !message.toLowerCase().includes("completed")) {
+                setError(message);
+            } else {
+                // Non-blocking fallback for already-confirmed state.
+                void refreshUser({ force: true });
+                router.replace("/user-onboarding/deposit");
+                return;
+            }
         } finally {
             setSubmitting(false);
         }
@@ -208,7 +261,6 @@ export default function Step4Page() {
 
     return (
         <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 32 }}>
-            {/* Header */}
             <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
                 <StepBadge icon={Check} label="Review &amp; Confirm" />
                 <StepTitle>Review &amp; Confirm</StepTitle>
@@ -217,32 +269,31 @@ export default function Step4Page() {
                 </StepSubtitle>
             </motion.div>
 
-            {/* Personal Details */}
             <motion.div variants={itemVariants}>
                 <ReviewCard
                     icon={Shield}
                     iconBg="rgba(31,58,45,0.08)"
                     iconColor={GREEN}
                     title="Personal Details"
-                    subtitle="Step 2 — Identity Verification"
+                    subtitle="Step 1 — Identity Verification"
                     onEdit={() => router.push("/user-onboarding/step-1")}
                 >
                     <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 2 }}>
-                        <DetailRow label="Name" value={step1.fullName || "—"} />
-                        <DetailRow label="Date of Birth" value={step1.dateOfBirth || "—"} />
-                        <DetailRow label="ID Type" value={ID_LABELS[step1.idType] || step1.idType} />
-                        <DetailRow label="ID Number" value={step1.idNumber || "—"} mono />
+                        <DetailRow label="Name" value={personal.fullName || "—"} />
+                        <DetailRow label="Date of Birth" value={personal.dateOfBirth || "—"} />
+                        <DetailRow label="ID Type" value={ID_LABELS[personal.idType] || personal.idType} />
+                        <DetailRow label="ID Number" value={personal.idNumber || "—"} mono />
                         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                            {step1.idFront && (
-                                <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
-                                    { }
-                                    <img src={step1.idFront.preview} alt="ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            {personal.idFront && (
+                                <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)", position: "relative" }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={personal.idFront.preview} alt="ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
-                            {step1.idBack && (
-                                <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
-                                    { }
-                                    <img src={step1.idBack.preview} alt="ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            {personal.idBack && (
+                                <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)", position: "relative" }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={personal.idBack.preview} alt="ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
                         </div>
@@ -250,37 +301,36 @@ export default function Step4Page() {
                 </ReviewCard>
             </motion.div>
 
-            {/* Emergency Details */}
             <motion.div variants={itemVariants}>
                 <ReviewCard
                     icon={Phone}
                     iconBg="rgba(216,181,106,0.12)"
                     iconColor={GOLD}
                     title="Emergency Contact"
-                    subtitle="Step 3 — Guardian Details"
+                    subtitle="Step 2 — Guardian Details"
                     onEdit={() => router.push("/user-onboarding/step-2")}
                 >
                     <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 2 }}>
-                        <DetailRow label="Contact Name" value={step2.emergencyName || "—"} />
-                        <DetailRow label="Phone" value={step2.emergencyPhone || "—"} mono />
-                        <DetailRow label="Relationship" value={step2.emergencyRelation || "—"} />
-                        {step2.alternatePhone && (
-                            <DetailRow label="Alternate Phone" value={step2.alternatePhone} mono />
+                        <DetailRow label="Contact Name" value={guardian.fullName || "—"} />
+                        <DetailRow label="Phone" value={guardian.phone || "—"} mono />
+                        <DetailRow label="Relationship" value={guardian.relation || "—"} />
+                        {guardian.alternatePhone && (
+                            <DetailRow label="Alternate Phone" value={guardian.alternatePhone} mono />
                         )}
                         <div style={{ height: 1, background: "rgba(31,58,45,0.08)", margin: "8px 0" }} />
-                        <DetailRow label="Guardian ID Type" value={ID_LABELS[step2.parentIdType] || step2.parentIdType} />
-                        <DetailRow label="Guardian ID Number" value={step2.parentIdNumber || "—"} mono />
+                        <DetailRow label="Guardian ID Type" value={ID_LABELS[guardian.idType] || guardian.idType} />
+                        <DetailRow label="Guardian ID Number" value={guardian.idNumber || "—"} mono />
                         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                            {step2.parentIdFront && (
+                            {guardian.idFront && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
-                                    { }
-                                    <img src={step2.parentIdFront.preview} alt="Guardian ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={guardian.idFront.preview} alt="Guardian ID Front" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
-                            {step2.parentIdBack && (
+                            {guardian.idBack && (
                                 <div style={{ width: 60, height: 40, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(31,58,45,0.15)" }}>
-                                    { }
-                                    <img src={step2.parentIdBack.preview} alt="Guardian ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={guardian.idBack.preview} alt="Guardian ID Back" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
                             )}
                         </div>
@@ -288,27 +338,36 @@ export default function Step4Page() {
                 </ReviewCard>
             </motion.div>
 
-            {/* Room Selection */}
             <motion.div variants={itemVariants}>
                 <ReviewCard
                     icon={Home}
                     iconBg="rgba(31,58,45,0.08)"
                     iconColor={GREEN}
                     title="Room Selected"
-                    subtitle="Step 4 — Room & Services"
+                    subtitle="Step 3 — Room & Services"
                     onEdit={() => router.push("/user-onboarding/step-3")}
                 >
                     <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 2 }}>
-                        {step3.selectedRoom ? (
+                        {selectedRoom ? (
                             <>
-                                <DetailRow label="Room" value={`${step3.selectedRoom.title} (${step3.selectedRoom.type})`} />
-                                <DetailRow label="Room Rent" value={`${step3.selectedRoom.priceLabel}/mo`} mono />
-                                {enabledAddOns.length > 0 && (
+                                <DetailRow
+                                    label="Room"
+                                    value={`${selectedRoom.displayName || selectedRoom.name}${selectedRoom.capacity ? ` (${selectedRoom.capacity} Seater)` : ""}`}
+                                />
+                                <DetailRow
+                                    label="Room Rent"
+                                    value={roomRentTotal > 0 ? `${inr(roomRentTotal)} total` : backendMonthlyRoomPrice > 0 ? `${inr(backendMonthlyRoomPrice)}/mo` : "—"}
+                                    mono
+                                />
+                                {(room.includeMess || room.includeTransport) && (
                                     <>
                                         <div style={{ height: 1, background: "rgba(31,58,45,0.08)", margin: "8px 0" }} />
-                                        {enabledAddOns.map((addon) => (
-                                            <DetailRow key={addon.id} label={addon.name} value={`₹${addon.price.toLocaleString()}/mo`} mono />
-                                        ))}
+                                        {room.includeTransport && (
+                                            <DetailRow label="Daily Transport" value={transportTotal > 0 ? `${inr(transportTotal)} total` : "Included"} mono />
+                                        )}
+                                        {room.includeMess && (
+                                            <DetailRow label="Mess Amount" value={messTotal > 0 ? `${inr(messTotal)} total` : "Included"} mono />
+                                        )}
                                     </>
                                 )}
                             </>
@@ -321,8 +380,7 @@ export default function Step4Page() {
                 </ReviewCard>
             </motion.div>
 
-            {/* Add-ons Summary */}
-            {enabledAddOns.length > 0 && (
+            {(room.includeMess || room.includeTransport) && (
                 <motion.div variants={itemVariants}>
                     <div
                         style={{
@@ -343,29 +401,21 @@ export default function Step4Page() {
                             </div>
                         </div>
                         <div style={{ paddingLeft: 52, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                            {enabledAddOns.map((addon) => (
-                                <span
-                                    key={addon.id}
-                                    style={{
-                                        padding: "4px 12px",
-                                        borderRadius: 999,
-                                        background: "rgba(31,58,45,0.07)",
-                                        border: "1px solid rgba(31,58,45,0.12)",
-                                        fontFamily: "var(--font-mono, monospace)",
-                                        fontSize: "0.65rem",
-                                        color: GREEN,
-                                        letterSpacing: "0.05em",
-                                    }}
-                                >
-                                    {addon.name} — ₹{addon.price.toLocaleString()}/mo
+                            {room.includeTransport && (
+                                <span style={{ padding: "4px 12px", borderRadius: 999, background: "rgba(31,58,45,0.07)", border: "1px solid rgba(31,58,45,0.12)", fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: GREEN, letterSpacing: "0.05em" }}>
+                                    Daily Transport — {transportTotal > 0 ? `${inr(transportTotal)} total` : "Included"}
                                 </span>
-                            ))}
+                            )}
+                            {room.includeMess && (
+                                <span style={{ padding: "4px 12px", borderRadius: 999, background: "rgba(31,58,45,0.07)", border: "1px solid rgba(31,58,45,0.12)", fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: GREEN, letterSpacing: "0.05em" }}>
+                                    Mess Amount — {messTotal > 0 ? `${inr(messTotal)} total` : "Included"}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </motion.div>
             )}
 
-            {/* Total Summary Banner */}
             <motion.div
                 variants={itemVariants}
                 style={{
@@ -380,40 +430,28 @@ export default function Step4Page() {
             >
                 <div>
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(216,181,106,0.6)", margin: 0 }}>
-                        Monthly Total
+                        Total Payable
                     </p>
                     <p style={{ fontFamily: "var(--font-display, serif)", fontSize: "2.2rem", color: GOLD, margin: "4px 0 0", lineHeight: 1 }}>
-                        ₹{totalCost.toLocaleString()}
+                        {inr(grandTotal)}
                     </p>
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(246,244,239,0.4)", margin: "6px 0 0" }}>
-                        Room {step3.selectedRoom?.priceLabel ?? "—"}
-                        {enabledAddOns.length > 0 && ` + Add-ons ₹${getAddOnsTotal().toLocaleString()}`}
+                        Room {roomRentTotal > 0 ? inr(roomRentTotal) : "—"}
+                        {(messTotal > 0 || transportTotal > 0) && ` + Add-ons ${inr(messTotal + transportTotal)}`}
+                        {(registrationFeeTotal > 0 || securityDepositTotal > 0) && ` + Fees ${inr(registrationFeeTotal + securityDepositTotal)}`}
                     </p>
                 </div>
-                <div
-                    style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: "50%",
-                        background: "rgba(216,181,106,0.15)",
-                        border: "1px solid rgba(216,181,106,0.3)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(216,181,106,0.15)", border: "1px solid rgba(216,181,106,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Check size={20} color={GOLD} strokeWidth={2.5} />
                 </div>
             </motion.div>
 
-            {/* Error */}
             {error && (
                 <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "#c0392b", textAlign: "center" }}>
                     {error}
                 </p>
             )}
 
-            {/* Agreements */}
             <motion.div variants={itemVariants}>
                 <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.1)", padding: 24, boxShadow: "0 2px 16px rgba(31,58,45,0.05)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
@@ -426,23 +464,23 @@ export default function Step4Page() {
                         </div>
                     </div>
                     <div style={{ paddingLeft: 52, display: "flex", flexDirection: "column", gap: 8 }}>
-                        {agreements ? (
-                            agreements.termsAccepted && agreements.privacyPolicyAccepted ? (
+                        {compliance ? (
+                            compliance.termsAccepted && compliance.privacyPolicyAccepted ? (
                                 <>
                                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                         <Check size={14} color="#16a34a" />
                                         <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", color: "rgba(31,58,45,0.8)" }}>
                                             <strong>Terms &amp; Conditions</strong> accepted
-                                            {agreements.termsAcceptedAt && <> on <em>{new Date(agreements.termsAcceptedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</em></>}
-                                            {agreements.termsVersion && <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.4)", marginLeft: 6 }}>({agreements.termsVersion})</span>}
+                                            {compliance.termsAcceptedAt && <> on <em>{new Date(compliance.termsAcceptedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</em></>}
+                                            {compliance.termsVersion && <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.4)", marginLeft: 6 }}>({compliance.termsVersion})</span>}
                                         </span>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                         <Check size={14} color="#16a34a" />
                                         <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.83rem", color: "rgba(31,58,45,0.8)" }}>
                                             <strong>Privacy Policy</strong> accepted
-                                            {agreements.privacyPolicyAcceptedAt && <> on <em>{new Date(agreements.privacyPolicyAcceptedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</em></>}
-                                            {agreements.privacyPolicyVersion && <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.4)", marginLeft: 6 }}>({agreements.privacyPolicyVersion})</span>}
+                                            {compliance.privacyAcceptedAt && <> on <em>{new Date(compliance.privacyAcceptedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</em></>}
+                                            {compliance.privacyVersion && <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.4)", marginLeft: 6 }}>({compliance.privacyVersion})</span>}
                                         </span>
                                     </div>
                                 </>
@@ -459,12 +497,11 @@ export default function Step4Page() {
                 </div>
             </motion.div>
 
-            {/* Navigation */}
             <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
                 <SecondaryButton onClick={() => router.push("/user-onboarding/step-3")}>
                     <ArrowLeft size={16} /> Back
                 </SecondaryButton>
-                <NavButton onClick={handleConfirm} disabled={submitting || saving}>
+                <NavButton onClick={handleConfirm} disabled={submitting}>
                     {submitting ? "Saving..." : (
                         <>
                             <CreditCard size={16} />

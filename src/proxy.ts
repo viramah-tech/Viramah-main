@@ -1,39 +1,46 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from "next/server";
 
-// Role-based route protection proxy
-export function proxy(request: NextRequest) {
-    const { pathname } = request.nextUrl
+// Routes that require an authenticated session. Presence of the httpOnly `token`
+// cookie is checked — full JWT validity is enforced by the backend on every
+// protected API call. This gives us SSR-time gating (no flash of protected
+// content) without needing JWT_SECRET in the Edge runtime.
+const PROTECTED_PREFIXES = [
+    "/user-onboarding",
+    "/student",
+    "/verify-contact",
+];
 
-    // TODO: Get session from cookies/headers when Supabase is configured
-    const session = null // Placeholder
+export function proxy(req: NextRequest) {
+    const { pathname } = req.nextUrl;
+    // Check for session cookie (express-session uses 'connect.sid' by default)
+    const hasSession = Boolean(req.cookies.get("connect.sid")?.value);
 
-    // Protected routes configuration
-    const protectedRoutes = {
-        '/student': 'student',
-        '/parent': 'parent',
-        '/admin': 'admin',
+    const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+    if (isProtected && !hasSession) {
+        const url = req.nextUrl.clone();
+        url.pathname = "/login";
+        url.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(url);
     }
 
-    // Check if route is protected
-    for (const [route, requiredRole] of Object.entries(protectedRoutes)) {
-        if (pathname.startsWith(route)) {
-            // TODO: Implement actual auth check
-            // For now, allow all routes during development
-            // if (!session || session.role !== requiredRole) {
-            //     return NextResponse.redirect(new URL('/login', request.url))
-            // }
-        }
-    }
+    // Allow users to access the login page even if they have a stale token.
+    // Client-side logic or manual logout will handle any token mismatch.
+    // const isPublicOnly = ["/login", "/register"].some((p) => pathname.startsWith(p));
+    // if (isPublicOnly && hasToken) {
+    //     const url = req.nextUrl.clone();
+    //     url.pathname = "/user-onboarding/terms";
+    //     return NextResponse.redirect(url);
+    // }
 
-    return NextResponse.next()
+    return NextResponse.next();
 }
 
 export const config = {
     matcher: [
-        '/student/:path*',
-        '/parent/:path*',
-        '/admin/:path*',
-        '/room-booking/:path*',
+        "/user-onboarding/:path*",
+        "/student/:path*",
+        "/verify-contact/:path*",
+        "/login",
+        "/register",
     ],
-}
+};

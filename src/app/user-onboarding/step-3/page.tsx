@@ -1,712 +1,678 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
-import {
-    ArrowRight, ArrowLeft, Home, Check, Bus, UtensilsCrossed,
-    ChevronLeft, ChevronRight as ChevronRightIcon,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { ArrowLeft, ArrowRight, Bus, Check, Home, UtensilsCrossed } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { PUBLIC_API } from "@/lib/apiEndpoints";
-import { usePricingConfig } from "@/hooks/usePricingConfig";
-import { ROOMS as STATIC_ROOMS, type RoomType } from "@/data/rooms";
-import { ROOM_TYPE_MAP } from "@/config/paymentConfig";
+import { API } from "@/lib/apiEndpoints";
 import {
-    NavButton, SecondaryButton, StepBadge, StepTitle, StepSubtitle,
-    containerVariants, itemVariants,
+    NavButton,
+    SecondaryButton,
+    StepBadge,
+    StepSubtitle,
+    StepTitle,
+    containerVariants,
+    itemVariants,
 } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
 
-// ── Selectable Room Card (reuses exact rooms page design) ────
-
-function SelectableRoomCard({
-    room,
-    isSelected,
-    onSelect,
-}: {
-    room: RoomType;
-    isSelected: boolean;
-    onSelect: () => void;
-}) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [currentImg, setCurrentImg] = useState(0);
-    const x = useMotionValue(0);
-    const y = useMotionValue(0);
-    const mouseX = useSpring(x, { stiffness: 500, damping: 100 });
-    const mouseY = useSpring(y, { stiffness: 500, damping: 100 });
-    const rotateX = useTransform(mouseY, [-0.5, 0.5], ["2deg", "-2deg"]);
-    const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-2deg", "2deg"]);
-
-    function handleMouseMove(event: React.MouseEvent<HTMLDivElement>) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        x.set((event.clientX - rect.left - rect.width / 2) / rect.width);
-        y.set((event.clientY - rect.top - rect.height / 2) / rect.height);
-    }
-
-    function handleMouseLeave() {
-        x.set(0);
-        y.set(0);
-    }
-
-    function prevImg(e: React.MouseEvent) {
-        e.stopPropagation();
-        setCurrentImg((i) => (i - 1 + room.images.length) % room.images.length);
-    }
-
-    function nextImg(e: React.MouseEvent) {
-        e.stopPropagation();
-        setCurrentImg((i) => (i + 1) % room.images.length);
-    }
-
-    const hasImages = room.images.length > 0;
-
-    return (
-        <motion.div
-            style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-            className={cn(
-                "group relative w-full rounded-[6px] overflow-hidden",
-                room.featured ? "bg-[#fdf8ee]" : "bg-[#f7f1e8]",
-                isSelected
-                    ? "shadow-[0_0_0_3px_#1F3A2D,0_0_30px_rgba(31,58,45,0.25)]"
-                    : room.featured
-                        ? "shadow-[0_0_0_2px_#D8B56A,0_0_30px_rgba(216,181,106,0.35),-12px_-12px_40px_rgba(255,255,255,0.6),16px_16px_50px_rgba(0,0,0,0.28)]"
-                        : "shadow-[-12px_-12px_40px_rgba(255,255,255,0.6),16px_16px_50px_rgba(0,0,0,0.28),inset_1px_1px_2px_rgba(255,255,255,0.8),inset_-1px_-1px_2px_rgba(0,0,0,0.12)]",
-                "hover:z-10 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer"
-            )}
-            onClick={onSelect}
-        >
-            {/* Selected indicator */}
-            {isSelected && (
-                <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ background: GREEN, boxShadow: "0 4px 14px rgba(31,58,45,0.4)" }}
-                >
-                    <Check size={18} color={GOLD} strokeWidth={2.5} />
-                </motion.div>
-            )}
-
-            {/* Featured ribbon */}
-            {room.featured && (
-                <div className="absolute top-0 right-0 z-30 overflow-hidden" style={{ width: 120, height: 120, pointerEvents: "none" }}>
-                    <div
-                        style={{
-                            position: "absolute", top: 28, right: -32, width: 140,
-                            background: "linear-gradient(135deg, #D8B56A, #c9a04f)",
-                            color: "#1a3328", fontSize: "0.58rem",
-                            fontFamily: "var(--font-mono, monospace)", fontWeight: 800,
-                            letterSpacing: "0.12em", textTransform: "uppercase",
-                            textAlign: "center", padding: "5px 0",
-                            transform: "rotate(45deg)", boxShadow: "0 3px 14px rgba(0,0,0,0.25)",
-                        }}
-                    >
-                        Popular
-                    </div>
-                </div>
-            )}
-
-            {/* Tag */}
-            {room.tag && (
-                <div
-                    className="absolute top-4 left-4 z-20 px-3 py-1.5 font-mono text-[0.58rem] uppercase tracking-[0.2em] font-bold rounded-[3px]"
-                    style={{
-                        background: room.featured ? "#D8B56A" : "var(--luxury-green)",
-                        color: room.featured ? "#1a3328" : "var(--gold)",
-                        boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
-                    }}
-                >
-                    {room.tag}
-                </div>
-            )}
-
-            <div className="relative w-full h-full flex flex-col" style={{ transform: "translateZ(20px)" }}>
-                {/* Image carousel */}
-                {hasImages && (
-                    <div className="relative w-full h-[260px] sm:h-[340px] md:h-[300px] overflow-hidden shrink-0">
-                        <div
-                            className="absolute inset-0 z-0"
-                            style={{
-                                background: "linear-gradient(110deg, #1e3529 30%, #2a4a38 50%, #1e3529 70%)",
-                                backgroundSize: "200% 100%",
-                                animation: "tileShimmer 1.6s ease-in-out infinite",
-                            }}
-                        />
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={currentImg}
-                                className="w-full h-full relative"
-                                initial={{ opacity: 0, scale: 1.05 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.97 }}
-                                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                            >
-                                <Image
-                                    src={room.images[currentImg]}
-                                    alt={`${room.title} – photo ${currentImg + 1}`}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 640px) 100vw, 50vw"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
-                                <div className="absolute top-3 right-14 z-10 flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                                    <span className="font-mono text-white/80 text-[0.55rem] tracking-widest">{currentImg + 1} / {room.images.length}</span>
-                                </div>
-                            </motion.div>
-                        </AnimatePresence>
-
-                        {room.images.length > 1 && (
-                            <>
-                                <button
-                                    onClick={prevImg}
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/45 hover:bg-black/70 text-white rounded-full text-lg transition-all duration-200 z-20 opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
-                                >
-                                    <ChevronLeft size={16} />
-                                </button>
-                                <button
-                                    onClick={nextImg}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/45 hover:bg-black/70 text-white rounded-full text-lg transition-all duration-200 z-20 opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
-                                >
-                                    <ChevronRightIcon size={16} />
-                                </button>
-                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-                                    {room.images.map((_, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={(e) => { e.stopPropagation(); setCurrentImg(i); }}
-                                            className={cn(
-                                                "rounded-full transition-all duration-300",
-                                                i === currentImg ? "bg-white w-4 h-1.5" : "bg-white/45 w-1.5 h-1.5"
-                                            )}
-                                        />
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
-                )}
-
-                {/* Content */}
-                <div className="flex flex-col gap-4 px-5 py-5">
-                    <div>
-                        <span className="font-mono text-[0.65rem] text-green-sage tracking-[2px] uppercase block mb-1.5 opacity-70">
-                            {room.type}
-                        </span>
-                        <h3 className="font-display text-[1.8rem] md:text-[2rem] text-charcoal leading-[0.9] uppercase tracking-[-1.5px]">
-                            {room.title.split(" ").map((word, i) => (
-                                <span key={i}>
-                                    {word}
-                                    {i < room.title.split(" ").length - 1 && <br />}
-                                </span>
-                            ))}
-                        </h3>
-                    </div>
-
-                    {/* Amenities */}
-                    {room.amenities.length > 0 && (
-                        <div className="pt-1">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-                                className="flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-[0.15em] text-charcoal/60 hover:text-charcoal transition-colors"
-                            >
-                                Amenities
-                                <motion.span animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.25 }} className="text-[0.8rem] leading-none ml-0.5">
-                                    {"\u203A"}
-                                </motion.span>
-                            </button>
-                            <motion.div
-                                initial={false}
-                                animate={{ height: isExpanded ? "auto" : 0, opacity: isExpanded ? 1 : 0, marginTop: isExpanded ? 10 : 0 }}
-                                transition={{ duration: 0.3, ease: "easeInOut" }}
-                                style={{ overflow: "hidden" }}
-                            >
-                                <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-                                    {room.amenities.map((a) => (
-                                        <div key={a} className="flex items-center gap-2">
-                                            <div className="w-1 h-1 rounded-full bg-luxury-green/30" />
-                                            <span className="font-mono text-[0.58rem] uppercase tracking-wider text-charcoal/50">{a}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-
-                    {/* Pricing Mini-Panel */}
-                    {(() => {
-                        // room.price = Full Tenure monthly (40% off + 12% GST, e.g. Nexus = ₹9,090)
-                        // Back-derive base: fullMonthly = base × 0.60 × 1.12 → base = price / 0.672
-                        const fullMonthly = room.price ?? 0;
-                        const base = Math.round(fullMonthly / (0.60 * 1.12));
-                        // Half Yearly: 25% off → monthly = base × 0.75 × 1.12
-                        const halfMonthly = Math.round(base * 0.75 * 1.12);
-                        const savings = (halfMonthly * 11) - (fullMonthly * 11);
-                        return (
-                            <div className="mt-2 rounded-[8px] overflow-hidden border border-black/8">
-                                <div className="grid grid-cols-2">
-                                    <div className="px-3 py-2.5 border-r border-black/8 bg-black/2">
-                                        <p className="font-mono text-[0.52rem] uppercase tracking-[0.15em] text-charcoal/40 mb-1">Half Yearly · 25% off</p>
-                                        <p className="font-display text-[1.15rem] text-charcoal leading-none">₹{halfMonthly.toLocaleString("en-IN")}</p>
-                                        <p className="font-mono text-[0.52rem] text-charcoal/35 mt-0.5">/month</p>
-                                    </div>
-                                    <div className="px-3 py-2.5 bg-luxury-green/5">
-                                        <p className="font-mono text-[0.52rem] uppercase tracking-[0.15em] text-green-sage/60 mb-1">Full Tenure · 40% off</p>
-                                        <p className="font-display text-[1.15rem] leading-none" style={{ color: GREEN }}>₹{fullMonthly.toLocaleString("en-IN")}</p>
-                                        <p className="font-mono text-[0.52rem] text-charcoal/35 mt-0.5">/month</p>
-                                    </div>
-                                </div>
-                                <div className="px-3 py-1.5 bg-amber-50/80 border-t border-amber-200/40">
-                                    <p className="font-mono text-[0.52rem] text-amber-700/70">
-                                        ✨ Save ₹{savings.toLocaleString("en-IN")} with full tenure vs half yearly
-                                    </p>
-                                </div>
-                            </div>
-                        );
-                    })()}
-
-                    {/* Footer */}
-                    <div className="flex justify-between items-end pt-1 border-t border-black/6 mt-2">
-                        <div className="flex flex-col gap-0.5">
-                            <span className="font-mono text-[0.58rem] text-charcoal/35 uppercase tracking-widest">Krishna Valley, Vrindavan</span>
-                        </div>
-                        <div
-                            className="px-4 py-2.5 rounded-[4px] font-mono text-[0.62rem] uppercase tracking-[0.15em] font-bold transition-all"
-                            style={{
-                                background: isSelected ? GREEN : "linear-gradient(135deg, #1F3A2D, #162b1e)",
-                                color: GOLD,
-                                boxShadow: isSelected ? "0 4px 16px rgba(31,58,45,0.3)" : "0 2px 8px rgba(31,58,45,0.2)",
-                            }}
-                        >
-                            {isSelected ? "Selected" : "Select Room"}
-                        </div>
-                    </div>
-                    <span className="font-mono text-[0.72rem] text-charcoal/40 leading-[1.5]">Including Mess &amp; All Amenities*</span>
-                </div>
-            </div>
-        </motion.div>
-    );
-}
-
-// ── Add-on Toggle Card ───────────────────────────────────────
-
-function AddOnCard({
-    icon: Icon,
-    name,
-    price,
-    description,
-    enabled,
-    onToggle,
-}: {
-    icon: React.ElementType;
+interface RoomData {
+    _id: string;
     name: string;
-    price: number;
-    description: string;
-    enabled: boolean;
-    onToggle: () => void;
-}) {
-    return (
-        <button
-            onClick={onToggle}
-            style={{
-                flex: 1,
-                padding: "20px 16px",
-                borderRadius: 16,
-                border: `2px solid ${enabled ? GREEN : "rgba(31,58,45,0.12)"}`,
-                background: enabled ? "rgba(31,58,45,0.04)" : "#fff",
-                textAlign: "left",
-                cursor: "pointer",
-                transition: "all 0.25s ease",
-                boxShadow: enabled ? "0 4px 16px rgba(31,58,45,0.1)" : "none",
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-            }}
-        >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div
-                        style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 10,
-                            background: enabled ? "rgba(31,58,45,0.1)" : "rgba(31,58,45,0.05)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
-                        <Icon size={20} color={enabled ? GREEN : "rgba(31,58,45,0.35)"} />
-                    </div>
-                    <div>
-                        <span
-                            style={{
-                                fontFamily: "var(--font-body, sans-serif)",
-                                fontSize: "0.9rem",
-                                fontWeight: 600,
-                                color: enabled ? GREEN : "rgba(31,58,45,0.7)",
-                                display: "block",
-                            }}
-                        >
-                            {name}
-                        </span>
-                        <span
-                            style={{
-                                fontFamily: "var(--font-mono, monospace)",
-                                fontSize: "0.6rem",
-                                color: "rgba(31,58,45,0.4)",
-                                letterSpacing: "0.05em",
-                            }}
-                        >
-                            {description}
-                        </span>
-                    </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                    <span
-                        style={{
-                            fontFamily: "var(--font-display, serif)",
-                            fontSize: "1.2rem",
-                            color: enabled ? GREEN : "rgba(31,58,45,0.5)",
-                        }}
-                    >
-                        ₹{price.toLocaleString()}
-                    </span>
-                    <span
-                        style={{
-                            fontFamily: "var(--font-mono, monospace)",
-                            fontSize: "0.55rem",
-                            color: "rgba(31,58,45,0.4)",
-                            display: "block",
-                        }}
-                    >
-                        /month
-                    </span>
-                </div>
-            </div>
-            {/* Toggle indicator */}
-            <div
-                style={{
-                    width: 44,
-                    height: 24,
-                    borderRadius: 12,
-                    background: enabled ? GREEN : "rgba(31,58,45,0.15)",
-                    padding: 2,
-                    transition: "background 0.25s ease",
-                    alignSelf: "flex-end",
-                }}
-            >
-                <motion.div
-                    animate={{ x: enabled ? 20 : 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        background: enabled ? GOLD : "#fff",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-                    }}
-                />
-            </div>
-        </button>
-    );
+    rawName: string;
+    capacity: number;
+    features?: string[];
+    monthlyPrice: number;
+    availableSeats: number;
+    isActive: boolean;
 }
 
-// ── Main Page ────────────────────────────────────────────────
+interface RoomApiRaw {
+    _id: string;
+    name: string;
+    displayName?: string;
+    capacity?: number;
+    bedsPerRoom?: number;
+    features?: string[];
+    basePrice?: number;
+    discountedPrice?: number;
+    monthlyPrice?: number;
+    price?: number;
+    availableRooms?: number;
+    availableSeats?: number;
+    isActive?: boolean;
+    pricing?: {
+        original?: number;
+        discounted?: number;
+    };
+}
+
+interface PricingConfigRaw {
+    tenureMonths?: number;
+    registrationFee?: number;
+    securityDeposit?: number;
+    mess?: {
+        monthlyFee?: number;
+        annualDiscountedPrice?: number;
+    };
+    transport?: {
+        monthlyFee?: number;
+    };
+}
+
+interface PricingView {
+    tenureMonths: number;
+    registrationFee: number;
+    securityDeposit: number;
+    messMonthly: number;
+    messLumpSum: number;
+    transportMonthly: number;
+}
+
+const FALLBACK_PRICING: PricingView = {
+    tenureMonths: 11,
+    registrationFee: 1000,
+    securityDeposit: 15000,
+    messMonthly: 2000,
+    messLumpSum: 19900,
+    transportMonthly: 2000,
+};
+
+const readNumber = (...values: unknown[]) => {
+    for (const value of values) {
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+    }
+    return 0;
+};
 
 export default function Step3Page() {
     const router = useRouter();
-    const { state, updateStep3, toggleAddOn, markStepComplete, canAccessStep, getTotalCost, saving } = useOnboarding();
-    const { config: pricingCfg } = usePricingConfig();
-    const { step3 } = state;
-    const [error, setError] = useState("");
+    const { room, setRoom } = useOnboarding();
+    const { refreshUser } = useAuth();
+
+    const [rooms, setRooms] = useState<RoomData[]>([]);
+    const [pricing, setPricing] = useState<PricingView>(FALLBACK_PRICING);
+    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [rooms, setRooms] = useState<RoomType[]>(STATIC_ROOMS);
-    const [redirecting, setRedirecting] = useState(false);
+    const [error, setError] = useState("");
+
+    const [selectedRoomId, setSelectedRoomId] = useState<string | null>(room?.roomTypeId || null);
+    const [includeMess, setIncludeMess] = useState<boolean>(room?.includeMess ?? false);
+    const [includeTransport, setIncludeTransport] = useState<boolean>(room?.includeTransport ?? false);
+
+    // Step access restrictions removed - users can move freely
+    // useEffect(() => {
+    //     if (!canAccessStep("room_selection")) {
+    //         router.replace("/user-onboarding/step-2");
+    //     }
+    // }, [canAccessStep, router]);
 
     useEffect(() => {
-        if (!canAccessStep(3)) {
-            setRedirecting(true);
-            router.replace("/user-onboarding/step-2");
-        }
-    }, [canAccessStep, router]);
+        const normalizePricing = (raw: PricingConfigRaw | null | undefined): PricingView => {
+            if (!raw) return FALLBACK_PRICING;
 
-    useEffect(() => {
-        const fetchRooms = async () => {
+            const tenureMonths = raw.tenureMonths ?? FALLBACK_PRICING.tenureMonths;
+            const registrationFee = raw.registrationFee ?? FALLBACK_PRICING.registrationFee;
+            const securityDeposit = raw.securityDeposit ?? FALLBACK_PRICING.securityDeposit;
+            const messMonthly = raw.mess?.monthlyFee ?? FALLBACK_PRICING.messMonthly;
+            const messLumpSum = raw.mess?.annualDiscountedPrice ?? messMonthly * tenureMonths;
+            const transportMonthly = raw.transport?.monthlyFee ?? FALLBACK_PRICING.transportMonthly;
+
+            return {
+                tenureMonths,
+                registrationFee,
+                securityDeposit,
+                messMonthly,
+                messLumpSum,
+                transportMonthly,
+            };
+        };
+
+        const fetchData = async () => {
+            setLoading(true);
+            setError("");
+
             try {
-                const res = await apiFetch<{ data: { roomTypes: Array<{ _id: string; name: string; basePrice?: number; discountedPrice?: number; pricing?: { original: number; discounted: number }; availableSeats: number; isActive: boolean }> } }>(PUBLIC_API.rooms.list);
-                if (res?.data?.roomTypes) {
-                    const mapped = STATIC_ROOMS.map(staticRoom => {
-                        const backendName = ROOM_TYPE_MAP[staticRoom.id];
-                        const beRoom = res.data.roomTypes.find(r => r.name === backendName);
-                        if (beRoom) {
-                            const origPrice = beRoom.pricing?.original ?? beRoom.basePrice ?? staticRoom.price;
-                            const discPrice = beRoom.pricing?.discounted ?? beRoom.discountedPrice ?? staticRoom.price;
-                            return {
-                                ...staticRoom,
-                                backendId: beRoom._id,
-                                price: discPrice,
-                                priceLabel: `₹${discPrice.toLocaleString()}`,
-                                originalPrice: `₹${origPrice.toLocaleString()}`,
-                                tag: beRoom.availableSeats > 0 ? staticRoom.tag : 'Sold Out',
-                            };
-                        }
-                        return staticRoom;
-                    });
-                    setRooms(mapped);
+                const [roomResult, pricingResult] = await Promise.allSettled([
+                    apiFetch<{ data?: { rooms?: RoomApiRaw[]; roomTypes?: RoomApiRaw[] } }>(API.rooms.list),
+                    apiFetch<{ data?: { pricing?: PricingConfigRaw } | PricingConfigRaw }>(API.pricing.get),
+                ]);
+
+                const roomRes = roomResult.status === "fulfilled" ? roomResult.value : null;
+                const pricingRes = pricingResult.status === "fulfilled" ? pricingResult.value : null;
+
+                const rawRooms = roomRes?.data?.rooms ?? roomRes?.data?.roomTypes ?? [];
+                const safeRooms = Array.isArray(rawRooms)
+                    ? rawRooms.map((item) => ({
+                          _id: item._id,
+                          rawName: item.name,
+                          name: item.displayName || item.name,
+                          capacity: Number(item.capacity ?? item.bedsPerRoom ?? 0),
+                          // RoomTypes: use basePrice (rack rate) as the source of truth.
+                          monthlyPrice: readNumber(
+                              item.basePrice,
+                              item.pricing?.original,
+                              item.monthlyPrice,
+                              item.price
+                          ),
+                          availableSeats: Number(item.availableSeats ?? item.availableRooms ?? 0),
+                          isActive: item.isActive !== false,
+                          features: Array.isArray(item.features) ? item.features : [],
+                      }))
+                    : [];
+
+                const rawPricing =
+                    (pricingRes?.data as { pricing?: PricingConfigRaw } | undefined)?.pricing ||
+                    (pricingRes?.data as PricingConfigRaw | undefined) ||
+                    null;
+
+                setRooms(safeRooms);
+                setPricing(normalizePricing(rawPricing));
+
+                if (roomResult.status === "rejected") {
+                    throw roomResult.reason;
                 }
-            } catch (err) {
-                console.error("Failed to fetch rooms:", err);
+
+                if (pricingResult.status === "rejected") {
+                    console.warn("step-3 pricing fallback applied:", pricingResult.reason);
+                }
+            } catch (fetchErr) {
+                console.error("step-3 fetch failed:", fetchErr);
+                setError("Unable to load room options right now. Please try again.");
+                setPricing(FALLBACK_PRICING);
+            } finally {
+                setLoading(false);
             }
         };
-        fetchRooms();
+
+        fetchData();
     }, []);
 
-    if (redirecting) {
-        return null;
-    }
+    const selectedRoom = useMemo(
+        () => rooms.find((item) => item._id === selectedRoomId) || null,
+        [rooms, selectedRoomId]
+    );
 
-    const handleSelectRoom = (room: RoomType) => {
-        if (room.tag === 'Sold Out') return;
-        updateStep3({
-            selectedRoom: {
-                id: room.id,
-                backendId: room.backendId,
-                title: room.title,
-                type: room.type,
-                price: room.price,
-                priceLabel: room.priceLabel,
-                originalPrice: room.originalPrice,
-            },
-        });
-        setError("");
-    };
+    const cost = useMemo(() => {
+        if (!selectedRoom) {
+            return {
+                roomRentMonthly: 0,
+                roomRentTotal: 0,
+                messTotal: 0,
+                transportTotal: 0,
+                totalPayable: 0,
+            };
+        }
+
+        const roomRentMonthly = selectedRoom.monthlyPrice;
+        const roomRentTotal = roomRentMonthly * pricing.tenureMonths;
+        const messTotal = includeMess
+            ? pricing.messLumpSum > 0
+                ? pricing.messLumpSum
+                : pricing.messMonthly * pricing.tenureMonths
+            : 0;
+        const transportTotal = includeTransport ? pricing.transportMonthly * pricing.tenureMonths : 0;
+
+        return {
+            roomRentMonthly,
+            roomRentTotal,
+            messTotal,
+            transportTotal,
+            totalPayable:
+                pricing.registrationFee +
+                pricing.securityDeposit +
+                roomRentTotal +
+                messTotal +
+                transportTotal,
+        };
+    }, [selectedRoom, includeMess, includeTransport, pricing]);
 
     const handleContinue = async () => {
-        if (!step3.selectedRoom) {
-            setError("Please select a room to continue");
+        if (!selectedRoomId) {
+            setError("Please select a room to continue.");
             return;
         }
 
         setSubmitting(true);
         setError("");
+
         try {
-            // Fetch backend rooms to find the matching _id
-            const backendRoomName = ROOM_TYPE_MAP[step3.selectedRoom.id] || "";
-            const roomsRes = await apiFetch<{
-                data: { roomTypes: Array<{ _id: string; name: string; availableSeats: number }> };
-            }>(PUBLIC_API.rooms.list);
+            await apiFetch(API.onboarding.room, {
+                method: "PUT",
+                body: {
+                    roomTypeId: selectedRoomId,
+                    includeMess,
+                    includeTransport,
+                },
+            });
 
-            const matchingRoom = roomsRes.data.roomTypes.find(
-                (r) => r.name === backendRoomName && r.availableSeats > 0
-            );
+            // Force a fresh user fetch before navigating to ensure step guard sees new currentStep.
+            await refreshUser({ force: true });
 
-            if (!matchingRoom) {
-                setError("Selected room type is no longer available. Please choose another.");
+            setRoom({
+                roomTypeId: selectedRoomId,
+                includeMess,
+                includeTransport,
+            });
+
+            router.replace("/user-onboarding/step-4");
+        } catch (saveErr) {
+            const message = saveErr instanceof Error ? saveErr.message : "Failed to save selection.";
+            const status =
+                typeof saveErr === "object" &&
+                saveErr !== null &&
+                "status" in saveErr &&
+                typeof (saveErr as { status?: unknown }).status === "number"
+                    ? (saveErr as { status: number }).status
+                    : undefined;
+            const currentStep = message.match(/current step:\s*([a-z_]+)/i)?.[1]?.toLowerCase();
+            const stepPathMap: Record<string, string> = {
+                compliance: "/user-onboarding/terms",
+                verification: "/verify-contact",
+                personal_details: "/user-onboarding/step-1",
+                guardian_details: "/user-onboarding/step-2",
+                room_selection: "/user-onboarding/step-3",
+                review: "/user-onboarding/step-4",
+                booking_payment: "/user-onboarding/deposit",
+                final_payment: "/user-onboarding/payment-breakdown",
+                completed: "/student/dashboard",
+            };
+            const canAutoForward =
+                currentStep === "review" ||
+                currentStep === "booking_payment" ||
+                currentStep === "final_payment" ||
+                currentStep === "completed";
+
+            // If backend has already advanced past room selection, treat this as an idempotent continue.
+            if (
+                status === 403 &&
+                /room_selection/i.test(message) &&
+                canAutoForward
+            ) {
+                setRoom({
+                    roomTypeId: selectedRoomId,
+                    includeMess,
+                    includeTransport,
+                });
+
+                if (currentStep === "booking_payment") {
+                    router.push("/user-onboarding/deposit");
+                } else if (currentStep === "final_payment" || currentStep === "completed") {
+                    router.push("/user-onboarding/payment-status");
+                } else {
+                    router.push("/user-onboarding/step-4");
+                }
                 return;
             }
 
-            // Determine messPackage and transport from add-ons
-            const hasLunch = step3.addOns.find((a) => a.id === "lunch")?.enabled;
-            const messPackage = hasLunch ? "full-board" : "partial-board";
-            const hasTransport = step3.addOns.find((a) => a.id === "transport")?.enabled;
+            if (/requires step/i.test(message) && currentStep && stepPathMap[currentStep]) {
+                router.push(stepPathMap[currentStep]);
+                return;
+            }
 
-            await apiFetch(PUBLIC_API.onboarding.step(3), {
-                method: "PATCH",
-                body: { roomTypeId: matchingRoom._id, roomTypeName: backendRoomName, messPackage, transportEnabled: !!hasTransport },
-            });
+            console.error("step-3 save failed:", saveErr);
 
-            // AUDIT FIX: Force backendId into React Context so Deposit page has it
-            updateStep3({
-                selectedRoom: {
-                    ...step3.selectedRoom,
-                    backendId: matchingRoom._id,
-                }
-            });
-
-            markStepComplete(3);
-            router.push("/user-onboarding/step-4");
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Failed to save room selection.";
-            setError(message);
+            setError(message || "Failed to save selection.");
         } finally {
             setSubmitting(false);
         }
     };
 
-    const totalCost = getTotalCost();
+    const handleBack = () => {
+        router.push("/user-onboarding/step-2");
+    };
+
+    if (loading) {
+        return (
+            <motion.div variants={containerVariants} initial={false} animate="visible" style={{ textAlign: "center", padding: "40px 20px" }}>
+                <p style={{ fontSize: "1rem", color: GREEN }}>Loading rooms...</p>
+            </motion.div>
+        );
+    }
+
+    if (!rooms.length) {
+        return (
+            <motion.div variants={containerVariants} initial={false} animate="visible" style={{ textAlign: "center", padding: "40px 20px" }}>
+                <p style={{ fontSize: "0.95rem", color: "#b91c1c", marginBottom: 16 }}>
+                    {error || "No active room options available."}
+                </p>
+                <NavButton onClick={() => window.location.reload()}>Try Again</NavButton>
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-            {/* Header */}
-            <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 8 }}>
+            <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 6 }}>
                 <StepBadge icon={Home} label="Room Selection" />
                 <StepTitle>Choose your room</StepTitle>
-                <StepSubtitle>
-                    Select the room type that best fits your lifestyle. Each room includes all amenities.
-                </StepSubtitle>
+                <StepSubtitle>Select room and optional services for your {pricing.tenureMonths}-month tenure.</StepSubtitle>
             </motion.div>
 
-            {/* Room Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
-                {rooms.map((room) => (
-                    <motion.div key={room.id} variants={itemVariants}>
-                        <SelectableRoomCard
-                            room={room}
-                            isSelected={step3.selectedRoom?.id === room.id}
-                            onSelect={() => handleSelectRoom(room)}
-                        />
-                    </motion.div>
-                ))}
-            </div>
-
             {error && (
-                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "#c0392b", textAlign: "center" }}>
-                    {error}
-                </p>
-            )}
-
-            {/* Add-on Services */}
-            {step3.selectedRoom && (
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-                    style={{ display: "flex", flexDirection: "column", gap: 16 }}
-                >
-                    <div style={{ textAlign: "center" }}>
-                        <p
-                            style={{
-                                fontFamily: "var(--font-mono, monospace)",
-                                fontSize: "0.62rem",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.25em",
-                                color: "rgba(31,58,45,0.55)",
-                                fontWeight: 700,
-                                marginBottom: 6,
-                            }}
-                        >
-                            Optional Add-ons
-                        </p>
-                        <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "rgba(31,58,45,0.5)" }}>
-                            Enhance your stay with optional services
-                        </p>
-                        <div style={{
-                            marginTop: 14,
-                            padding: "10px 14px",
-                            background: "rgba(245, 158, 11, 0.08)",
-                            border: "1px solid rgba(245, 158, 11, 0.25)",
-                            borderRadius: 8,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 8,
-                            textAlign: "left"
-                        }}>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", fontWeight: 700, color: "#92400e", letterSpacing: "0.02em", lineHeight: 1.4 }}>
-                                ONLY SELECT FOR YEARLY PAYMENT OF ADD-ONS.<br />
-                                FOR MONTHLY PAYMENTS, PLEASE USE YOUR DASHBOARD.
-                            </span>
-                        </div>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
-                        <AddOnCard
-                            icon={Bus}
-                            name="Daily Transport"
-                            price={pricingCfg.transportMonthly}
-                            description="Campus shuttle service"
-                            enabled={step3.addOns.find((a) => a.id === "transport")?.enabled ?? false}
-                            onToggle={() => toggleAddOn("transport")}
-                        />
-                        <AddOnCard
-                            icon={UtensilsCrossed}
-                            name="Mess Amount"
-                            price={pricingCfg.messMonthly}
-                            description="Daily meals per month"
-                            enabled={step3.addOns.find((a) => a.id === "lunch")?.enabled ?? false}
-                            onToggle={() => toggleAddOn("lunch")}
-                        />
-                    </div>
-                </motion.div>
-            )}
-
-            {/* Cost Summary */}
-            {step3.selectedRoom && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    variants={itemVariants}
                     style={{
-                        background: "linear-gradient(135deg, #1F3A2D 0%, #162b1e 100%)",
-                        borderRadius: 16,
-                        padding: "24px 28px",
-                        boxShadow: "0 8px 32px rgba(31,58,45,0.25)",
+                        padding: "12px 14px",
+                        borderRadius: 10,
+                        border: "1px solid #ef4444",
+                        background: "#fef2f2",
+                        color: "#b91c1c",
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontSize: "0.72rem",
+                        letterSpacing: "0.04em",
                     }}
                 >
-                    <p
+                    {error}
+                </motion.div>
+            )}
+
+            <motion.div variants={itemVariants} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
+                {rooms.map((roomEntry) => (
+                    <RoomCard
+                        key={roomEntry._id}
+                        room={roomEntry}
+                        tenureMonths={pricing.tenureMonths}
+                        selected={selectedRoomId === roomEntry._id}
+                        onSelect={() => setSelectedRoomId(roomEntry._id)}
+                    />
+                ))}
+            </motion.div>
+
+            {selectedRoom && (
+                <motion.div variants={itemVariants} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 12 }}>
+                    <AddOnCard
+                        icon={UtensilsCrossed}
+                        title="Meal Plan"
+                        description="3 meals daily"
+                        enabled={includeMess}
+                        onToggle={() => setIncludeMess((prev) => !prev)}
+                        amount={pricing.messLumpSum > 0 ? pricing.messLumpSum : pricing.messMonthly * pricing.tenureMonths}
+                        amountLabel="full tenure"
+                    />
+                    <AddOnCard
+                        icon={Bus}
+                        title="Daily Transport"
+                        description="Campus shuttle"
+                        enabled={includeTransport}
+                        onToggle={() => setIncludeTransport((prev) => !prev)}
+                        amount={pricing.transportMonthly * pricing.tenureMonths}
+                        amountLabel={`${pricing.tenureMonths} months`}
+                    />
+                </motion.div>
+            )}
+
+            {selectedRoom && (
+                <motion.div
+                    variants={itemVariants}
+                    style={{
+                        background: "linear-gradient(135deg, #1F3A2D 0%, #15281d 100%)",
+                        borderRadius: 14,
+                        padding: 20,
+                        color: "#fff",
+                    }}
+                >
+                    <h4
                         style={{
+                            margin: "0 0 14px 0",
                             fontFamily: "var(--font-mono, monospace)",
-                            fontSize: "0.6rem",
+                            fontSize: "0.62rem",
                             textTransform: "uppercase",
-                            letterSpacing: "0.25em",
-                            color: "rgba(216,181,106,0.6)",
-                            margin: 0,
-                            marginBottom: 16,
+                            letterSpacing: "0.18em",
+                            color: GOLD,
                         }}
                     >
-                        Cost Breakdown
-                    </p>
+                        Payment Summary
+                    </h4>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.75rem", color: "rgba(246,244,239,0.6)" }}>
-                                {step3.selectedRoom.title} ({step3.selectedRoom.type})
-                            </span>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.85rem", color: "rgba(246,244,239,0.9)" }}>
-                                {step3.selectedRoom.priceLabel}/mo
-                            </span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.85rem" }}>
+                        <CostItem label={`${selectedRoom.name} (${pricing.tenureMonths} months)`} amount={cost.roomRentTotal} />
+                        {includeMess && <CostItem label="Mess Fee" amount={cost.messTotal} />}
+                        {includeTransport && <CostItem label="Transport Fee" amount={cost.transportTotal} />}
+
+                        <div style={{ borderTop: "1px solid rgba(255,255,255,0.2)", marginTop: 8, paddingTop: 8 }}>
+                            <CostItem label="Registration Fee" amount={pricing.registrationFee} subtle />
+                            <CostItem label="Security Deposit" amount={pricing.securityDeposit} subtle />
                         </div>
 
-                        {step3.addOns.filter((a) => a.enabled).map((addon) => (
-                            <div key={addon.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.75rem", color: "rgba(246,244,239,0.6)" }}>
-                                    {addon.name}
-                                </span>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.85rem", color: "rgba(246,244,239,0.9)" }}>
-                                    ₹{(addon.id === 'lunch' ? pricingCfg.messMonthly : addon.price).toLocaleString()}/mo
-                                </span>
+                        <div style={{ borderTop: "1px solid rgba(255,255,255,0.2)", marginTop: 8, paddingTop: 8 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1rem", color: GOLD }}>
+                                <span>Total Payable</span>
+                                <span>₹{cost.totalPayable.toLocaleString()}</span>
                             </div>
-                        ))}
-
-                        <div style={{ height: 1, background: "rgba(246,244,239,0.15)", margin: "8px 0" }} />
-
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 500, color: "rgba(246,244,239,0.8)" }}>
-                                Monthly Total
-                            </span>
-                            <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "2rem", color: GOLD, lineHeight: 1 }}>
-                                ₹{totalCost.toLocaleString()}
-                            </span>
                         </div>
                     </div>
                 </motion.div>
             )}
 
-            {/* Navigation */}
-            <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
-                <SecondaryButton onClick={() => router.push("/user-onboarding/step-2")}>
+            <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                <SecondaryButton onClick={handleBack}>
                     <ArrowLeft size={16} /> Back
                 </SecondaryButton>
-                <NavButton onClick={handleContinue} disabled={!step3.selectedRoom || submitting || saving}>
-                    {submitting ? "Saving..." : "Continue to Review"}
-                    {!submitting && <ArrowRight size={16} />}
+                <NavButton onClick={handleContinue} disabled={!selectedRoomId || submitting}>
+                    {submitting ? (
+                        "Saving..."
+                    ) : (
+                        <>
+                            Continue to Review <ArrowRight size={16} />
+                        </>
+                    )}
                 </NavButton>
             </motion.div>
         </motion.div>
+    );
+}
+
+function RoomCard({
+    room,
+    tenureMonths,
+    selected,
+    onSelect,
+}: {
+    room: RoomData;
+    tenureMonths: number;
+    selected: boolean;
+    onSelect: () => void;
+}) {
+    const canSelect = room.isActive && room.availableSeats > 0;
+    const previewFeatures = Array.isArray(room.features) ? room.features : [];
+
+    return (
+        <motion.button
+            type="button"
+            disabled={!canSelect}
+            onClick={onSelect}
+            whileHover={canSelect ? { scale: 1.01 } : {}}
+            whileTap={canSelect ? { scale: 0.99 } : {}}
+            style={{
+                width: "100%",
+                textAlign: "left",
+                borderRadius: 14,
+                border: `2px solid ${selected ? GREEN : "rgba(31,58,45,0.1)"}`,
+                background: selected ? "#ffffff" : "rgba(255,255,255,0.8)",
+                padding: 16,
+                cursor: canSelect ? "pointer" : "not-allowed",
+                opacity: canSelect ? 1 : 0.55,
+                display: "flex",
+                gap: 12,
+                alignItems: "flex-start",
+            }}
+        >
+            <div
+                style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: "50%",
+                    border: `2px solid ${selected ? GREEN : "rgba(31,58,45,0.2)"}`,
+                    background: selected ? GREEN : "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginTop: 2,
+                    flexShrink: 0,
+                }}
+            >
+                {selected && <Check size={13} color="#fff" strokeWidth={3} />}
+            </div>
+
+            <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                    <div>
+                        <h3 style={{ margin: 0, fontSize: "1rem", color: GREEN }}>{room.rawName}</h3>
+                        <p style={{ margin: "4px 0 0 0", fontSize: "0.78rem", color: "rgba(31,58,45,0.6)" }}>
+                            {room.name} � {room.availableSeats} seats available
+                        </p>
+                    </div>
+                    {!canSelect && (
+                        <span
+                            style={{
+                                background: "#fef2f2",
+                                border: "1px solid #fecaca",
+                                color: "#b91c1c",
+                                borderRadius: 999,
+                                padding: "4px 10px",
+                                fontFamily: "var(--font-mono, monospace)",
+                                fontSize: "0.55rem",
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase",
+                            }}
+                        >
+                            Full
+                        </span>
+                    )}
+                </div>
+
+                {previewFeatures.length > 0 && (
+                    <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 6 }}>
+                        {previewFeatures.slice(0, 4).map((feature, index) => (
+                            <div key={`${room._id}-feature-${index}`} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.76rem", color: "rgba(31,58,45,0.75)" }}>
+                                <div style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN }} />
+                                <span>{feature}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div style={{ marginTop: 12, display: "flex", gap: 18 }}>
+                    <PriceTile label="Per Month" amount={room.monthlyPrice} color={GREEN} />
+                    <PriceTile label={`${tenureMonths} Months`} amount={room.monthlyPrice * tenureMonths} color={GOLD} />
+                </div>
+            </div>
+        </motion.button>
+    );
+}
+
+function AddOnCard({
+    icon: Icon,
+    title,
+    description,
+    enabled,
+    onToggle,
+    amount,
+    amountLabel,
+}: {
+    icon: React.ElementType;
+    title: string;
+    description: string;
+    enabled: boolean;
+    onToggle: () => void;
+    amount: number;
+    amountLabel: string;
+}) {
+    return (
+        <motion.button
+            type="button"
+            onClick={onToggle}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            style={{
+                borderRadius: 12,
+                border: `2px solid ${enabled ? GREEN : "rgba(31,58,45,0.12)"}`,
+                background: enabled ? "#fff" : "rgba(255,255,255,0.8)",
+                padding: 14,
+                textAlign: "left",
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+            }}
+        >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div
+                    style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        background: enabled ? GREEN : "rgba(31,58,45,0.08)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    <Icon size={18} color={enabled ? "#fff" : GREEN} />
+                </div>
+                <div
+                    style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: "50%",
+                        border: `2px solid ${enabled ? GREEN : "rgba(31,58,45,0.2)"}`,
+                        background: enabled ? GREEN : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    {enabled && <Check size={10} color="#fff" strokeWidth={3} />}
+                </div>
+            </div>
+
+            <div>
+                <h4 style={{ margin: 0, color: GREEN, fontSize: "0.9rem" }}>{title}</h4>
+                <p style={{ margin: "4px 0 0 0", fontSize: "0.76rem", color: "rgba(31,58,45,0.55)" }}>
+                    {description}
+                </p>
+            </div>
+
+            <p style={{ margin: 0, color: enabled ? GOLD : "rgba(31,58,45,0.6)", fontWeight: 700, fontSize: "0.9rem" }}>
+                ₹{amount.toLocaleString()} <span style={{ fontWeight: 500, fontSize: "0.72rem" }}>({amountLabel})</span>
+            </p>
+        </motion.button>
+    );
+}
+
+function PriceTile({ label, amount, color }: { label: string; amount: number; color: string }) {
+    return (
+        <div>
+            <p
+                style={{
+                    margin: 0,
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: "0.56rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    color: "rgba(31,58,45,0.5)",
+                }}
+            >
+                {label}
+            </p>
+            <p style={{ margin: "3px 0 0 0", fontSize: "1.05rem", fontWeight: 700, color }}>
+                ₹{amount.toLocaleString()}
+            </p>
+        </div>
+    );
+}
+
+function CostItem({ label, amount, subtle = false }: { label: string; amount: number; subtle?: boolean }) {
+    return (
+        <div style={{ display: "flex", justifyContent: "space-between", color: subtle ? "rgba(255,255,255,0.75)" : "#fff" }}>
+            <span>{label}</span>
+            <span>₹{amount.toLocaleString()}</span>
+        </div>
     );
 }

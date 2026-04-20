@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, Check } from "lucide-react";
@@ -36,6 +37,7 @@ const PERKS = [
 export default function SignUpPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -72,6 +74,10 @@ export default function SignUpPage() {
     const emailError = touched.email && email.length > 0 && !emailRegex.test(email)
         ? "Enter a valid email address" : "";
 
+    const cleanedPhone = phone.replace(/\D/g, "");
+    const phoneError = touched.phone && phone.length > 0 && cleanedPhone.length !== 10
+        ? "Enter a valid 10-digit phone number" : "";
+
     const passwordChecks = {
         minLength: password.length >= 8,
         hasUpper: /[A-Z]/.test(password),
@@ -96,8 +102,8 @@ export default function SignUpPage() {
     const confirmError = touched.confirm && confirmPassword.length > 0 && !passwordsMatch
         ? "Passwords don't match" : "";
 
-    const canSubmit = name.trim().length >= 2
-        && emailRegex.test(email)
+    const canSubmit = emailRegex.test(email)
+        && cleanedPhone.length === 10
         && passwordChecks.minLength && passwordChecks.notName && passwordChecks.notEmail
         && passwordsMatch
         && !submitting;
@@ -105,11 +111,11 @@ export default function SignUpPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // Mark all fields as touched to show any remaining errors
-        setTouched({ name: true, email: true, password: true, confirm: true });
+        setTouched({ name: true, email: true, phone: true, password: true, confirm: true });
         if (!canSubmit) {
             let msg = "";
-            if (name.trim().length < 2) msg = "Name must be at least 2 characters";
-            else if (!emailRegex.test(email)) msg = "Enter a valid email address";
+            if (!emailRegex.test(email)) msg = "Enter a valid email address";
+            else if (cleanedPhone.length !== 10) msg = "Enter a valid 10-digit phone number";
             else if (!passwordChecks.minLength) msg = "Password must be at least 8 characters";
             else if (!passwordChecks.notName) msg = "Password must not be the same as your name";
             else if (!passwordChecks.notEmail) msg = "Password must not be the same as your email";
@@ -121,9 +127,9 @@ export default function SignUpPage() {
         setError("");
         setSubmitting(true);
         try {
-            await signup(name, email, password);
-            showToast("Account created successfully! Redirecting...", "success");
-            router.push("/verify-contact");
+            await signup(email, cleanedPhone, password, name.trim());
+            showToast("Account created successfully! Please log in.", "success");
+            router.push("/login");
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
             setError(message);
@@ -170,7 +176,7 @@ export default function SignUpPage() {
                     {/* Logo + name grouped above the copy */}
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
                         <div style={{ width: 40, height: 40 }}>
-                            <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            <Image src="/logo.png" alt="Viramah Logo" width={40} height={40} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                         </div>
                         <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.4rem", color: "#F6F4EF", letterSpacing: "0.05em" }}>
                             VIRAMAH
@@ -223,7 +229,7 @@ export default function SignUpPage() {
                 {/* Mobile logo */}
                 <div className="absolute top-6 left-6 lg:hidden flex items-center gap-2">
                     <div className="w-8 h-8">
-                        <img src="/logo.png" alt="Viramah" className="w-full h-full object-contain" />
+                        <Image src="/logo.png" alt="Viramah" width={32} height={32} className="w-full h-full object-contain" />
                     </div>
                     <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.1rem", color: "#1F3A2D" }}>VIRAMAH</span>
                 </div>
@@ -296,6 +302,33 @@ export default function SignUpPage() {
                                 style={emailError ? { borderColor: "#c07a5a" } : undefined}
                             />
                             {emailError && <FieldHint text={emailError} type="error" />}
+                        </motion.div>
+
+                        {/* Phone */}
+                        <motion.div variants={itemVariants} className="flex flex-col gap-2">
+                            <AuthLabel htmlFor="signup-phone">Phone Number</AuthLabel>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                <span style={{
+                                    fontFamily: "var(--font-mono, monospace)", fontSize: "0.85rem",
+                                    color: "#1F3A2D", padding: "13px 10px",
+                                    background: "rgba(31,58,45,0.04)", border: "1.5px solid rgba(31,58,45,0.12)",
+                                    borderRadius: 10, flexShrink: 0,
+                                }}>+91</span>
+                                <AuthInput
+                                    id="signup-phone"
+                                    type="tel"
+                                    inputMode="numeric"
+                                    placeholder="9876543210"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                                    focused={focusedField === "phone"}
+                                    onFocus={() => setFocusedField("phone")}
+                                    onBlur={() => { setFocusedField(null); markTouched("phone"); }}
+                                    required
+                                    style={phoneError ? { borderColor: "#c07a5a" } : undefined}
+                                />
+                            </div>
+                            {phoneError && <FieldHint text={phoneError} type="error" />}
                         </motion.div>
 
                         {/* Password */}

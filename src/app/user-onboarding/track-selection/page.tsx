@@ -4,13 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-    CreditCard, Check, ArrowRight, Loader2, AlertCircle,
-    Zap, Sparkles, Shield,
+    CreditCard, Check, ArrowRight,
+    Zap, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { useBookingStatus } from "@/hooks/useBookingStatus";
-import { apiFetch } from "@/lib/api";
 import {
     StepBadge, StepTitle, StepSubtitle,
     containerVariants, itemVariants,
@@ -18,29 +16,6 @@ import {
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
-
-interface TrackConfig {
-    trackId: string;
-    name: string;
-    discount: number;
-    isActive: boolean;
-    phases: number;
-    description: string;
-}
-
-interface ConfigResponse {
-    data: {
-        tracks: TrackConfig[];
-        discountConfigs: Array<{ trackId: string; defaultDiscountRate: number; isActive: boolean }>;
-    };
-}
-
-interface PlanSummary {
-    _id?: string;
-    planId?: string;
-    trackId: string;
-    chosenTrackId: string | null;
-}
 
 const TRACK_DETAILS: Record<string, {
     icon: typeof CreditCard;
@@ -74,98 +49,47 @@ const TRACK_DETAILS: Record<string, {
 
 export default function TrackSelectionPage() {
     const router = useRouter();
-    const { token } = useAuth();
-    const { state } = useOnboarding();
-    const { bookingId } = state;
-    const { booking, isLoading: bookingLoading } = useBookingStatus();
+    const { user, loading: authLoading } = useAuth();
+    const { room } = useOnboarding();
 
-    // V3 Guard: Only allow access when booking is BOOKING_CONFIRMED
-    // If no bookingId or booking not confirmed, redirect to deposit flow
-    useEffect(() => {
-        if (bookingLoading) return; // Wait for status to load
-        if (!bookingId) {
-            router.replace("/user-onboarding/deposit");
-            return;
-        }
-        // Booking exists but not yet confirmed — send back to status page
-        if (booking && booking.status !== "BOOKING_CONFIRMED" && booking.status !== "FINAL_PAYMENT_PENDING") {
-            router.replace("/user-onboarding/deposit-status");
-        }
-    }, [bookingId, booking, bookingLoading, router]);
-
-    const addOns = {
-        transport: !!state.step3?.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "transport")?.enabled,
-        mess: !!state.step3?.addOns?.find((a: { id: string; enabled: boolean }) => a.id === "lunch")?.enabled,
-    };
-    const [configs, setConfigs] = useState<ConfigResponse["data"] | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
+    const [selectedTrack, setSelectedTrack] = useState<"full" | "twopart" | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
+    // Keep this route available only for final payment flow.
     useEffect(() => {
-        const fetchConfig = async () => {
-            try {
-                // Check if user already has an active plan in the DB
-                try {
-                    const planRes = await apiFetch<{ data: { plan: PlanSummary | null } }>("/api/payment/plan/me", { token });
-                    if (planRes?.data?.plan) {
-                        // User already has a persisted plan — go to breakdown (NOT /confirm, which creates loops)
-                        router.replace("/user-onboarding/payment-breakdown");
-                        return;
-                    }
-                } catch { /* No plan — continue to track selection */ }
+        if (authLoading) return;
+        if (!user) {
+            router.replace("/login");
+            return;
+        }
 
-                const res = await apiFetch<ConfigResponse>("/api/payment/config");
-                setConfigs(res.data);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to load payment configuration");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchConfig();
-    }, [token, router]);
+    // Step access restrictions removed - users can move freely through final payment flow
+    // const step = user.onboarding?.currentStep;
+    // if (step === "final_payment" || step === "completed") return;
+    //
+    // if (step === "booking_payment") {
+    //     router.replace("/user-onboarding/deposit");
+    //     return;
+    // }
+    //
+    // if (step === "review") {
+    //     router.replace("/user-onboarding/step-4");
+    //     return;
+    // }
+    // router.replace("/user-onboarding/step-3");
+    }, [authLoading, router, user]);
 
     const handleSelect = async () => {
         if (!selectedTrack) return;
         setSubmitting(true);
-        setError(null);
-
         try {
-            await apiFetch<{ data: { plan: PlanSummary } }>("/api/payment/plan/select-track", {
-                method: "POST",
-                token,
-                body: { trackId: selectedTrack, addOns, bookingId },
-            });
-            router.push("/user-onboarding/confirm");
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to select track");
-        } finally {
-            setSubmitting(false);
+            sessionStorage.setItem("viramah_payment_track", selectedTrack);
+        } catch {
+            // Non-blocking: continue even if sessionStorage is unavailable.
         }
+        router.push("/user-onboarding/payment-breakdown");
+        setSubmitting(false);
     };
-
-    const discountForTrack = (trackId: string): number => {
-        if (!configs?.discountConfigs) return trackId === "full" ? 0.40 : trackId === "twopart" ? 0.25 : 0;
-        const cfg = configs.discountConfigs.find((c) => c.trackId === trackId);
-        return cfg?.isActive ? (cfg.defaultDiscountRate || 0) : 0;
-    };
-
-    if (loading) {
-        return (
-            <motion.div
-                variants={containerVariants} initial={false} animate="visible"
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "80px 0" }}
-            >
-                <Loader2 size={32} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
-                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem", color: "rgba(31,58,45,0.5)" }}>
-                    Loading payment options...
-                </span>
-                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-            </motion.div>
-        );
-    }
 
     const tracks = [
         { id: "full",    name: "Full Payment",     phases: 1 },
@@ -181,7 +105,6 @@ export default function TrackSelectionPage() {
                 <StepSubtitle>Select how you would like to pay for your stay at Viramah.</StepSubtitle>
             </motion.div>
 
-            {/* Booking Credit Banner — explains how the ₹16,180 already paid flows into the plan */}
             <motion.div variants={itemVariants}>
                 <div style={{
                     background: "linear-gradient(135deg, rgba(31,58,45,0.05) 0%, rgba(216,181,106,0.08) 100%)",
@@ -189,52 +112,22 @@ export default function TrackSelectionPage() {
                     borderRadius: 14,
                     padding: "16px 18px",
                     display: "flex",
-                    gap: 14,
-                    alignItems: "flex-start",
+                    flexDirection: "column",
+                    gap: 8,
                 }}>
-                    <div style={{
-                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                        background: "rgba(31,58,45,0.08)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                        <Shield size={18} color={GREEN} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <p style={{
-                            fontFamily: "var(--font-mono, monospace)",
-                            fontSize: "0.58rem",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.18em",
-                            color: "rgba(31,58,45,0.5)",
-                            fontWeight: 700,
-                            margin: "0 0 6px",
-                        }}>
-                            Booking fee already received — ₹16,180
+                    <p style={{ margin: 0, fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", letterSpacing: "0.08em", color: "rgba(31,58,45,0.55)", textTransform: "uppercase" }}>
+                        Final Payment Mode
+                    </p>
+                    <p style={{ margin: 0, fontFamily: "var(--font-body, sans-serif)", fontSize: "0.84rem", color: "rgba(31,58,45,0.75)", lineHeight: 1.5 }}>
+                        Select your preferred style for final payment visibility. This choice is local to your session and does not call any legacy payment-plan endpoints.
+                    </p>
+                    {(room.includeMess || room.includeTransport) && (
+                        <p style={{ margin: 0, fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.45)" }}>
+                            Add-ons from room selection: {room.includeMess ? "Mess " : ""}{room.includeTransport ? "Transport" : ""}
                         </p>
-                        <p style={{
-                            fontFamily: "var(--font-body, sans-serif)",
-                            fontSize: "0.82rem",
-                            color: "rgba(31,58,45,0.7)",
-                            lineHeight: 1.55,
-                            margin: 0,
-                        }}>
-                            <strong style={{ color: GREEN }}>₹1,180</strong> (registration + GST) will be credited to your first installment.{" "}
-                            <strong style={{ color: GREEN }}>₹15,000</strong> (security deposit) is held as a refundable balance and is excluded from the amounts below.
-                        </p>
-                    </div>
+                    )}
                 </div>
             </motion.div>
-
-            {/* Error Banner */}
-            {error && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                    style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.25)", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}
-                >
-                    <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0 }} />
-                    <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: "#dc2626" }}>{error}</span>
-                </motion.div>
-            )}
 
             {/* Track Cards */}
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -242,7 +135,7 @@ export default function TrackSelectionPage() {
                     const details = TRACK_DETAILS[track.id];
                     const Icon = details.icon;
                     const isSelected = selectedTrack === track.id;
-                    const discount = discountForTrack(track.id);
+                    const discount = track.id === "full" ? 0.4 : 0.25;
 
                     return (
                         <motion.div
@@ -252,7 +145,7 @@ export default function TrackSelectionPage() {
                             whileTap={{ scale: 0.985 }}
                         >
                             <button
-                                onClick={() => setSelectedTrack(track.id)}
+                                onClick={() => setSelectedTrack(track.id as "full" | "twopart")}
                                 style={{
                                     width: "100%",
                                     textAlign: "left",
@@ -373,7 +266,6 @@ export default function TrackSelectionPage() {
                 >
                     {submitting ? (
                         <>
-                            <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
                             Processing...
                         </>
                     ) : (

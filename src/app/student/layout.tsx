@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { PortalNav } from "@/components/layout/PortalNav";
 import { useAuth } from "@/context/AuthContext";
 import { Bell, Menu, X } from "lucide-react";
@@ -12,12 +12,23 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { user, loading, isAuthenticated } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
-        if (!loading && !isAuthenticated) {
+        if (loading) return;
+        if (!isAuthenticated || !user) {
             router.push("/login");
+            return;
         }
-    }, [loading, isAuthenticated, router]);
+        if (user.onboarding?.currentStep !== "completed") {
+            router.replace("/user-onboarding/payment-status");
+            return;
+        }
+        if (user.roomDetails?.status !== "checked_in" && pathname !== "/student/move-in") {
+            router.replace("/student/move-in");
+            return;
+        }
+    }, [loading, isAuthenticated, user, router, pathname]);
 
     if (loading) {
         return (
@@ -181,7 +192,11 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
                 {/* Page Content */}
                 <div style={{ flex: 1, padding: "32px 28px 60px" }}>
-                    {children}
+                    {user?.roomDetails?.status === "checked_in" || pathname === "/student/move-in" ? children : (
+                        <div style={{ display: "flex", justifyContent: "center", padding: 100 }}>
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", color: "rgba(31,58,45,0.4)" }}>Redirecting...</span>
+                        </div>
+                    )}
                 </div>
             </main>
 

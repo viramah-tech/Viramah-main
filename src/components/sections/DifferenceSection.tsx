@@ -62,15 +62,6 @@ export function DifferenceSection() {
     const fissureRefs = useRef<(HTMLElement | null)[]>([]);
     const lastPointerTs = useRef(0);
 
-    // Cache inner element refs once cards mount
-    const setCardRef = useCallback((el: HTMLDivElement | null, index: number) => {
-        cardRefs.current[index] = el;
-        if (el) {
-            beforeRefs.current[index] = el.querySelector(".diff-image-before");
-            fissureRefs.current[index] = el.querySelector(".diff-fissure");
-        }
-    }, []);
-
     // ── Pointer handler (mouse + touch unified) ──
     const handlePointerMove = useCallback(
         (e: React.PointerEvent<HTMLDivElement>, index: number) => {

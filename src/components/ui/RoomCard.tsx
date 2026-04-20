@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -60,11 +60,11 @@ export function RoomCard({
         y.set(0);
     }
 
-    // Detect touch devices to disable 3D tilt (wastes GPU, looks broken on touch)
-    const [isTouchDevice, setIsTouchDevice] = useState(false);
-    useEffect(() => {
-        setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-    }, []);
+    // Detect touch devices to disable 3D tilt (lazy init reads navigator on first client render)
+    const [isTouchDevice] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    });
 
     const hasImages = images.length > 0;
 

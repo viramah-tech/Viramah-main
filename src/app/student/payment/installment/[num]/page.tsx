@@ -1,27 +1,65 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, AlertCircle, Clock, Upload, ArrowRight, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { uploadFile } from "@/lib/uploadFile";
+import { uploadPaymentProof } from "@/lib/uploadFile";
 import { useAuth } from "@/context/AuthContext";
-import { containerVariants, itemVariants, FieldLabel, FieldInput, FieldError } from "@/components/onboarding/FormComponents";
-import { DualBillDisplay } from "@/components/onboarding/DualBillDisplay";
+import { containerVariants, itemVariants, FieldLabel, FieldInput } from "@/components/onboarding/FormComponents";
 import { PAYMENT_CONFIG } from "@/config/paymentConfig";
 
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
 
+interface CurrentInstallment {
+  number: number;
+  type: string;
+  totalAmount: number;
+  amountPaid: number;
+  amountRemaining: number;
+  status: string;
+  dueDate: string | null;
+  daysRemaining: number | null;
+}
+interface HistoryPayment {
+  amount: number;
+  paidAt: string;
+  approvedAt: string;
+  paymentId: string | null;
+  status: string;
+  method: string | null;
+  utrNumber: string | null;
+}
+interface PendingPayment {
+  amount: number;
+  paidAt: string;
+}
+interface NextPaymentConfig {
+  minimumAmount: number;
+  maximumAmount: number;
+  recommendedAmounts: number[];
+}
+interface InstallmentData {
+  currentInstallment: CurrentInstallment;
+  paymentHistory: HistoryPayment[];
+  pendingPayments: PendingPayment[];
+  nextPayment: NextPaymentConfig;
+}
+interface BookingLite {
+  _id: string;
+  bookingId?: string;
+}
+
 export default function InstallmentPaymentPage() {
-  const router = useRouter();
   const params = useParams();
   const installmentNumber = params.num as string;
   const { token } = useAuth();
 
   const [bookingId, setBookingId] = useState<string | null>(null);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<InstallmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,13 +74,13 @@ export default function InstallmentPaymentPage() {
   useEffect(() => {
     const fetchInstallmentData = async () => {
       try {
-        const bookingRes = await apiFetch<{ data: any }>("/api/v1/bookings/my-booking", { token });
+        const bookingRes = await apiFetch<{ data: BookingLite }>("/api/v1/bookings/my-booking", { token });
         if (!bookingRes.data) throw new Error("No active booking found");
-        
-        const bId = bookingRes.data._id || bookingRes.data.bookingId;
+
+        const bId = bookingRes.data._id || bookingRes.data.bookingId!;
         setBookingId(bId);
 
-        const res = await apiFetch<{ data: any }>(`/api/v1/bookings/${bId}/installments/${installmentNumber}`, { token });
+        const res = await apiFetch<{ data: InstallmentData }>(`/api/v1/bookings/${bId}/installments/${installmentNumber}`, { token });
         setData(res.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load installment details");
@@ -55,9 +93,13 @@ export default function InstallmentPaymentPage() {
 
   const validate = () => {
     const num = Number(amount);
-    if (!num || num < 1000) return "Minimum payment amount is ₹1,000";
-    if (data?.nextPayment?.maximumAmount && num > data.nextPayment.maximumAmount) {
-      return `Amount cannot exceed remaining balance of ₹${data.nextPayment.maximumAmount.toLocaleString()}`;
+    const minAmount = data?.nextPayment?.minimumAmount ?? 1000;
+    const maxAmount = data?.nextPayment?.maximumAmount;
+    if (!num || num < minAmount) {
+      return `Minimum payment amount is ₹${minAmount.toLocaleString("en-IN")}`;
+    }
+    if (maxAmount && num > maxAmount) {
+      return `Amount cannot exceed remaining balance of ₹${maxAmount.toLocaleString("en-IN")}`;
     }
     if (!transactionId.trim()) return "Transaction ID is required";
     if (!receipt) return "Payment receipt is required";
@@ -76,7 +118,7 @@ export default function InstallmentPaymentPage() {
     try {
       let receiptUrl = receipt!.preview;
       if (receiptUrl.startsWith("data:")) {
-        receiptUrl = await uploadFile("receipt", receiptUrl, receipt!.name);
+        receiptUrl = await uploadPaymentProof(receiptUrl, receipt!.name);
       }
 
       await apiFetch(`/api/v1/bookings/${bookingId}/installments/${installmentNumber}/pay`, {
@@ -148,8 +190,8 @@ export default function InstallmentPaymentPage() {
         <div style={{ height: 8, background: "rgba(31,58,45,0.05)", borderRadius: 4, overflow: "hidden", marginBottom: 12, position: "relative" }}>
            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(inst.amountPaid / inst.totalAmount) * 100}%`, background: GREEN, borderRadius: 4 }} />
            {/* Pending payments progress (ghosted) */}
-           {data.pendingPayments.map((p: any, idx: number) => {
-              const previousTotal = inst.amountPaid + data.pendingPayments.slice(0, idx).reduce((sum: number, x: any) => sum + x.amount, 0);
+           {data.pendingPayments.map((p, idx) => {
+              const previousTotal = inst.amountPaid + data.pendingPayments.slice(0, idx).reduce((sum, x) => sum + x.amount, 0);
               return (
                  <div key={idx} style={{ position: "absolute", left: `${(previousTotal / inst.totalAmount) * 100}%`, top: 0, bottom: 0, width: `${(p.amount / inst.totalAmount) * 100}%`, background: GOLD, opacity: 0.6 }} />
               );
@@ -177,7 +219,7 @@ export default function InstallmentPaymentPage() {
         <motion.div variants={itemVariants} style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.08)", padding: 24, marginBottom: 24 }}>
           <h3 style={{ margin: "0 0 16px 0", color: GREEN, fontSize: "1rem" }}>Past Payments for this Installment</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {data.paymentHistory.map((p: any, i: number) => (
+            {data.paymentHistory.map((p, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "rgba(31,58,45,0.03)", borderRadius: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <CheckCircle2 color="#16a34a" size={18} />
@@ -189,7 +231,7 @@ export default function InstallmentPaymentPage() {
                 <div style={{ fontSize: "0.8rem", color: "#16a34a", fontWeight: 600, background: "rgba(22,163,74,0.1)", padding: "4px 8px", borderRadius: 12 }}>Approved</div>
               </div>
             ))}
-            {data.pendingPayments.map((p: any, i: number) => (
+            {data.pendingPayments.map((p, i) => (
               <div key={`pending-${i}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "rgba(216,181,106,0.05)", borderRadius: 8, border: "1px dashed rgba(216,181,106,0.3)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <Clock color={GOLD} size={18} />
@@ -224,7 +266,7 @@ export default function InstallmentPaymentPage() {
               {/* Quick Select Chips */}
               {data.nextPayment.recommendedAmounts.length > 0 && (
                 <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                  {data.nextPayment.recommendedAmounts.map((rec: number, idx: number) => (
+                  {data.nextPayment.recommendedAmounts.map((rec, idx) => (
                     <button 
                       key={idx}
                       onClick={() => setAmount(rec.toString())}
@@ -246,7 +288,7 @@ export default function InstallmentPaymentPage() {
             <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: 16, border: "1px dashed rgba(31,58,45,0.1)" }}>
                <p style={{ fontSize: "0.85rem", fontWeight: 600, color: GREEN, margin: "0 0 12px 0" }}>Transfer to Viramah UPI:</p>
                <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                 <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="QR Code" style={{ width: 80, height: 80, borderRadius: 8 }} />
+                <Image src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="QR Code" width={80} height={80} style={{ borderRadius: 8 }} />
                  <div>
                     <div style={{ fontSize: "0.85rem", color: "rgba(31,58,45,0.6)" }}>UPI ID:</div>
                     <div style={{ fontSize: "1rem", color: GREEN, fontWeight: 700 }}>{PAYMENT_CONFIG.BANK_DETAILS.upiId}</div>
@@ -270,7 +312,7 @@ export default function InstallmentPaymentPage() {
               <FieldLabel>Payment Screenshot</FieldLabel>
               {receipt ? (
                 <div style={{ position: "relative", width: "fit-content" }}>
-                  <img src={receipt.preview} alt="Receipt" style={{ height: 100, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)" }} />
+                  <Image src={receipt.preview} alt="Receipt" width={160} height={100} unoptimized style={{ height: 100, width: "auto", borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)" }} />
                   <button onClick={() => setReceipt(null)} style={{ position: "absolute", top: -8, right: -8, background: "#dc2626", color: "#fff", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <X size={14} />
                   </button>

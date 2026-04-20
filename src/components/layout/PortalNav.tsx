@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -14,7 +15,6 @@ import {
     User,
     Wrench
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
 const GREEN = "#1F3A2D";
@@ -69,7 +69,7 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
             <div style={{ padding: "24px 20px", borderBottom: "1px solid rgba(31,58,45,0.07)" }}>
                 <Link href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
                     <div style={{ width: 38, height: 38, flexShrink: 0 }}>
-                        <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                        <Image src="/logo.png" alt="Viramah Logo" width={38} height={38} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                     </div>
                     <div>
                         <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.1rem", color: GREEN, display: "block", letterSpacing: "0.05em" }}>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Shield, Info } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { V1_API } from "@/lib/apiEndpoints";
+import { API } from "@/lib/apiEndpoints";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,17 +108,21 @@ export const DualBillDisplay: React.FC<DualBillProps> = ({ bookingId, bookingDat
     let active = true;
 
     if (!bookingId) {
-      if (initialData) setData(initialData);
-      return;
+      const initialDataTimer = setTimeout(() => {
+        if (active && initialData) setData(initialData);
+      }, 0);
+
+      return () => {
+        active = false;
+        clearTimeout(initialDataTimer);
+      };
     }
 
     const fetchLiveBills = async () => {
       setLoading(true);
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
         const res = await apiFetch<{ data: { bookingBill?: unknown; projectedFinalBill?: unknown } }>(
-          V1_API.bookings.bills(bookingId),
-          { token }
+          API.payment.status
         );
         if (active) {
           if (res.data) {
@@ -137,9 +141,14 @@ export const DualBillDisplay: React.FC<DualBillProps> = ({ bookingId, bookingDat
       }
     };
 
-    fetchLiveBills();
+    const initialFetchTimer = setTimeout(() => {
+      void fetchLiveBills();
+    }, 0);
 
-    return () => { active = false; };
+    return () => {
+      active = false;
+      clearTimeout(initialFetchTimer);
+    };
   }, [bookingId, initialData]);
 
   if (loading && !data) {
@@ -240,7 +249,7 @@ export const DualBillDisplay: React.FC<DualBillProps> = ({ bookingId, bookingDat
             Projected Final Bill (Full Tenure)
           </h3>
           <p style={{ margin: "0 0 20px 0", fontSize: "0.85rem", color: "rgba(31,58,45,0.6)" }}>
-            <i>This is an estimate. You will choose your payment track (Full Tenure / Half Yearly) after room confirmation.</i>
+            <i>This is an estimate. You will choose your payment track (Full Tenure / 60% Payment) after room confirmation.</i>
           </p>
 
           {/* Room Rent */}

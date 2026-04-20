@@ -4,7 +4,9 @@ import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Shield, FileText, Lock, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiPut } from "@/lib/api";
+import { API } from "@/lib/apiEndpoints";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/Toast";
 import {
     StepBadge, StepTitle, StepSubtitle, FormCard,
@@ -146,6 +148,7 @@ function ConsentCheckbox({
 export default function TermsAndConditionsPage() {
     const router     = useRouter();
     const { showToast } = useToast();
+    const { refreshUser } = useAuth();
 
     const [termsChecked,   setTermsChecked]   = useState(false);
     const [privacyChecked, setPrivacyChecked] = useState(false);
@@ -157,16 +160,16 @@ export default function TermsAndConditionsPage() {
         if (!bothChecked || submitting) return;
         setSubmitting(true);
         try {
-            await apiFetch("/api/public/auth/accept-terms", {
-                method: "POST",
-                body: { termsVersion: TERMS_VERSION, privacyPolicyVersion: PRIVACY_VERSION },
-            });
-            // Store acceptance in localStorage for UX (source of truth is backend)
-            localStorage.setItem("viramah_terms", JSON.stringify({
+            await apiPut(API.onboarding.compliance, {
                 termsAccepted: true,
-                acceptedAt: new Date().toISOString(),
-            }));
+                privacyPolicyAccepted: true,
+                termsVersion: TERMS_VERSION,
+                privacyVersion: PRIVACY_VERSION,
+            });
+            // Force a fresh read so context sees the updated step.
+            await refreshUser({ force: true });
             showToast("Terms accepted. Welcome to Viramah!", "success");
+            // Navigate to personal details (backend already skips verification step)
             router.push("/user-onboarding/step-1");
         } catch (err) {
             const msg = err instanceof Error ? err.message : "Failed to record acceptance. Please try again.";
@@ -298,7 +301,7 @@ function TermsContent() {
             </Section>
 
             <Section title="2. Eligibility">
-                You must be at least 18 years old to register. By registering you confirm you meet this requirement and that all information provided is accurate.
+                You must be at least 14 years old to register. By registering you confirm you meet this requirement and that all information provided is accurate.
             </Section>
 
             <Section title="3. Booking & Deposit Policy">
@@ -391,7 +394,7 @@ function PrivacyContent() {
             </Section>
 
             <Section title="8. Children's Privacy">
-                Our service is not directed to persons under 18. We do not knowingly collect data from minors.
+                Our service is not directed to persons under 14. We do not knowingly collect data from minors.
             </Section>
 
             <Section title="9. Changes to This Policy">

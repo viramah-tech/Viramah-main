@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, AlertCircle, Calendar, Star, Info } from "lucide-react";
+import { ArrowRight, CheckCircle2, AlertCircle, Calendar, Star } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { containerVariants, itemVariants } from "@/components/onboarding/FormComponents";
@@ -11,11 +11,44 @@ import { containerVariants, itemVariants } from "@/components/onboarding/FormCom
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
 
+interface RoomRentView {
+  baseMonthly: number;
+}
+interface InstallmentView {
+  totalAmount: number;
+  dueDate?: string | null;
+}
+interface TrackView {
+  roomRent: RoomRentView;
+  totalAfterDeductions: number;
+  discountPercent: number;
+}
+interface ProjectedFinalBill {
+  fullTenure: TrackView;
+  halfYearly: {
+    firstInstallment:  InstallmentView;
+    secondInstallment: InstallmentView;
+  };
+}
+interface BookingDoc {
+  _id: string;
+  status: string;
+  displayBills?: { projectedFinalBill?: ProjectedFinalBill };
+  financials?: {
+    totalPaid?: number;
+    bookingPaidBreakdown?: {
+      registrationPaid: number;
+      securityPaid:     number;
+      roomRentAdvance:  number;
+    };
+  };
+}
+
 export default function TrackSelectionPage() {
   const router = useRouter();
   const { token } = useAuth();
-  
-  const [booking, setBooking] = useState<any>(null);
+
+  const [booking, setBooking] = useState<BookingDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,15 +57,13 @@ export default function TrackSelectionPage() {
   useEffect(() => {
     const fetchBooking = async () => {
       try {
-        const res = await apiFetch<{ data: any }>("/api/v1/bookings/my-booking", { token });
+        const res = await apiFetch<{ data: BookingDoc }>("/api/v1/bookings/my-booking", { token });
         if (!res.data) throw new Error("No active booking found");
-        
-        // Ensure dual bills exist
+
         if (!res.data.displayBills?.projectedFinalBill) {
           throw new Error("Billing data not available");
         }
-        
-        // If track is already selected, redirect
+
         if (["TRACK_SELECTED", "PARTIALLY_PAID", "FULLY_PAID"].includes(res.data.status)) {
           router.replace("/student/payment/installment/1");
           return;
@@ -53,7 +84,7 @@ export default function TrackSelectionPage() {
   };
 
   const handleConfirm = async () => {
-    if (!selectedTrack) return;
+    if (!selectedTrack || !booking) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -82,7 +113,10 @@ export default function TrackSelectionPage() {
     );
   }
 
-  const { fullTenure, halfYearly } = booking.displayBills.projectedFinalBill;
+  const { fullTenure, halfYearly } = booking.displayBills!.projectedFinalBill!;
+  const bk = booking.financials?.bookingPaidBreakdown;
+  const rentCreditPaid = (bk?.securityPaid ?? 0) + (bk?.roomRentAdvance ?? 0);
+  const fmt = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ maxWidth: 800, margin: "0 auto", padding: "40px 20px" }}>
@@ -140,10 +174,12 @@ export default function TrackSelectionPage() {
               <CheckCircle2 size={16} color={GREEN} style={{ marginTop: 2, flexShrink: 0 }} />
               No further rent payments for 11 months
             </li>
-            <li style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "0.9rem", color: "rgba(31,58,45,0.7)" }}>
-              <CheckCircle2 size={16} color={GREEN} style={{ marginTop: 2, flexShrink: 0 }} />
-              Includes -₹15,000 Security Deposit Credit
-            </li>
+            {rentCreditPaid > 0 && (
+              <li style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "0.9rem", color: "rgba(31,58,45,0.7)" }}>
+                <CheckCircle2 size={16} color={GREEN} style={{ marginTop: 2, flexShrink: 0 }} />
+                Includes -{fmt(rentCreditPaid)} from your booking payment
+              </li>
+            )}
           </ul>
         </motion.div>
 

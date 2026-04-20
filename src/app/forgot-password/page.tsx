@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
@@ -224,7 +225,7 @@ export default function ForgotPasswordPage() {
                 >
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
                         <div style={{ width: 40, height: 40 }}>
-                            <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            <Image src="/logo.png" alt="Viramah Logo" width={40} height={40} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                         </div>
                         <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.4rem", color: "#F6F4EF", letterSpacing: "0.05em" }}>
                             VIRAMAH
@@ -297,7 +298,7 @@ export default function ForgotPasswordPage() {
                         {/* Logo visible only on mobile (desktop has left panel) */}
                         <div className="flex lg:hidden items-center gap-3 mb-8">
                             <div className="w-8 h-8">
-                                <img src="/logo.png" alt="Viramah Logo" className="w-full h-full object-contain" />
+                                <Image src="/logo.png" alt="Viramah Logo" width={32} height={32} className="w-full h-full object-contain" />
                             </div>
                             <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1.15rem", color: "#1F3A2D", letterSpacing: "0.08em" }}>
                                 VIRAMAH

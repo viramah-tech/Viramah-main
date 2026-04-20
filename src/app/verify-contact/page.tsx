@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Phone, Check, ArrowRight, Shield, RefreshCw, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -174,28 +175,38 @@ export default function VerifyContactPage() {
     // ── Fetch initial verification status ────────────────────────
     const fetchStatus = useCallback(async () => {
         try {
-            const res = await apiFetch<{ data: {
-                email: { address: string; verified: boolean; verifiedAt: string | null };
-                phone: { number: string | null; hasPhone: boolean; verified: boolean; verifiedAt: string | null };
-                allVerified: boolean;
-            }}>("/api/public/verification/status");
-
-            const d = res.data;
-            setEmailState(prev => ({
-                ...prev, verified: d.email.verified, verifiedAt: d.email.verifiedAt, masked: d.email.address,
-            }));
-            if (d.phone.hasPhone && d.phone.number) {
-                setExistingPhone(d.phone.number);
+            // Check user's current verification status from auth context
+            if (user?.verification?.emailVerified) {
+                setEmailState(prev => ({
+                    ...prev, verified: true, masked: user.basicInfo.email,
+                }));
+            }
+            if (user?.basicInfo?.phone) {
+                setExistingPhone(user.basicInfo.phone);
                 setPhoneSaved(true);
             }
         } catch {
             // Non-critical
         }
-    }, []);
+    }, [user]);
 
     useEffect(() => {
-        if (isAuthenticated) fetchStatus();
+        if (!isAuthenticated) return;
+        const timer = setTimeout(() => {
+            void fetchStatus();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [isAuthenticated, fetchStatus]);
+
+    // ── Auto-redirect if both email & phone are already done ─────
+    useEffect(() => {
+        if (loading || !isAuthenticated || !user) return;
+        const emailDone = !!user.verification?.emailVerified;
+        const phoneDone = !!user.basicInfo?.phone;
+        if (emailDone && phoneDone) {
+            router.replace("/user-onboarding/terms");
+        }
+    }, [loading, isAuthenticated, user, router]);
 
     // ── Cooldown timer ───────────────────────────────────────────
     useEffect(() => {
@@ -208,16 +219,16 @@ export default function VerifyContactPage() {
     const handleSendEmailOtp = async () => {
         setEmailState(p => ({ ...p, loading: true, error: "", success: "" }));
         try {
-            const res = await apiFetch<{ message: string; data: { maskedEmail: string; expiresIn: number } }>(
-                "/api/public/verification/email/send",
+            const res = await apiFetch<{ message: string; data: { email: string } }>(
+                "/api/verify/send-otp",
                 { method: "POST" }
             );
             setEmailState(p => ({
                 ...p, loading: false, otpSent: true, cooldown: 60,
-                masked: res.data.maskedEmail, success: res.message,
+                masked: res.data.email, success: "OTP sent to your email",
             }));
             setEmailOtp("");
-            showToast(res.message, "success");
+            showToast("OTP sent to your email", "success");
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : "Failed to send code";
             setEmailState(p => ({ ...p, loading: false, error: msg }));
@@ -230,7 +241,7 @@ export default function VerifyContactPage() {
         if (emailOtp.length !== 6) return;
         setEmailState(p => ({ ...p, loading: true, error: "", success: "" }));
         try {
-            await apiFetch("/api/public/verification/email/verify", {
+            await apiFetch("/api/verify/verify-otp", {
                 method: "POST", body: { otp: emailOtp },
             });
             setEmailState(p => ({
@@ -255,13 +266,11 @@ export default function VerifyContactPage() {
         }
         setPhoneSaving(true);
         try {
-            // Use the phone send endpoint to save the phone number to the user profile
-            // The OTP won't be verified, but the number gets stored
-            await apiFetch("/api/public/verification/phone/send", {
-                method: "POST", body: { phone: cleaned },
+            await apiFetch("/api/onboarding/phone", {
+                method: "PUT", body: { phone: cleaned },
             });
             setPhoneSaved(true);
-            setExistingPhone(`******${cleaned.slice(-4)}`);
+            setExistingPhone(`+91-${cleaned.slice(-10)}`);
             showToast("Phone number saved successfully", "success");
             await refreshUser();
         } catch (err: unknown) {
@@ -305,7 +314,7 @@ export default function VerifyContactPage() {
                     </Link>
                     <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
                         <div style={{ width: 32, height: 32 }}>
-                            <img src="/logo.png" alt="Viramah Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            <Image src="/logo.png" alt="Viramah Logo" width={32} height={32} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                         </div>
                         <span style={{ fontFamily: "var(--font-display, serif)", fontSize: "1rem", color: BRAND_GREEN, letterSpacing: "0.05em" }} className="hidden sm:block">
                             VIRAMAH

@@ -27,7 +27,7 @@ interface BackendRoomType {
 async function fetchRooms(): Promise<RoomType[]> {
     const base = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:5000";
     try {
-        const res = await fetch(`${base}/api/public/rooms`, { next: { revalidate: 60 } });
+        const res = await fetch(`${base}/api/rooms`, { next: { revalidate: 60 } });
         if (!res.ok) return STATIC_ROOMS;
         const json = (await res.json()) as { data?: { roomTypes?: BackendRoomType[] } };
         const beRooms = json?.data?.roomTypes;

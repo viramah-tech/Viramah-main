@@ -1,11 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, Upload, ArrowRight, UtensilsCrossed, Bus, CheckCircle2, Phone, X } from "lucide-react";
+import { AlertCircle, Upload, ArrowRight, UtensilsCrossed, Bus, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { uploadFile } from "@/lib/uploadFile";
+import { uploadPaymentProof } from "@/lib/uploadFile";
 import { useAuth } from "@/context/AuthContext";
 import { containerVariants, itemVariants, FieldLabel, FieldInput } from "@/components/onboarding/FormComponents";
 import { PAYMENT_CONFIG } from "@/config/paymentConfig";
@@ -13,11 +13,32 @@ import { PAYMENT_CONFIG } from "@/config/paymentConfig";
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
 
+interface ServiceItem {
+  service: string;
+  label: string;
+  totalAmount: number;
+  amountDue: number;
+  status: string;
+}
+
+interface BookingLookupResponse {
+  data?: {
+    _id?: string;
+    bookingId?: string;
+  };
+}
+
+interface ServicesResponse {
+  data: {
+    availableServices: ServiceItem[];
+  };
+}
+
 export default function ServicePaymentsPage() {
   const { token } = useAuth();
 
   const [bookingId, setBookingId] = useState<string | null>(null);
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,13 +54,14 @@ export default function ServicePaymentsPage() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const bookingRes = await apiFetch<{ data: any }>("/api/v1/bookings/my-booking", { token });
+        const bookingRes = await apiFetch<BookingLookupResponse>("/api/v1/bookings/my-booking", { token });
         if (!bookingRes.data) throw new Error("No active booking found");
         
         const bId = bookingRes.data._id || bookingRes.data.bookingId;
+        if (!bId) throw new Error("Booking id not found");
         setBookingId(bId);
 
-        const res = await apiFetch<{ data: { availableServices: any[] } }>(`/api/v1/bookings/${bId}/services`, { token });
+        const res = await apiFetch<ServicesResponse>(`/api/v1/bookings/${bId}/services`, { token });
         setServices(res.data.availableServices || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load services");
@@ -75,7 +97,7 @@ export default function ServicePaymentsPage() {
     try {
       let receiptUrl = receipt!.preview;
       if (receiptUrl.startsWith("data:")) {
-        receiptUrl = await uploadFile("receipt", receiptUrl, receipt!.name);
+        receiptUrl = await uploadPaymentProof(receiptUrl, receipt!.name);
       }
 
       await apiFetch(`/api/v1/bookings/${bookingId}/services/${selectedService}/pay`, {
@@ -95,7 +117,7 @@ export default function ServicePaymentsPage() {
       setReceipt(null);
       
       // Reload silently
-      const res = await apiFetch<{ data: { availableServices: any[] } }>(`/api/v1/bookings/${bookingId}/services`, { token });
+      const res = await apiFetch<ServicesResponse>(`/api/v1/bookings/${bookingId}/services`, { token });
       setServices(res.data.availableServices);
     } catch (err) {
       setValidationError(err instanceof Error ? err.message : "Submission failed");
@@ -215,7 +237,7 @@ export default function ServicePaymentsPage() {
                   <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: 16, border: "1px dashed rgba(31,58,45,0.1)" }}>
                      <p style={{ fontSize: "0.85rem", fontWeight: 600, color: GREEN, margin: "0 0 12px 0" }}>Transfer via UPI:</p>
                      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                       <img src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="QR" style={{ width: 80, height: 80, borderRadius: 8 }} />
+                      <Image src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="QR" width={80} height={80} style={{ borderRadius: 8 }} />
                        <div>
                           <div style={{ fontSize: "0.85rem", color: "rgba(31,58,45,0.6)" }}>UPI ID:</div>
                           <div style={{ fontSize: "1rem", color: GREEN, fontWeight: 700 }}>{PAYMENT_CONFIG.BANK_DETAILS.upiId}</div>
@@ -237,7 +259,7 @@ export default function ServicePaymentsPage() {
                     <FieldLabel>Payment Screenshot</FieldLabel>
                     {receipt ? (
                       <div style={{ position: "relative", width: "fit-content" }}>
-                        <img src={receipt.preview} alt="Receipt" style={{ height: 100, borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)" }} />
+                        <Image src={receipt.preview} alt="Receipt" width={160} height={100} unoptimized style={{ height: 100, width: "auto", borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)" }} />
                         <button onClick={() => setReceipt(null)} style={{ position: "absolute", top: -8, right: -8, background: "#dc2626", color: "#fff", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", display: "flex", alignItems: "center", justifyItems: "center" }}>
                            <X size={14} style={{ margin: "auto" }}/>
                         </button>

@@ -394,27 +394,36 @@ export function EnquiryModal() {
 
     // Lock body scroll when open
     useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = "hidden";
-            // Reset state if opened fresh
-            if (isSubmitted) {
+        if (!isOpen) {
+            document.body.style.overflow = "";
+            return;
+        }
+
+        document.body.style.overflow = "hidden";
+
+        // Defer reset to avoid synchronous state updates in effect.
+        const resetTimer = isSubmitted
+            ? setTimeout(() => {
                 setIsSubmitted(false);
                 setForm(INITIAL_FORM);
-            }
-            const t = setTimeout(() => firstInputRef.current?.focus(), 600);
-            return () => clearTimeout(t);
-        } else {
+            }, 0)
+            : null;
+
+        const focusTimer = setTimeout(() => firstInputRef.current?.focus(), 600);
+        return () => {
+            if (resetTimer) clearTimeout(resetTimer);
+            clearTimeout(focusTimer);
             document.body.style.overflow = "";
-        }
+        };
     }, [isOpen, isSubmitted]);
 
     const searchParams = useSearchParams();
 
     // Auto-open if ?enquire=true is in the URL
     useEffect(() => {
-        if (searchParams.get("enquire") === "true") {
-            setIsOpen(true);
-        }
+        if (searchParams.get("enquire") !== "true") return;
+        const timer = setTimeout(() => setIsOpen(true), 0);
+        return () => clearTimeout(timer);
     }, [searchParams]);
 
     // Global open trigger + Escape key

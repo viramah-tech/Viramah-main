@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  Shield, Tag, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp, ArrowRight,
+  Tag, Clock, CheckCircle, AlertTriangle, ArrowRight,
 } from "lucide-react";
 
 const GREEN = "#1F3A2D";
@@ -41,12 +40,17 @@ function calcRoom(baseMonthly: number, mode: "full" | "half") {
   const discountedBase = Math.round(baseMonthly * (1 - discountRate));
   const gst = Math.round(discountedBase * GST_RATE);
   const monthlyTotal = discountedBase + gst;
-  const months1 = mode === "full" ? TENURE_MONTHS : INST1_MONTHS;
-  const months2 = mode === "full" ? 0 : INST2_MONTHS;
-  const roomRent1 = monthlyTotal * months1;
-  const inst1 = roomRent1 + SECURITY_DEPOSIT + REGISTRATION_FEE;
-  const inst2 = monthlyTotal * months2;
-  return { discountedBase, gst, monthlyTotal, roomRent1, inst1, inst2, discountRate };
+  const totalRoomRent = monthlyTotal * TENURE_MONTHS;
+  if (mode === "full") {
+    const roomRent1 = totalRoomRent;
+    const inst1 = roomRent1 + SECURITY_DEPOSIT + REGISTRATION_FEE;
+    return { discountedBase, gst, monthlyTotal, roomRent1, inst1, inst2: 0, discountRate };
+  } else {
+    const roomRent1 = Math.round(totalRoomRent * 0.60);
+    const inst1 = roomRent1 + SECURITY_DEPOSIT + REGISTRATION_FEE;
+    const inst2 = totalRoomRent - roomRent1;
+    return { discountedBase, gst, monthlyTotal, roomRent1, inst1, inst2, discountRate };
+  }
 }
 
 // ── Room Pricing Column ────────────────────────────────────────────────────────
@@ -75,13 +79,13 @@ function RoomColumn({ room }: { room: typeof ROOM_TYPES[0] }) {
         {/* Half Yearly */}
         <div>
           <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.15em", color: GOLD, fontWeight: 700, marginBottom: 6 }}>
-            Half Yearly — 25% off
+            60% Payment — 25% off
           </div>
           {[
             ["Discounted rent", inr(half.discountedBase) + "/mo"],
             ["GST (12%)", "+" + inr(half.gst) + "/mo"],
             ["Monthly total", inr(half.monthlyTotal) + "/mo"],
-            ["Installment 1 (6 mo)", inr(half.roomRent1)],
+            ["First Payment (60%)", inr(half.roomRent1)],
             ["+ Security deposit", inr(SECURITY_DEPOSIT)],
             ["+ Admin fee", inr(REGISTRATION_FEE)],
           ].map(([l, v]) => (
@@ -91,11 +95,11 @@ function RoomColumn({ room }: { room: typeof ROOM_TYPES[0] }) {
             </div>
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", margin: "6px 0 2px", padding: "6px 0", background: "rgba(31,58,45,0.04)", borderRadius: 8, paddingLeft: 8, paddingRight: 8 }}>
-            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", fontWeight: 700, color: GREEN }}>Inst. 1 Total</span>
+            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", fontWeight: 700, color: GREEN }}>60% Payment Total</span>
             <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", fontWeight: 700, color: GREEN }}>{inr(half.inst1)}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", padding: "2px 0" }}>
-            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.5)" }}>Inst. 2 (5 mo, later)</span>
+            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.5)" }}>Remaining (40%, later)</span>
             <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(31,58,45,0.65)" }}>{inr(half.inst2)}</span>
           </div>
         </div>
@@ -127,7 +131,7 @@ function RoomColumn({ room }: { room: typeof ROOM_TYPES[0] }) {
 
           <div style={{ marginTop: 6, padding: "6px 8px", background: "rgba(216,181,106,0.1)", borderRadius: 8, display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "#92400e" }}>
-              ✨ Full pay saves {inr(Math.abs(savings))} vs half yearly
+              ✨ Full pay saves {inr(Math.abs(savings))} vs 60% plan
             </span>
           </div>
         </div>
@@ -150,11 +154,11 @@ function WorkedExample() {
         ["Discounted rent", inr(calc.discountedBase)],
         ["GST (12%)", `+${inr(calc.gst)}`],
         ["Monthly total", inr(calc.monthlyTotal)],
-        ["× 6 months", inr(calc.roomRent1)],
+        ["60% of room rent", inr(calc.roomRent1)],
         ["+ Security deposit", inr(SECURITY_DEPOSIT)],
         ["+ Admin fee", inr(REGISTRATION_FEE)],
         ["Installment 1", inr(calc.inst1)],
-        ["Installment 2 (5 mo)", inr(calc.inst2)],
+        ["Remaining (40%)", inr(calc.inst2)],
       ]
     : [
         ["Base rent", inr(room.baseMonthly)],
@@ -177,7 +181,7 @@ function WorkedExample() {
         {(["half", "full"] as const).map((m) => (
           <button key={m} onClick={() => setMode(m)}
             style={{ padding: "6px 16px", borderRadius: 8, border: `1.5px solid ${mode === m ? GOLD : "rgba(216,181,106,0.2)"}`, background: mode === m ? "rgba(216,181,106,0.12)" : "transparent", color: mode === m ? GOLD : "rgba(216,181,106,0.4)", fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", cursor: "pointer", transition: "all 0.2s" }}>
-            {m === "half" ? "Half Yearly" : "Full Tenure"}
+            {m === "half" ? "60% Payment" : "Full Tenure"}
           </button>
         ))}
       </div>
@@ -343,7 +347,7 @@ export default function TermsAndPricingPage() {
                 "No refund after 7 days — the deposit is forfeited.",
                 "You have 21 days from deposit approval to complete your full payment.",
                 "After 21 days without payment, your room is released to the next applicant.",
-                "Payment mode (Full / Half Yearly) is selected at deposit time and cannot be changed.",
+                "Payment mode (Full / 60% Payment) is selected at deposit time and cannot be changed.",
               ].map((line, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 7 }}>
                   <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#b45309", flexShrink: 0, marginTop: 7 }} />

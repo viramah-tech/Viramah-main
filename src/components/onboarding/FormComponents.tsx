@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { Upload, X, Camera, Trash2, Loader2 } from "lucide-react";
 import type { UploadedFile } from "@/context/OnboardingContext";
 
@@ -198,7 +199,14 @@ export function PhotoUpload({
                         border: `2px solid ${GREEN}`,
                     }}
                 >
-                    <img src={file.preview} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <Image
+                        src={file.preview}
+                        alt={label}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 768px) 100vw, 420px"
+                        style={{ objectFit: "cover" }}
+                    />
                     <button
                         onClick={handleRemove}
                         disabled={deleting}
@@ -342,18 +350,20 @@ export function AvatarUpload({
                         style={{
                             width: 130,
                             height: 130,
+                            position: "relative",
                             borderRadius: "50%",
                             overflow: "hidden",
                             border: `3px solid ${GREEN}`,
                             boxShadow: "0 6px 24px rgba(31,58,45,0.15)",
                         }}
                     >
-                        <img
+                        <Image
                             src={file.preview}
                             alt={label}
+                            fill
+                            unoptimized
+                            sizes="130px"
                             style={{
-                                width: "100%",
-                                height: "100%",
                                 objectFit: "cover",
                                 display: "block",
                             }}
