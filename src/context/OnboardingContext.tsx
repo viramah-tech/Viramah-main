@@ -170,9 +170,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     // Re-hydrate form state once the user object loads (it's null during auth init).
     useEffect(() => {
         if (user && !seeded) {
+            // Hydrate local editable form state from auth user once on load.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setPersonalState(seedPersonal(user));
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setGuardianState(seedGuardian(user));
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setRoomState(seedRoom(user));
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setSeeded(true);
         }
     }, [user, seeded]);
