@@ -24,10 +24,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             router.replace("/user-onboarding/payment-status");
             return;
         }
-        if (user.roomDetails?.status !== "checked_in" && pathname !== "/student/move-in") {
-            router.replace("/student/move-in");
-            return;
-        }
+        // Allow users to navigate freely in the dashboard once onboarding is completed
+        // even if they haven't completed the move-in checklist yet.
     }, [loading, isAuthenticated, user, router, pathname]);
 
     if (loading) {
@@ -192,11 +190,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
                 {/* Page Content */}
                 <div style={{ flex: 1, padding: "32px 28px 60px" }}>
-                    {user?.roomDetails?.status === "checked_in" || pathname === "/student/move-in" ? children : (
-                        <div style={{ display: "flex", justifyContent: "center", padding: 100 }}>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", color: "rgba(31,58,45,0.4)" }}>Redirecting...</span>
-                        </div>
-                    )}
+                    {children}
                 </div>
             </main>
 

@@ -376,7 +376,7 @@ export function HeroSection() {
                     <div className="hero-ribbon-content">
                         {[...Array(10)].map((_, i) => (
                             <div key={i} className="hero-ribbon-item">
-                                <span>REGISTRATION OPENS FROM 27TH MARCH</span>
+                                <span>LIMITED ROOMS ARE LEFT</span>
                                 <span style={{ color: "#D8B56A" }}>✦</span>
                             </div>
                         ))}

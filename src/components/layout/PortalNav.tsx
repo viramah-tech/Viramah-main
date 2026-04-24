@@ -13,7 +13,8 @@ import {
     LogOut,
     ChevronRight,
     User,
-    Wrench
+    Wrench,
+    CreditCard
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -29,6 +30,7 @@ interface NavItem {
 const STUDENT_NAV: NavItem[] = [
     { label: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
     { label: "Wallet", href: "/student/wallet", icon: Wallet },
+    { label: "Payments", href: "/student/payment", icon: CreditCard },
     { label: "Canteen", href: "/student/canteen", icon: UtensilsCrossed },
     { label: "Amenities", href: "/student/amenities", icon: Dumbbell },
     { label: "Maintenance", href: "/student/maintenance", icon: Wrench },

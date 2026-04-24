@@ -274,7 +274,7 @@ export default function SignUpPage() {
                             <AuthInput
                                 id="signup-name"
                                 type="text"
-                                placeholder="e.g. Arjun Mehta"
+                                placeholder="Your Name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 focused={focusedField === "name"}
@@ -292,7 +292,7 @@ export default function SignUpPage() {
                             <AuthInput
                                 id="signup-email"
                                 type="email"
-                                placeholder="you@example.com"
+                                placeholder="Your Email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 focused={focusedField === "email"}
@@ -318,7 +318,7 @@ export default function SignUpPage() {
                                     id="signup-phone"
                                     type="tel"
                                     inputMode="numeric"
-                                    placeholder="9876543210"
+                                    placeholder="Mobile Number"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
                                     focused={focusedField === "phone"}

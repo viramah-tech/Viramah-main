@@ -104,6 +104,7 @@ export default function Step3Page() {
     const [selectedRoomId, setSelectedRoomId] = useState<string | null>(room?.roomTypeId || null);
     const [includeMess, setIncludeMess] = useState<boolean>(room?.includeMess ?? false);
     const [includeTransport, setIncludeTransport] = useState<boolean>(room?.includeTransport ?? false);
+    const [paymentPlan, setPaymentPlan] = useState<"full" | "half">("full");
 
     // Step access restrictions removed - users can move freely
     // useEffect(() => {
@@ -198,11 +199,17 @@ export default function Step3Page() {
         [rooms, selectedRoomId]
     );
 
+    const FULL_DISCOUNT_PCT = 40;
+    const HALF_DISCOUNT_PCT = 25;
+
     const cost = useMemo(() => {
         if (!selectedRoom) {
             return {
                 roomRentMonthly: 0,
-                roomRentTotal: 0,
+                roomRentRaw: 0,
+                discountPct: 0,
+                discountValue: 0,
+                roomRentDiscounted: 0,
                 messTotal: 0,
                 transportTotal: 0,
                 totalPayable: 0,
@@ -210,7 +217,10 @@ export default function Step3Page() {
         }
 
         const roomRentMonthly = selectedRoom.monthlyPrice;
-        const roomRentTotal = roomRentMonthly * pricing.tenureMonths;
+        const roomRentRaw = roomRentMonthly * pricing.tenureMonths;
+        const discountPct = paymentPlan === "full" ? FULL_DISCOUNT_PCT : HALF_DISCOUNT_PCT;
+        const discountValue = Math.round(roomRentRaw * (discountPct / 100));
+        const roomRentDiscounted = roomRentRaw - discountValue;
         const messTotal = includeMess
             ? pricing.messLumpSum > 0
                 ? pricing.messLumpSum
@@ -220,17 +230,20 @@ export default function Step3Page() {
 
         return {
             roomRentMonthly,
-            roomRentTotal,
+            roomRentRaw,
+            discountPct,
+            discountValue,
+            roomRentDiscounted,
             messTotal,
             transportTotal,
             totalPayable:
                 pricing.registrationFee +
                 pricing.securityDeposit +
-                roomRentTotal +
+                roomRentDiscounted +
                 messTotal +
                 transportTotal,
         };
-    }, [selectedRoom, includeMess, includeTransport, pricing]);
+    }, [selectedRoom, includeMess, includeTransport, pricing, paymentPlan]);
 
     const handleContinue = async () => {
         if (!selectedRoomId) {
@@ -248,6 +261,7 @@ export default function Step3Page() {
                     roomTypeId: selectedRoomId,
                     includeMess,
                     includeTransport,
+                    paymentPlan,
                 },
             });
 
@@ -408,6 +422,92 @@ export default function Step3Page() {
             )}
 
             {selectedRoom && (
+                <motion.div variants={itemVariants} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <motion.button
+                        type="button"
+                        onClick={() => setPaymentPlan("full")}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        style={{
+                            borderRadius: 14,
+                            border: `2px solid ${paymentPlan === "full" ? GREEN : "rgba(31,58,45,0.12)"}`,
+                            background: paymentPlan === "full" ? "rgba(31,58,45,0.06)" : "#fff",
+                            padding: 16,
+                            cursor: "pointer",
+                            textAlign: "center",
+                        }}
+                    >
+                        <p style={{
+                            margin: 0,
+                            fontFamily: "var(--font-mono, monospace)",
+                            fontSize: "0.58rem",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                            color: paymentPlan === "full" ? GOLD : "rgba(31,58,45,0.5)",
+                        }}>
+                            Full Payment
+                        </p>
+                        <p style={{
+                            margin: "6px 0 4px 0",
+                            fontSize: "1.1rem",
+                            fontWeight: 700,
+                            color: GREEN,
+                        }}>
+                            {FULL_DISCOUNT_PCT}% Off
+                        </p>
+                        <p style={{
+                            margin: 0,
+                            fontSize: "0.78rem",
+                            color: "rgba(31,58,45,0.55)",
+                        }}>
+                            Pay ₹{(Math.round(selectedRoom.monthlyPrice * pricing.tenureMonths * (1 - FULL_DISCOUNT_PCT / 100))).toLocaleString()} total
+                        </p>
+                    </motion.button>
+
+                    <motion.button
+                        type="button"
+                        onClick={() => setPaymentPlan("half")}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        style={{
+                            borderRadius: 14,
+                            border: `2px solid ${paymentPlan === "half" ? GREEN : "rgba(31,58,45,0.12)"}`,
+                            background: paymentPlan === "half" ? "rgba(31,58,45,0.06)" : "#fff",
+                            padding: 16,
+                            cursor: "pointer",
+                            textAlign: "center",
+                        }}
+                    >
+                        <p style={{
+                            margin: 0,
+                            fontFamily: "var(--font-mono, monospace)",
+                            fontSize: "0.58rem",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                            color: paymentPlan === "half" ? GOLD : "rgba(31,58,45,0.5)",
+                        }}>
+                            Part Payment
+                        </p>
+                        <p style={{
+                            margin: "6px 0 4px 0",
+                            fontSize: "1.1rem",
+                            fontWeight: 700,
+                            color: GREEN,
+                        }}>
+                            {HALF_DISCOUNT_PCT}% Off
+                        </p>
+                        <p style={{
+                            margin: 0,
+                            fontSize: "0.78rem",
+                            color: "rgba(31,58,45,0.55)",
+                        }}>
+                            Pay 60% now, 40% later
+                        </p>
+                    </motion.button>
+                </motion.div>
+            )}
+
+            {selectedRoom && (
                 <motion.div
                     variants={itemVariants}
                     style={{
@@ -431,7 +531,12 @@ export default function Step3Page() {
                     </h4>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.85rem" }}>
-                        <CostItem label={`${selectedRoom.name} (${pricing.tenureMonths} months)`} amount={cost.roomRentTotal} />
+                        <CostItem label={`${selectedRoom.name} (${pricing.tenureMonths} months)`} amount={cost.roomRentRaw} />
+                        <div style={{ display: "flex", justifyContent: "space-between", color: "#4ade80" }}>
+                            <span>{paymentPlan === "full" ? "Full Payment" : "Part Payment"} Discount ({cost.discountPct}%)</span>
+                            <span>- ₹{cost.discountValue.toLocaleString()}</span>
+                        </div>
+                        <CostItem label="Discounted Room Rent" amount={cost.roomRentDiscounted} />
                         {includeMess && <CostItem label="Mess Fee" amount={cost.messTotal} />}
                         {includeTransport && <CostItem label="Transport Fee" amount={cost.transportTotal} />}
 
@@ -445,6 +550,12 @@ export default function Step3Page() {
                                 <span>Total Payable</span>
                                 <span>₹{cost.totalPayable.toLocaleString()}</span>
                             </div>
+                            {paymentPlan === "half" && (
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "rgba(255,255,255,0.6)", marginTop: 6 }}>
+                                    <span>Pay Now (60%)</span>
+                                    <span>₹{Math.round(cost.roomRentDiscounted * 0.6).toLocaleString()}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </motion.div>

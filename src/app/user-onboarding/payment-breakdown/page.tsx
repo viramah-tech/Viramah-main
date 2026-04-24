@@ -224,7 +224,9 @@ export default function PaymentBreakdownPage() {
                 label: "Room Rent",
                 total: Number(summary?.roomRent?.total ?? 0),
                 paid: Number(summary?.roomRent?.paid ?? 0),
-                remaining: Number(summary?.roomRent?.remaining ?? 0),
+                remaining: (summary?.roomRent as any)?.selectedPlan === "half"
+                    ? Math.max(0, Math.round((Number(summary?.roomRent?.total ?? 0) * 0.60)) - Number(summary?.roomRent?.paid ?? 0))
+                    : Number(summary?.roomRent?.remaining ?? 0),
                 partialAllowed: true,
                 isRoomRent: true,
                 fullDiscountPct: (summary?.roomRent as any)?.fullPaymentDiscountPct ?? 40,
@@ -277,27 +279,11 @@ export default function PaymentBreakdownPage() {
             }
             if (!category || !dueItems.some((d) => d.category === category)) {
                 setCategory(dueItems[0].category);
-                
-                const current = dueItems[0];
-                if (current.isRoomRent) {
-                    if (current.total === current.remaining) {
-                        setAmount(String(current.total)); // Default selection to Full Payment
-                    } else {
-                        setAmount(String(current.remaining));
-                    }
-                } else {
-                    setAmount(String(current.remaining));
-                }
+                setAmount(String(dueItems[0].remaining));
                 return;
             }
             const current = dueItems.find((d) => d.category === category);
-            if (current && current.isRoomRent) {
-                if (current.total === current.remaining) {
-                    setAmount(String(current.total)); // Default selection to Full Payment
-                } else {
-                    setAmount(String(current.remaining));
-                }
-            } else if (current && !current.partialAllowed) {
+            if (current) {
                 setAmount(String(current.remaining));
             }
         }, 0);
@@ -343,17 +329,6 @@ export default function PaymentBreakdownPage() {
                 proofUrl = await uploadPaymentProof(proofUrl, receipt.name);
             }
 
-            let planType = undefined;
-            if (category === "room_rent" && activeDue.selectedPlan === "pending") {
-                // Determine implicit plan selection by amount if they haven't explicitly set it
-                // We'll derive it from the buttons being pushed
-                if (Number(amount) > activeDue.total * 0.5) {
-                   planType = "full";
-                } else {
-                   planType = "half";
-                }
-            }
-
             await apiFetch(API.payment.final, {
                 method: "POST",
                 body: {
@@ -362,7 +337,6 @@ export default function PaymentBreakdownPage() {
                     transactionId: transactionId.trim(),
                     proofUrl,
                     amount: parseFloat(Number(amount).toFixed(2)),
-                    ...(planType && { planType }),
                 },
             });
 
@@ -520,75 +494,52 @@ export default function PaymentBreakdownPage() {
                 )}
 
                 {activeDue && activeDue.isRoomRent ? (
-                    (() => {
-                        const totalRack = activeDue.total;
-                        const rawFullDiscounted = Math.round(totalRack * (1 - (activeDue.fullDiscountPct || 40) / 100));
-                        const fullTarget = Math.max(0, rawFullDiscounted - activeDue.paid);
-                        const discountedTotal = Math.round(totalRack * (1 - (activeDue.halfDiscountPct || 25) / 100));
-                        const firstHalfTarget = Math.round(discountedTotal * 0.60);
-                        
-                        if (activeDue.selectedPlan === "pending" || activeDue.paid < firstHalfTarget) {
-                            const remainingForFirstHalf = Math.max(0, firstHalfTarget - activeDue.paid);
-                            return (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                    <FieldLabel>Select Your Room Rent Plan</FieldLabel>
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                                        <button 
-                                            onClick={() => setAmount(String(fullTarget))}
-                                            style={{ padding: "12px", borderRadius: 10, border: `2px solid ${amount === String(fullTarget) ? GREEN : "rgba(31,58,45,0.15)"}`, background: amount === String(fullTarget) ? "rgba(31,58,45,0.06)" : "#fff", color: amount === String(fullTarget) ? GREEN : "rgba(31,58,45,0.6)", fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", fontWeight: amount === String(fullTarget) ? 700 : 400, textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s ease" }}
-                                            type="button"
-                                        >
-                                            Full Payment ({activeDue.fullDiscountPct}% Off)<br/><span style={{ fontSize: "0.85rem", marginTop: 4, display: "block", color: GREEN, fontWeight: 700 }}>₹{fullTarget.toLocaleString("en-IN")}</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => setAmount(String(remainingForFirstHalf))}
-                                            style={{ padding: "12px", borderRadius: 10, border: `2px solid ${amount === String(remainingForFirstHalf) ? GREEN : "rgba(31,58,45,0.15)"}`, background: amount === String(remainingForFirstHalf) ? "rgba(31,58,45,0.06)" : "#fff", color: amount === String(remainingForFirstHalf) ? GREEN : "rgba(31,58,45,0.6)", fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", fontWeight: amount === String(remainingForFirstHalf) ? 700 : 400, textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s ease" }}
-                                            type="button"
-                                        >
-                                            60% Payment ({activeDue.halfDiscountPct}% Off)<br/><span style={{ fontSize: "0.85rem", marginTop: 4, display: "block", color: GREEN, fontWeight: 700 }}>₹{remainingForFirstHalf.toLocaleString("en-IN")}</span>
-                                        </button>
-                                    </div>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
-                                        <FieldLabel htmlFor="final-amount">Partial / Custom Amount (₹)</FieldLabel>
-                                        <FieldInput
-                                            id="final-amount"
-                                            type="number"
-                                            value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
-                                            placeholder="e.g. 25000"
-                                            hasError={attempted && !!errors.amount}
-                                        />
-                                        {attempted && errors.amount && <FieldError>{errors.amount}</FieldError>}
-                                    </div>
-                                </div>
-                            );
-                        } else {
-                            return (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                    <FieldLabel>Room Rent Goal</FieldLabel>
-                                    <button 
-                                        onClick={() => setAmount(String(activeDue.remaining))}
-                                        style={{ width: "100%", padding: "12px", borderRadius: 10, border: `2px solid ${amount === String(activeDue.remaining) ? GREEN : "rgba(31,58,45,0.15)"}`, background: amount === String(activeDue.remaining) ? "rgba(31,58,45,0.06)" : "#fff", color: amount === String(activeDue.remaining) ? GREEN : "rgba(31,58,45,0.6)", fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", fontWeight: amount === String(activeDue.remaining) ? 700 : 400, textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s ease" }}
-                                        type="button"
-                                    >
-                                        Remaining Balance (40%)<br/><span style={{ fontSize: "0.85rem", marginTop: 4, display: "block", color: GREEN, fontWeight: 700 }}>₹{activeDue.remaining.toLocaleString("en-IN")}</span>
-                                    </button>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
-                                        <FieldLabel htmlFor="final-amount">Partial / Custom Amount (₹)</FieldLabel>
-                                        <FieldInput
-                                            id="final-amount"
-                                            type="number"
-                                            value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
-                                            placeholder="e.g. 20000"
-                                            hasError={attempted && !!errors.amount}
-                                        />
-                                        {attempted && errors.amount && <FieldError>{errors.amount}</FieldError>}
-                                    </div>
-                                </div>
-                            );
-                        }
-                    })()
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <FieldLabel>Room Rent — {activeDue.selectedPlan === "half" ? "Part Payment Plan" : "Full Payment Plan"}</FieldLabel>
+                        <div style={{
+                            width: "100%",
+                            padding: "14px",
+                            borderRadius: 10,
+                            border: `2px solid ${GREEN}`,
+                            background: "rgba(31,58,45,0.04)",
+                            textAlign: "center",
+                        }}>
+                            <p style={{
+                                margin: 0,
+                                fontFamily: "var(--font-mono, monospace)",
+                                fontSize: "0.6rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.1em",
+                                color: "rgba(31,58,45,0.5)",
+                            }}>
+                                {activeDue.selectedPlan === "half" && activeDue.paid === 0
+                                    ? "Pay 60% Now"
+                                    : activeDue.selectedPlan === "half"
+                                        ? "Pay Remaining Balance"
+                                        : "Pay Full Room Rent"}
+                            </p>
+                            <p style={{
+                                margin: "6px 0 0 0",
+                                fontSize: "1.1rem",
+                                fontWeight: 700,
+                                color: GREEN,
+                            }}>
+                                ₹{Number(amount).toLocaleString("en-IN")}
+                            </p>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+                            <FieldLabel htmlFor="final-amount">Custom Amount (₹)</FieldLabel>
+                            <FieldInput
+                                id="final-amount"
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                placeholder="e.g. 25000"
+                                hasError={attempted && !!errors.amount}
+                            />
+                        </div>
+                        {attempted && errors.amount && <FieldError>{errors.amount}</FieldError>}
+                    </div>
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         <FieldLabel htmlFor="final-amount">Amount</FieldLabel>

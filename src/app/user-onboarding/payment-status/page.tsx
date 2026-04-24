@@ -136,11 +136,21 @@ export default function PaymentStatusPage() {
     const view = statusView[booking?.status ?? "UNDER_VERIFICATION"];
     const StatusIcon = view.icon;
 
-    const outstanding = useMemo(() => {
-        const required = Number(summary?.totalRequired ?? 0);
-        const paid = Number(summary?.totalPaid ?? 0);
-        return Math.max(0, required - paid);
+    const effectiveTotalRequired = useMemo(() => {
+        if (!summary) return 0;
+        let req = Number(summary.totalRequired ?? 0);
+        if (summary.roomRent?.selectedPlan === "half") {
+            const roomTotal = Number(summary.roomRent.total ?? 0);
+            const deferred = roomTotal - Math.round(roomTotal * 0.60);
+            req -= deferred;
+        }
+        return req;
     }, [summary]);
+
+    const outstanding = useMemo(() => {
+        const paid = Number(summary?.totalPaid ?? 0);
+        return Math.max(0, effectiveTotalRequired - paid);
+    }, [effectiveTotalRequired, summary?.totalPaid]);
 
     const canRequestExtension =
         booking?.status === "FINAL_PAYMENT_PENDING" && !booking.extensionRequested;
@@ -237,7 +247,7 @@ export default function PaymentStatusPage() {
             )}
 
             <motion.div variants={itemVariants} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
-                <SummaryCard title="Total Required" value={inr(summary?.totalRequired)} />
+                <SummaryCard title="Total Required Now" value={inr(effectiveTotalRequired)} />
                 <SummaryCard title="Total Approved" value={inr(summary?.totalPaid)} />
                 <SummaryCard title="Outstanding" value={inr(outstanding)} />
                 <SummaryCard title="Pending Requests" value={String(summary?.totalPending ?? 0)} icon={<CalendarClock size={14} color={GOLD} />} />
@@ -299,7 +309,11 @@ export default function PaymentStatusPage() {
             </motion.div>
 
             <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
-                <SecondaryButton onClick={() => router.push("/user-onboarding/deposit")}>Back to Booking</SecondaryButton>
+                {booking?.status === "REJECTED" ? (
+                    <SecondaryButton onClick={() => router.push("/user-onboarding/deposit")}>Back to Booking</SecondaryButton>
+                ) : (
+                    <div />
+                )}
                 {(booking?.status === "BOOKING_CONFIRMED" || booking?.status === "FINAL_PAYMENT_PENDING") ? (
                     <NavButton onClick={() => router.push("/user-onboarding/payment-breakdown")}>
                         Continue Payment
