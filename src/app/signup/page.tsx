@@ -42,6 +42,7 @@ export default function SignUpPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [salesAgent, setSalesAgent] = useState("");
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -127,7 +128,7 @@ export default function SignUpPage() {
         setError("");
         setSubmitting(true);
         try {
-            await signup(email, cleanedPhone, password, name.trim());
+            await signup(email, cleanedPhone, password, name.trim(), salesAgent.trim());
             showToast("Account created successfully! Please log in.", "success");
             router.push("/login");
         } catch (err: unknown) {
@@ -329,6 +330,21 @@ export default function SignUpPage() {
                                 />
                             </div>
                             {phoneError && <FieldHint text={phoneError} type="error" />}
+                        </motion.div>
+
+                        {/* Sales Agent */}
+                        <motion.div variants={itemVariants} className="flex flex-col gap-2">
+                            <AuthLabel htmlFor="signup-sales">Sales Agent (Optional)</AuthLabel>
+                            <AuthInput
+                                id="signup-sales"
+                                type="text"
+                                placeholder="Name of sales executive"
+                                value={salesAgent}
+                                onChange={(e) => setSalesAgent(e.target.value)}
+                                focused={focusedField === "sales"}
+                                onFocus={() => setFocusedField("sales")}
+                                onBlur={() => { setFocusedField(null); }}
+                            />
                         </motion.div>
 
                         {/* Password */}

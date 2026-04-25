@@ -17,6 +17,7 @@ export interface AuthUser {
         dateOfBirth?: string;
         /** Stored as a plain string on the backend. */
         address?: string;
+        salesAgent?: string;
     };
     profilePhoto?: { url?: string; uploadedAt?: string };
     userIdProof?: {
@@ -78,7 +79,7 @@ interface AuthContextType {
     loading: boolean;
     isAuthenticated: boolean;
     login: (email: string, password: string) => Promise<AuthUser>;
-    signup: (email: string, phone: string | undefined, password: string, name?: string) => Promise<AuthUser>;
+    signup: (email: string, phone: string | undefined, password: string, name?: string, salesAgent?: string) => Promise<AuthUser>;
     logout: () => Promise<void>;
     refreshUser: (options?: { force?: boolean }) => Promise<AuthUser | null>;
     updateUser: (patch: Partial<AuthUser>) => void;
@@ -140,10 +141,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return next;
     };
 
-    const signup = async (email: string, phone: string | undefined, password: string, name?: string): Promise<AuthUser> => {
+    const signup = async (email: string, phone: string | undefined, password: string, name?: string, salesAgent?: string): Promise<AuthUser> => {
         const body: Record<string, string> = { email, password };
         if (phone) body.phone = phone;
         if (name) body.name = name;
+        if (salesAgent) body.salesAgent = salesAgent;
         const { user: next } = await apiPost<AuthPayload>(API.auth.register, body);
         setUser(next);
         return next;
