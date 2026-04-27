@@ -31,6 +31,7 @@ export const API = {
   upload: {
     document: '/api/upload/document',
     paymentProof: '/api/upload/payment-proof',
+    reupload: '/api/upload/re-upload',
   },
   payment: {
     booking: '/api/payment/booking',

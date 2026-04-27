@@ -14,7 +14,8 @@ import {
     ChevronRight,
     User,
     Wrench,
-    CreditCard
+    CreditCard,
+    FileCheck
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -31,6 +32,7 @@ const STUDENT_NAV: NavItem[] = [
     { label: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
     { label: "Wallet", href: "/student/wallet", icon: Wallet },
     { label: "Payments", href: "/student/payment", icon: CreditCard },
+    { label: "Documents", href: "/student/documents", icon: FileCheck },
     { label: "Canteen", href: "/student/canteen", icon: UtensilsCrossed },
     { label: "Amenities", href: "/student/amenities", icon: Dumbbell },
     { label: "Maintenance", href: "/student/maintenance", icon: Wrench },
@@ -119,12 +121,12 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     {navItems.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                        const isAllowedPath = ["/student/payment", "/student/documents"].includes(item.href);
+                        const isLocked = role === "student" && !isAllowedPath;
+
                         return (
                             <li key={item.href}>
-                                <Link
-                                    href={item.href}
-                                    style={{ textDecoration: "none", display: "block" }}
-                                >
+                                {isLocked ? (
                                     <div style={{
                                         display: "flex",
                                         alignItems: "center",
@@ -132,40 +134,78 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
                                         padding: "10px 12px",
                                         borderRadius: 10,
                                         position: "relative",
-                                        background: isActive ? GREEN : "transparent",
-                                        transition: "background 0.2s ease",
-                                        cursor: "pointer",
-                                    }}
-                                        className={!isActive ? "nav-item-hover" : ""}
-                                    >
-                                        {isActive && (
-                                            <motion.div
-                                                layoutId="activeNav"
-                                                style={{ position: "absolute", inset: 0, background: GREEN, borderRadius: 10 }}
-                                                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                            />
-                                        )}
+                                        background: "transparent",
+                                        opacity: 0.5,
+                                        cursor: "not-allowed",
+                                    }}>
                                         <item.icon
                                             size={17}
-                                            color={isActive ? GOLD : "rgba(31,58,45,0.45)"}
+                                            color="rgba(31,58,45,0.45)"
                                             style={{ position: "relative", zIndex: 1, flexShrink: 0 }}
                                         />
                                         <span style={{
                                             fontFamily: "var(--font-body, sans-serif)",
                                             fontSize: "0.85rem",
-                                            fontWeight: isActive ? 600 : 500,
-                                            color: isActive ? "#fff" : "rgba(31,58,45,0.7)",
+                                            fontWeight: 500,
+                                            color: "rgba(31,58,45,0.7)",
                                             position: "relative",
                                             zIndex: 1,
                                             flex: 1,
                                         }}>
                                             {item.label}
                                         </span>
-                                        {isActive && (
-                                            <ChevronRight size={14} color="rgba(255,255,255,0.5)" style={{ position: "relative", zIndex: 1 }} />
-                                        )}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock" style={{ color: "rgba(31,58,45,0.5)" }}>
+                                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                        </svg>
                                     </div>
-                                </Link>
+                                ) : (
+                                    <Link
+                                        href={item.href}
+                                        style={{ textDecoration: "none", display: "block" }}
+                                    >
+                                        <div style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 10,
+                                            padding: "10px 12px",
+                                            borderRadius: 10,
+                                            position: "relative",
+                                            background: isActive ? GREEN : "transparent",
+                                            transition: "background 0.2s ease",
+                                            cursor: "pointer",
+                                        }}
+                                            className={!isActive ? "nav-item-hover" : ""}
+                                        >
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="activeNav"
+                                                    style={{ position: "absolute", inset: 0, background: GREEN, borderRadius: 10 }}
+                                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                                />
+                                            )}
+                                            <item.icon
+                                                size={17}
+                                                color={isActive ? GOLD : "rgba(31,58,45,0.45)"}
+                                                style={{ position: "relative", zIndex: 1, flexShrink: 0 }}
+                                            />
+                                            <span style={{
+                                                fontFamily: "var(--font-body, sans-serif)",
+                                                fontSize: "0.85rem",
+                                                fontWeight: isActive ? 600 : 500,
+                                                color: isActive ? "#fff" : "rgba(31,58,45,0.7)",
+                                                position: "relative",
+                                                zIndex: 1,
+                                                flex: 1,
+                                            }}>
+                                                {item.label}
+                                            </span>
+                                            {isActive && (
+                                                <ChevronRight size={14} color="rgba(255,255,255,0.5)" style={{ position: "relative", zIndex: 1 }} />
+                                            )}
+                                        </div>
+                                    </Link>
+                                )}
                             </li>
                         );
                     })}

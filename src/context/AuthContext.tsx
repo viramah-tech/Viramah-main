@@ -50,6 +50,8 @@ export interface AuthUser {
         emailVerified: boolean;
         phoneVerified: boolean;
         documentVerified: boolean;
+        documentVerificationStatus?: "pending" | "approved" | "rejected";
+        documentRejectionReason?: string;
     };
     onboarding: {
         currentStep: OnboardingStep;

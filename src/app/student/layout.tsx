@@ -24,8 +24,13 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             router.replace("/user-onboarding/payment-status");
             return;
         }
-        // Allow users to navigate freely in the dashboard once onboarding is completed
-        // even if they haven't completed the move-in checklist yet.
+
+        const allowedPaths = ["/student/move-in", "/student/payment", "/student/documents"];
+        const isAllowed = allowedPaths.some(p => pathname === p || pathname.startsWith(p + "/"));
+        if (!isAllowed) {
+            router.replace("/student/move-in");
+            return;
+        }
     }, [loading, isAuthenticated, user, router, pathname]);
 
     if (loading) {
