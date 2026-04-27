@@ -10,9 +10,9 @@ import { useAuth } from "@/context/AuthContext";
 export default function SettingsPage() {
     const { user } = useAuth();
     const [profile, setProfile] = useState({
-        name: user?.name || "",
-        email: user?.email || "",
-        phone: user?.phone || "+91 98XXX XXXXX",
+        name: user?.basicInfo?.fullName || "",
+        email: user?.basicInfo?.email || "",
+        phone: user?.basicInfo?.phone || "+91 98XXX XXXXX",
     });
 
     return (
