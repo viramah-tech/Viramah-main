@@ -14,9 +14,9 @@ import {
 } from "@/components/onboarding/FormComponents";
 
 const GREEN = "#1F3A2D";
-const GOLD  = "#D8B56A";
+const GOLD = "#D8B56A";
 
-const TERMS_VERSION   = "v1.0";
+const TERMS_VERSION = "v1.0";
 const PRIVACY_VERSION = "v1.0";
 
 // ── Scrollable Document Box ───────────────────────────────────────────────────
@@ -32,7 +32,7 @@ function ScrollableDoc({
     children: React.ReactNode;
     onScrollProgress: (pct: number) => void;
 }) {
-    const boxRef         = useRef<HTMLDivElement>(null);
+    const boxRef = useRef<HTMLDivElement>(null);
     const [scrolled, setScrolled] = useState(false);
 
     const handleScroll = useCallback(() => {
@@ -146,13 +146,13 @@ function ConsentCheckbox({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function TermsAndConditionsPage() {
-    const router     = useRouter();
+    const router = useRouter();
     const { showToast } = useToast();
     const { refreshUser } = useAuth();
 
-    const [termsChecked,   setTermsChecked]   = useState(false);
+    const [termsChecked, setTermsChecked] = useState(false);
     const [privacyChecked, setPrivacyChecked] = useState(false);
-    const [submitting,     setSubmitting]     = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     const bothChecked = termsChecked && privacyChecked;
 
@@ -198,7 +198,7 @@ export default function TermsAndConditionsPage() {
             {/* Terms & Conditions */}
             <motion.div variants={itemVariants}>
                 <FormCard>
-                    <ScrollableDoc title="Terms & Conditions" icon={FileText} onScrollProgress={() => {}}>
+                    <ScrollableDoc title="Terms & Conditions" icon={FileText} onScrollProgress={() => { }}>
                         <TermsContent />
                     </ScrollableDoc>
                     <div style={{ borderTop: "1px solid rgba(31,58,45,0.07)", paddingTop: 14, marginTop: 14 }}>
@@ -214,7 +214,7 @@ export default function TermsAndConditionsPage() {
             {/* Privacy Policy */}
             <motion.div variants={itemVariants}>
                 <FormCard>
-                    <ScrollableDoc title="Privacy Policy" icon={Lock} onScrollProgress={() => {}}>
+                    <ScrollableDoc title="Privacy Policy" icon={Lock} onScrollProgress={() => { }}>
                         <PrivacyContent />
                     </ScrollableDoc>
                     <div style={{ borderTop: "1px solid rgba(31,58,45,0.07)", paddingTop: 14, marginTop: 14 }}>
@@ -307,8 +307,6 @@ function TermsContent() {
             <Section title="3. Booking & Deposit Policy">
                 <ul style={{ paddingLeft: 16, margin: 0, lineHeight: 1.8 }}>
                     <li>A ₹15,000 security deposit is required to hold your room.</li>
-                    <li>The deposit is refundable in full within 7 days of admin approval.</li>
-                    <li>After 7 days the deposit is non-refundable.</li>
                     <li>You must complete full payment within 21 days of approval or your room is released and the deposit is forfeited.</li>
                     <li>Viramah reserves the right to reject any reservation without liability.</li>
                 </ul>
