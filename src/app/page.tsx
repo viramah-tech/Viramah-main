@@ -132,10 +132,10 @@ export default function Home() {
                 featured
                 amenities={["650 Sq Ft", "Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals", "2 Bean Bags"]}
                 images={[
-                  "/room images/3 seater/room 1.png",
-                  "/room images/3 seater/room 2.png",
-                  "/room images/3 seater/study tables.webp",
-                  "/room images/3 seater/toilet.webp",
+                  "/room images/3 seater/WhatsApp Image 2026-04-24 at 11.41.59 PM (2).jpeg",
+                  "/room images/3 seater/WhatsApp Image 2026-04-24 at 11.42.01 PM (2).jpeg",
+                  "/room images/3 seater/WhatsApp Image 2026-04-24 at 11.42.08 PM.jpeg",
+                  "/room images/3 seater/WhatsApp Image 2026-04-24 at 11.42.09 PM.jpeg",
                 ]}
               />
               <RoomCard
@@ -147,10 +147,10 @@ export default function Home() {
                 featured
                 amenities={["650 Sq Ft", "Shared Space", "High-Speed WiFi", "Study Desk", "Economy", "3 Meals", "2 Bean Bags"]}
                 images={[
-                  "/room images/4 seater/room 1.webp",
-                  "/room images/4 seater/room 2.webp",
-                  "/room images/4 seater/study tables.webp",
-                  "/room images/4 seater/toilet.webp",
+                  "/room images/4 seater/WhatsApp Image 2026-04-24 at 11.41.59 PM (2).jpeg",
+                  "/room images/4 seater/WhatsApp Image 2026-04-24 at 11.42.01 PM (2).jpeg",
+                  "/room images/4 seater/WhatsApp Image 2026-04-24 at 11.42.08 PM.jpeg",
+                  "/room images/4 seater/WhatsApp Image 2026-04-24 at 11.42.09 PM.jpeg",
                 ]}
                 className=""
               />
@@ -162,10 +162,10 @@ export default function Home() {
                 tag="Best Value"
                 amenities={["450 Sq Ft", "High-Speed WiFi", "Study Desk", "Essential Living", "3 Meals", "1 Bean Bag"]}
                 images={[
-                  "/room images/2 seater/bed + table.png",
-                  "/room images/2 seater/cuboard + beds.png",
-                  "/room images/2 seater/cuboard.png",
-                  "/room images/2 seater/toilet .png.jpeg",
+                  "/room images/2 seater/WhatsApp Image 2026-04-24 at 11.42.12 PM.jpeg",
+                  "/room images/2 seater/WhatsApp Image 2026-04-24 at 11.42.15 PM.jpeg",
+                  "/room images/2 seater/WhatsApp Image 2026-04-24 at 11.42.18 PM.jpeg",
+                  "/room images/2 seater/WhatsApp Image 2026-04-24 at 11.42.22 PM.jpeg",
                 ]}
               />
 
