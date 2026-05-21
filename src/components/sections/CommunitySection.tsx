@@ -47,43 +47,8 @@ export function CommunitySection() {
             <div className="cs-grain" aria-hidden="true" />
 
             <div className="cs-inner">
-                {/* ── Left: Image + Stats ── */}
-                <div className="cs-left">
-                    <div className="cs-image-wrap">
-                        <Image
-                            src="/communities.jpg"
-                            alt="Viramah Community — people connecting"
-                            fill
-                            sizes="(max-width: 768px) 100vw, 50vw"
-                            quality={75}
-                            loading="lazy"
-                            className="cs-image"
-                        />
-                        {/* Overlay tint */}
-                        <div className="cs-image-overlay" aria-hidden="true" />
-
-                        {/* Floating stats card */}
-                        <div className="cs-stats-card">
-                            {STATS.map((s, i) => (
-                                <div
-                                    key={s.label}
-                                    className="cs-stat"
-                                    style={{
-                                        opacity: 0,
-                                        transform: "translateY(16px)",
-                                        transition: `opacity 0.5s ease ${0.3 + i * 0.1}s, transform 0.5s ease ${0.3 + i * 0.1}s`,
-                                    }}
-                                >
-                                    <span className="cs-stat-num">{s.num}</span>
-                                    <span className="cs-stat-label">{s.label}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Right: Content ── */}
-                <div className="cs-right">
+                {/* ── Content ── */}
+                <div className="cs-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <p className="cs-eyebrow">The Viramah Community</p>
                     <h2 className="cs-title">
                         Members,<br />
@@ -96,7 +61,7 @@ export function CommunitySection() {
                     </p>
 
                     {/* Perks pills */}
-                    <div className="cs-perks">
+                    <div className="cs-perks" style={{ justifyContent: 'center' }}>
                         {PERKS.map((p, i) => (
                             <div
                                 key={p.label}
@@ -114,7 +79,7 @@ export function CommunitySection() {
                     </div>
 
                     {/* CTAs */}
-                    <div className="cs-ctas">
+                    <div className="cs-ctas" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                         <EnquireNowButton variant="gold" label="Enquire Now" />
                         <ScheduleVisitButton variant="dark" />
                         <Link href="/community" className="cs-link-btn">

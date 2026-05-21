@@ -15,32 +15,25 @@ interface GalleryItem {
 
 const GALLERY_ITEMS: GalleryItem[] = [
     {
-        src: "/life at viramah images/common area.jpg",
-        alt: "Common area — the social hub for meetups and workshops",
-        title: "Weekly Meetups",
-        stats: ["SUNDAY DINNERS", "GAME NIGHTS", "STUDY GROUPS"],
-        span: 8,
-    },
-    {
-        src: "/life at viramah images/swiming pool.jpg",
+        src: "/life at viramah images/swiming pool.jpeg",
         alt: "Swimming pool and wellness deck",
         title: "Swimming Pool",
         stats: ["YOGA SESSIONS", "POOL RECOVERY"],
-        span: 4,
+        span: 6,
     },
     {
         src: "/life at viramah images/gaming zone.jpg",
         alt: "Gaming and skills lab",
         title: "Gaming Zone",
         stats: ["SKILL SESSIONS", "TOURNAMENTS", "LIVE"],
-        span: 4,
+        span: 6,
     },
     {
         src: "/life at viramah images/gym.jpg",
         alt: "Fully equipped gym and fitness studio",
         title: "Fitness & Zen",
         stats: ["STRENGTH & CARDIO", "YOGA SPACE", "ZEN ZONE"],
-        span: 8,
+        span: 12,
     },
 ];
 

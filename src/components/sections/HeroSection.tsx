@@ -18,9 +18,9 @@ const TILES: MarqueeTile[] = [
         title: "Living Space",
     },
     {
-        src: "/life at viramah images/common area.jpg",
-        alt: "Viramah — community common area",
-        title: "Common Area",
+        src: "/room images/2 seater/WhatsApp Image 2026-04-24 at 11.42.18 PM.jpeg",
+        alt: "Viramah — premium room",
+        title: "Premium Room",
     },
     {
         src: "/life at viramah images/gaming zone.jpg",
@@ -28,7 +28,7 @@ const TILES: MarqueeTile[] = [
         title: "Gaming Zone",
     },
     {
-        src: "/life at viramah images/swiming pool.jpg",
+        src: "/life at viramah images/swiming pool.jpeg",
         alt: "Viramah — swimming pool wellness",
         title: "Swimming Pool",
     },
@@ -372,12 +372,12 @@ export function HeroSection() {
                 animate="visible"
             >
                 {/* ── Marquee Ribbon ──────────────────────────────── */}
-                <div className="hero-ribbon" aria-hidden="true">
-                    <div className="hero-ribbon-content">
+                <div className="hero-ribbon" aria-hidden="true" suppressHydrationWarning>
+                    <div className="hero-ribbon-content" suppressHydrationWarning>
                         {[...Array(10)].map((_, i) => (
-                            <div key={i} className="hero-ribbon-item">
-                                <span>LIMITED ROOMS ARE LEFT</span>
-                                <span style={{ color: "#D8B56A" }}>✦</span>
+                            <div key={i} className="hero-ribbon-item" suppressHydrationWarning>
+                                <span suppressHydrationWarning>LIMITED ROOMS ARE LEFT</span>
+                                <span style={{ color: "#D8B56A" }} suppressHydrationWarning>✦</span>
                             </div>
                         ))}
                     </div>

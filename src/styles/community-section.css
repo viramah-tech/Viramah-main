@@ -28,13 +28,14 @@
 .cs-inner {
     position: relative;
     z-index: 2;
-    max-width: 1200px;
+    max-width: 800px; /* Reduced since there's no image */
     margin: 0 auto;
     padding: 0 clamp(1.5rem, 5vw, 5rem);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(3rem, 6vw, 6rem);
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    text-align: center;
+    gap: clamp(3rem, 6vw, 6rem);
 }
 
 /* ── Left: Image ── */
@@ -336,4 +337,4 @@
     .cs-perk-pill {
         transition: none !important;
     }
-}
+}

@@ -110,8 +110,18 @@
 }
 
 /* Column spans */
+.lav-span-12 {
+    grid-column: span 12;
+    height: clamp(380px, 42vh, 600px);
+}
+
 .lav-span-8 {
     grid-column: span 8;
+    height: clamp(380px, 42vh, 600px);
+}
+
+.lav-span-6 {
+    grid-column: span 6;
     height: clamp(380px, 42vh, 600px);
 }
 
@@ -301,6 +311,7 @@
     }
 
     .lav-span-8,
+    .lav-span-6,
     .lav-span-4,
     .lav-span-12 {
         grid-column: span 12;
@@ -334,6 +345,7 @@
     }
 
     .lav-span-8,
+    .lav-span-6,
     .lav-span-4,
     .lav-span-12 {
         height: 60vw;
@@ -358,6 +370,11 @@
     /* On tablet: 8→6, 4→6 for even split */
     .lav-span-8 {
         grid-column: span 7;
+        height: clamp(300px, 35vh, 450px);
+    }
+
+    .lav-span-6 {
+        grid-column: span 6;
         height: clamp(300px, 35vh, 450px);
     }
 

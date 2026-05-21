@@ -91,7 +91,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* DNS prefetch & preconnect for third-party scripts */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
@@ -101,6 +101,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
       <body
+        suppressHydrationWarning
         className={`${dmSerif.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
         {/* ── Google Analytics 4 ── */}
