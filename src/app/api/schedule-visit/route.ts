@@ -168,6 +168,34 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // ── 3b. Sync to Backend Database (viramah-backend) ───────
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        try {
+            console.log(`[Backend Sync] Synchronizing visit to: ${backendUrl}/api/website/visits`);
+            const backendRes = await fetch(`${backendUrl}/api/website/visits`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: fullName,
+                    email,
+                    phone: mobile,
+                    visitDate,
+                    visitTime: timeSlot,
+                    guests: Number(guests) || 1,
+                }),
+                signal: AbortSignal.timeout(5000),
+            });
+
+            if (backendRes.ok) {
+                console.log("[Backend Sync] Visit successfully synced to MongoDB database.");
+            } else {
+                const text = await backendRes.text();
+                console.error(`[Backend Sync] Sync failed with status ${backendRes.status}:`, text);
+            }
+        } catch (backendErr) {
+            console.error("[Backend Sync] Failed to connect or sync visit to database:", backendErr);
+        }
+
         console.log(`[Schedule Visit] ✓ Booking saved (sheets=${sheetsOk}) → ${email} on ${visitDate} at ${timeSlot}`);
 
         return NextResponse.json({

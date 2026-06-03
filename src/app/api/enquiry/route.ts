@@ -159,6 +159,34 @@ export async function POST(req: NextRequest) {
             console.warn("[Sheets] GOOGLE_SHEET_WEBHOOK_URL is not set in environment variables.");
         }
 
+        // ── 3b. Sync to Backend Database (viramah-backend) ───────
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        try {
+            console.log(`[Backend Sync] Synchronizing lead to: ${backendUrl}/api/website/leads`);
+            const backendRes = await fetch(`${backendUrl}/api/website/leads`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: fullName,
+                    email,
+                    phone: mobile,
+                    city,
+                    state,
+                    country,
+                    source: "website",
+                }),
+                signal: AbortSignal.timeout(5000),
+            });
+
+            if (backendRes.ok) {
+                console.log("[Backend Sync] Lead successfully synced to MongoDB database.");
+            } else {
+                const text = await backendRes.text();
+                console.error(`[Backend Sync] Sync failed with status ${backendRes.status}:`, text);
+            }
+        } catch (backendErr) {
+            console.error("[Backend Sync] Failed to connect or sync lead to database:", backendErr);
+        }
 
         // ── 4. Try to fetch brochure PDF via HTTP ─────────────────
         // Using fetch (not readFileSync) so it works in serverless
