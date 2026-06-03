@@ -12,6 +12,7 @@ interface RoomCardProps {
     price: string;
     originalPrice?: string;
     tag?: string;
+    type?: string;
     amenities?: string[];
     featured?: boolean;
     className?: string;
@@ -22,6 +23,7 @@ export function RoomCard({
     price,
     originalPrice,
     tag,
+    type,
     amenities = [],
     images = [],
     featured = false,
