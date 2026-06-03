@@ -376,7 +376,7 @@ export function HeroSection() {
                     <div className="hero-ribbon-content" suppressHydrationWarning>
                         {[...Array(10)].map((_, i) => (
                             <div key={i} className="hero-ribbon-item" suppressHydrationWarning>
-                                <span suppressHydrationWarning>LIMITED ROOMS ARE LEFT</span>
+                                <span suppressHydrationWarning>1st Year admissions are open now </span>
                                 <span style={{ color: "#D8B56A" }} suppressHydrationWarning>✦</span>
                             </div>
                         ))}

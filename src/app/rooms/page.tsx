@@ -150,7 +150,6 @@ export default async function RoomsPage() {
                             <RoomCard
                                 key={`${room.title}-${room.type}`}
                                 title={room.title}
-                                type={room.type}
                                 price={room.priceLabel || room.price.toString()}
                                 originalPrice={room.originalPrice}
                                 tag={room.tag}

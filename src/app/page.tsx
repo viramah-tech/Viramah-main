@@ -125,9 +125,9 @@ export default function Home() {
 
               <RoomCard
                 title="VIRAMAH COLLECTIVE"
-                type="3 SEATER"
-                price="₹12,490"
-                originalPrice="₹20,817"
+
+                price="₹10,990"
+                originalPrice="₹18,320"
                 tag="Limited"
                 featured
                 amenities={["650 Sq Ft", "Community Pick", "High-Speed WiFi", "Study Desk", "Kitchen", "3 Meals", "2 Bean Bags"]}
@@ -140,7 +140,7 @@ export default function Home() {
               />
               <RoomCard
                 title="VIRAMAH NEXUS"
-                type="4 SEATER"
+
                 price="₹9,090"
                 originalPrice="₹15,150"
                 tag="Limited"
@@ -156,7 +156,7 @@ export default function Home() {
               />
               <RoomCard
                 title="VIRAMAH AXIS"
-                type="2 SEATER"
+
                 price="₹14,490"
                 originalPrice="₹24,150"
                 tag="Best Value"

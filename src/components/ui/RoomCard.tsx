@@ -8,7 +8,6 @@ import { EnquireNowButton } from "@/components/ui/EnquireNowButton";
 
 interface RoomCardProps {
     title: string;
-    type: string;
     images?: string[];
     price: string;
     originalPrice?: string;
@@ -20,7 +19,6 @@ interface RoomCardProps {
 
 export function RoomCard({
     title,
-    type,
     price,
     originalPrice,
     tag,

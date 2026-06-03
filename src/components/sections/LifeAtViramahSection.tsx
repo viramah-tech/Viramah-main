@@ -18,7 +18,7 @@ const GALLERY_ITEMS: GalleryItem[] = [
         src: "/life at viramah images/swiming pool.jpeg",
         alt: "Swimming pool and wellness deck",
         title: "Swimming Pool",
-        stats: ["YOGA SESSIONS", "POOL RECOVERY"],
+        stats: ["YOGA SESSIONS"],
         span: 6,
     },
     {
