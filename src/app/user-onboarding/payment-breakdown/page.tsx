@@ -62,6 +62,7 @@ type DueItem = {
     total: number;
     paid: number;
     remaining: number;
+    suggestedAmount: number;
     partialAllowed: boolean;
     isRoomRent: boolean;
     fullDiscountPct?: number;
@@ -218,15 +219,23 @@ export default function PaymentBreakdownPage() {
 
     const dueItems = useMemo<DueItem[]>(() => {
         const summary = statusData?.paymentSummary;
+        const roomRentTotal = Number(summary?.roomRent?.total ?? 0);
+        const roomRentPaid = Number(summary?.roomRent?.paid ?? 0);
+        const roomRentRemaining = Number(summary?.roomRent?.remaining ?? 0);
+        const isHalfPlan = (summary?.roomRent as any)?.selectedPlan === "half";
+        // For half-plan users, suggest 60% of total as the minimum target; otherwise suggest the full remaining
+        const sixtyPctTarget = isHalfPlan
+            ? Math.max(0, Math.round(roomRentTotal * 0.60) - roomRentPaid)
+            : roomRentRemaining;
+
         const items: DueItem[] = [
             {
                 category: "room_rent",
                 label: "Room Rent",
-                total: Number(summary?.roomRent?.total ?? 0),
-                paid: Number(summary?.roomRent?.paid ?? 0),
-                remaining: (summary?.roomRent as any)?.selectedPlan === "half"
-                    ? Math.max(0, Math.round((Number(summary?.roomRent?.total ?? 0) * 0.60)) - Number(summary?.roomRent?.paid ?? 0))
-                    : Number(summary?.roomRent?.remaining ?? 0),
+                total: roomRentTotal,
+                paid: roomRentPaid,
+                remaining: roomRentRemaining,
+                suggestedAmount: Math.min(sixtyPctTarget, roomRentRemaining),
                 partialAllowed: true,
                 isRoomRent: true,
                 fullDiscountPct: (summary?.roomRent as any)?.fullPaymentDiscountPct ?? 40,
@@ -239,6 +248,7 @@ export default function PaymentBreakdownPage() {
                 total: Number(summary?.securityDeposit?.total ?? 0),
                 paid: Number(summary?.securityDeposit?.paid ?? 0),
                 remaining: Number(summary?.securityDeposit?.remaining ?? 0),
+                suggestedAmount: Number(summary?.securityDeposit?.remaining ?? 0),
                 partialAllowed: true,
                 isRoomRent: false,
             },
@@ -248,6 +258,7 @@ export default function PaymentBreakdownPage() {
                 total: Number(summary?.messFee?.total ?? 0),
                 paid: Number(summary?.messFee?.paid ?? 0),
                 remaining: Number(summary?.messFee?.remaining ?? 0),
+                suggestedAmount: Number(summary?.messFee?.remaining ?? 0),
                 partialAllowed: false,
                 isRoomRent: false,
             },
@@ -257,6 +268,7 @@ export default function PaymentBreakdownPage() {
                 total: Number(summary?.transportFee?.total ?? 0),
                 paid: Number(summary?.transportFee?.paid ?? 0),
                 remaining: Number(summary?.transportFee?.remaining ?? 0),
+                suggestedAmount: Number(summary?.transportFee?.remaining ?? 0),
                 partialAllowed: false,
                 isRoomRent: false,
             },
@@ -279,12 +291,12 @@ export default function PaymentBreakdownPage() {
             }
             if (!category || !dueItems.some((d) => d.category === category)) {
                 setCategory(dueItems[0].category);
-                setAmount(String(dueItems[0].remaining));
+                setAmount(String(dueItems[0].suggestedAmount));
                 return;
             }
             const current = dueItems.find((d) => d.category === category);
             if (current) {
-                setAmount(String(current.remaining));
+                setAmount(String(current.suggestedAmount));
             }
         }, 0);
 
@@ -513,7 +525,7 @@ export default function PaymentBreakdownPage() {
                                 color: "rgba(31,58,45,0.5)",
                             }}>
                                 {activeDue.selectedPlan === "half" && activeDue.paid === 0
-                                    ? "Pay 60% Now"
+                                    ? "Minimum 60% Required Now"
                                     : activeDue.selectedPlan === "half"
                                         ? "Pay Remaining Balance"
                                         : "Pay Full Room Rent"}
@@ -527,6 +539,42 @@ export default function PaymentBreakdownPage() {
                                 ₹{Number(amount).toLocaleString("en-IN")}
                             </p>
                         </div>
+                        {activeDue.selectedPlan === "half" && activeDue.suggestedAmount < activeDue.remaining && (
+                            <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setAmount(String(activeDue.suggestedAmount))}
+                                    style={{
+                                        fontSize: "0.72rem",
+                                        background: Number(amount) === activeDue.suggestedAmount ? "rgba(31,58,45,0.12)" : "rgba(31,58,45,0.04)",
+                                        border: `1px solid ${Number(amount) === activeDue.suggestedAmount ? GREEN : "rgba(31,58,45,0.15)"}`,
+                                        padding: "6px 12px",
+                                        borderRadius: 8,
+                                        cursor: "pointer",
+                                        color: GREEN,
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    60% Target — ₹{activeDue.suggestedAmount.toLocaleString("en-IN")}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAmount(String(activeDue.remaining))}
+                                    style={{
+                                        fontSize: "0.72rem",
+                                        background: Number(amount) === activeDue.remaining ? "rgba(31,58,45,0.12)" : "rgba(31,58,45,0.04)",
+                                        border: `1px solid ${Number(amount) === activeDue.remaining ? GREEN : "rgba(31,58,45,0.15)"}`,
+                                        padding: "6px 12px",
+                                        borderRadius: 8,
+                                        cursor: "pointer",
+                                        color: GREEN,
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Full Balance — ₹{activeDue.remaining.toLocaleString("en-IN")}
+                                </button>
+                            </div>
+                        )}
                         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
                             <FieldLabel htmlFor="final-amount">Custom Amount (₹)</FieldLabel>
                             <FieldInput
@@ -538,6 +586,11 @@ export default function PaymentBreakdownPage() {
                                 hasError={attempted && !!errors.amount}
                             />
                         </div>
+                        {activeDue.selectedPlan === "half" && (
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "rgba(31,58,45,0.45)" }}>
+                                You can pay any amount up to ₹{activeDue.remaining.toLocaleString("en-IN")} (full outstanding balance)
+                            </span>
+                        )}
                         {attempted && errors.amount && <FieldError>{errors.amount}</FieldError>}
                     </div>
                 ) : (
