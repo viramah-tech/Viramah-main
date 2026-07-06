@@ -36,7 +36,7 @@ import { PAYMENT_CONFIG } from "@/config/paymentConfig";
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
 
-type FinalCategory = "room_rent" | "mess" | "transport" | "security_deposit" | "all";
+type FinalCategory = "room_rent" | "mess" | "transport" | "security_deposit" | "fine" | "all";
 type PaymentMethod = "upi" | "bank_transfer" | "cash";
 
 type Ledger = {
@@ -52,6 +52,7 @@ type PaymentStatusData = {
         roomRent?: Ledger;
         messFee?: Ledger;
         transportFee?: Ledger;
+        fines?: Ledger;
         grandTotal?: Ledger;
     };
 };
@@ -270,6 +271,16 @@ export default function PaymentBreakdownPage() {
                 remaining: Number(summary?.transportFee?.remaining ?? 0),
                 suggestedAmount: Number(summary?.transportFee?.remaining ?? 0),
                 partialAllowed: false,
+                isRoomRent: false,
+            },
+            {
+                category: "fine",
+                label: "Fines & Penalties",
+                total: Number(summary?.fines?.total ?? 0),
+                paid: Number(summary?.fines?.paid ?? 0),
+                remaining: Number(summary?.fines?.remaining ?? 0),
+                suggestedAmount: Number(summary?.fines?.remaining ?? 0),
+                partialAllowed: true,
                 isRoomRent: false,
             },
         ];

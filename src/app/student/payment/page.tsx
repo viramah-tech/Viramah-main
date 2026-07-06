@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CreditCard, ArrowRight, Upload, X, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -26,10 +26,26 @@ export default function StudentPaymentPage() {
     const [actionMessage, setActionMessage] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [upgrading, setUpgrading] = useState(false);
+    const [paymentCategory, setPaymentCategory] = useState<string>("room_rent");
 
     const roomRent = summary?.roomRent;
     const isHalfPlan = roomRent?.selectedPlan === "half";
     const canUpgrade = isHalfPlan && (roomRent?.remaining ?? 0) > 0;
+
+    // Auto-select category with remaining dues
+    useEffect(() => {
+        if (summary) {
+            if ((summary.roomRent?.remaining ?? 0) > 0) {
+                setPaymentCategory("room_rent");
+            } else if ((summary.fines?.remaining ?? 0) > 0) {
+                setPaymentCategory("fine");
+            } else if ((summary.messFee?.remaining ?? 0) > 0) {
+                setPaymentCategory("mess");
+            } else if ((summary.transportFee?.remaining ?? 0) > 0) {
+                setPaymentCategory("transport");
+            }
+        }
+    }, [summary]);
 
     const handleUpgradePlan = async () => {
         if (!confirm("Are you sure you want to upgrade to the Full Payment Plan? You will get a higher discount, but the remaining balance will be due.")) return;
@@ -92,7 +108,7 @@ export default function StudentPaymentPage() {
                 method: "POST",
                 token,
                 body: {
-                    category: "room_rent",
+                    category: paymentCategory,
                     method: "upi",
                     transactionId: transactionId.trim(),
                     proofUrl,
@@ -120,9 +136,34 @@ export default function StudentPaymentPage() {
         return <div style={{ padding: 40, color: "red" }}>{error}</div>;
     }
 
-    const hasDues = (roomRent?.remaining ?? 0) > 0;
-    const pendingRentPayments = payments.filter(p => p.category === "room_rent" && p.status === "pending");
+    const hasDues = (summary?.grandTotal?.remaining ?? 0) > 0;
+    const pendingRentPayments = payments.filter(p => p.status === "pending");
     const totalPendingAmount = pendingRentPayments.reduce((sum, p) => sum + p.amount, 0);
+
+    // Active category remaining limit
+    const getActiveRemaining = () => {
+        if (paymentCategory === "room_rent") return summary?.roomRent?.remaining ?? 0;
+        if (paymentCategory === "fine") return summary?.fines?.remaining ?? 0;
+        if (paymentCategory === "mess") return summary?.messFee?.remaining ?? 0;
+        if (paymentCategory === "transport") return summary?.transportFee?.remaining ?? 0;
+        return summary?.grandTotal?.remaining ?? 0;
+    };
+    const activeRemaining = getActiveRemaining();
+
+    // Build list of active due options
+    const paymentOptions = [];
+    if ((summary?.roomRent?.remaining ?? 0) > 0) {
+        paymentOptions.push({ value: "room_rent", label: `Room Rent (₹${summary.roomRent.remaining.toLocaleString()} pending)` });
+    }
+    if ((summary?.fines?.remaining ?? 0) > 0) {
+        paymentOptions.push({ value: "fine", label: `Fines & Penalties (₹${summary.fines.remaining.toLocaleString()} pending)` });
+    }
+    if ((summary?.messFee?.remaining ?? 0) > 0) {
+        paymentOptions.push({ value: "mess", label: `Mess Fee (₹${summary.messFee.remaining.toLocaleString()} pending)` });
+    }
+    if ((summary?.transportFee?.remaining ?? 0) > 0) {
+        paymentOptions.push({ value: "transport", label: `Transport Fee (₹${summary.transportFee.remaining.toLocaleString()} pending)` });
+    }
 
     return (
         <div style={{ maxWidth: 800, margin: "0 auto", paddingBottom: 40 }}>
@@ -219,6 +260,41 @@ export default function StudentPaymentPage() {
                 )}
             </motion.div>
 
+            {/* Fines & Penalties Summary Card */}
+            {summary?.fines && (summary.fines.total > 0) && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.15 }}
+                    style={{ marginTop: 24, background: "#fff", borderRadius: 16, padding: 24, border: "1px solid rgba(31,58,45,0.1)" }}
+                >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+                        <div>
+                            <h2 style={{ margin: "0 0 4px 0", fontSize: "1.2rem", color: GREEN }}>Fines & Penalties Ledger</h2>
+                            <span style={{ fontSize: "0.85rem", color: "rgba(31,58,45,0.5)" }}>
+                                Outstanding fines and penalties applied to your account.
+                            </span>
+                        </div>
+                        <AlertCircle size={28} color="#dc2626" style={{ opacity: 0.5 }} />
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
+                        <div style={{ background: "rgba(31,58,45,0.03)", padding: 16, borderRadius: 12 }}>
+                            <span style={{ fontSize: "0.75rem", color: "rgba(31,58,45,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Fines</span>
+                            <div style={{ fontSize: "1.25rem", fontWeight: 700, color: GREEN }}>₹{summary.fines.total?.toLocaleString()}</div>
+                        </div>
+                        <div style={{ background: "rgba(31,58,45,0.03)", padding: 16, borderRadius: 12 }}>
+                            <span style={{ fontSize: "0.75rem", color: "rgba(31,58,45,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Paid</span>
+                            <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#16a34a" }}>₹{summary.fines.paid?.toLocaleString()}</div>
+                        </div>
+                        <div style={{ background: "rgba(220,38,38,0.05)", padding: 16, borderRadius: 12, border: "1px solid rgba(220,38,38,0.2)" }}>
+                            <span style={{ fontSize: "0.75rem", color: "#b91c1c", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Unpaid Fines</span>
+                            <div style={{ fontSize: "1.4rem", fontWeight: 700, color: "#b91c1c" }}>₹{summary.fines.remaining?.toLocaleString()}</div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Payment Form */}
             {hasDues && (
                 <motion.form
@@ -244,6 +320,37 @@ export default function StudentPaymentPage() {
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        {paymentOptions.length > 1 && (
+                            <div>
+                                <FieldLabel htmlFor="payment-category">Payment For</FieldLabel>
+                                <select
+                                    id="payment-category"
+                                    value={paymentCategory}
+                                    onChange={(e) => {
+                                        setPaymentCategory(e.target.value);
+                                        setAmount("");
+                                    }}
+                                    style={{
+                                        width: "100%",
+                                        padding: "12px 16px",
+                                        borderRadius: 8,
+                                        border: "1px solid rgba(31,58,45,0.15)",
+                                        background: "rgba(31,58,45,0.03)",
+                                        color: GREEN,
+                                        fontWeight: 500,
+                                        outline: "none",
+                                        cursor: "pointer"
+                                    }}
+                                >
+                                    {paymentOptions.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         <div>
                             <FieldLabel htmlFor="payment-amount">Amount (₹)</FieldLabel>
                             <FieldInput
@@ -253,11 +360,11 @@ export default function StudentPaymentPage() {
                                 onChange={(e) => setAmount(e.target.value)}
                                 placeholder="Enter amount to pay"
                                 min="1"
-                                max={roomRent.remaining}
+                                max={activeRemaining}
                             />
                             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                                <button type="button" onClick={() => setAmount(String(roomRent.remaining))} style={{ fontSize: "0.75rem", background: "rgba(31,58,45,0.05)", border: "none", padding: "4px 10px", borderRadius: 20, cursor: "pointer", color: GREEN }}>
-                                    Pay Full Remaining (₹{roomRent.remaining?.toLocaleString()})
+                                <button type="button" onClick={() => setAmount(String(activeRemaining))} style={{ fontSize: "0.75rem", background: "rgba(31,58,45,0.05)", border: "none", padding: "4px 10px", borderRadius: 20, cursor: "pointer", color: GREEN }}>
+                                    Pay Full Remaining (₹{activeRemaining?.toLocaleString()})
                                 </button>
                             </div>
                         </div>
