@@ -36,7 +36,7 @@ import { PAYMENT_CONFIG } from "@/config/paymentConfig";
 const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
 
-type FinalCategory = "room_rent" | "mess" | "transport" | "security_deposit";
+type FinalCategory = "room_rent" | "mess" | "transport" | "security_deposit" | "all";
 type PaymentMethod = "upi" | "bank_transfer" | "cash";
 
 type Ledger = {
@@ -273,13 +273,39 @@ export default function PaymentBreakdownPage() {
                 isRoomRent: false,
             },
         ];
-        return items.filter((x) => {
+        const filtered = items.filter((x) => {
             if (x.remaining <= 0) return false;
             // Exclude if there is a pending payment covering this amount
             const pendingPayments = statusData?.paymentDetails?.filter((p: any) => p.status === "pending" && p.category === x.category);
             const pendingAmount = pendingPayments?.reduce((sum: number, p: any) => sum + (p.amounts?.totalAmount || 0), 0) || 0;
             return (x.remaining - pendingAmount) > 0;
         });
+
+        // Add "All Remaining Dues" option when there is more than one outstanding category
+        if (filtered.length > 1) {
+            const grandRemaining = Number(summary?.grandTotal?.remaining ?? 0);
+            const grandTotal = filtered.reduce((s, i) => s + i.total, 0);
+            const grandPaid = filtered.reduce((s, i) => s + i.paid, 0);
+            // Exclude amount already pending under the "all" category
+            const pendingAllPayments = statusData?.paymentDetails?.filter((p: any) => p.status === "pending" && p.category === "all");
+            const pendingAllAmount = pendingAllPayments?.reduce((sum: number, p: any) => sum + (p.amounts?.totalAmount || 0), 0) || 0;
+            const effectiveRemaining = Math.max(0, grandRemaining - pendingAllAmount);
+
+            if (effectiveRemaining > 0) {
+                filtered.unshift({
+                    category: "all" as FinalCategory,
+                    label: "All Remaining Dues",
+                    total: grandTotal,
+                    paid: grandPaid,
+                    remaining: effectiveRemaining,
+                    suggestedAmount: effectiveRemaining,
+                    partialAllowed: true,
+                    isRoomRent: false,
+                });
+            }
+        }
+
+        return filtered;
     }, [statusData]);
 
     useEffect(() => {
