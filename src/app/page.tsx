@@ -31,11 +31,11 @@ const ClosingSection = dynamic(() => import("@/components/sections/ClosingSectio
 
 
 export const metadata: Metadata = {
-  title: "Viramah stay",
-  description: "Experience premium student living at Viramah. Modern hostel with high-speed WiFi, gaming zone, and nutritious food. The ultimate PG alternative for students.",
+  title: "Viramah | Premium Student Living & Hostels near GLA University Mathura",
+  description: "Experience premium student living at Viramah. Modern hostels & co-living PGs near GLA University Mathura with high-speed Wi-Fi, gaming zone, nutritious food, and community events.",
   openGraph: {
-    title: "Viramah | Premium Student Living Reimagined",
-    description: "Modern hostel with high-speed WiFi, gaming zone, nutritious food, and a thriving community. The ultimate PG alternative for students in India.",
+    title: "Viramah | Premium Student Living & Hostels near GLA University Mathura",
+    description: "Modern hostels and PGs near GLA University Mathura with high-speed Wi-Fi, gaming zone, nutritious food, and a thriving student community. The ultimate PG alternative.",
     url: "https://viramahstay.com",
   },
   keywords: [
@@ -45,7 +45,23 @@ export const metadata: Metadata = {
     "hostel with gaming zone",
     "premium yet affordable hostel",
     "safe and respectful hostel",
-    "next generation hostel India"
+    "next generation hostel India",
+    "PG in Mathura",
+    "Hostel in Mathura",
+    "best PG in Mathura for students",
+    "boys PG in Mathura",
+    "girls PG in Mathura",
+    "student accommodation Mathura",
+    "PG near GLA University Mathura",
+    "hostel near GLA University Mathura",
+    "premium student living Mathura",
+    "co living space Mathura",
+    "AC PG in Mathura",
+    "luxury boys hostel Mathura",
+    "premium girls PG Mathura",
+    "student rooms rent Mathura",
+    "safe hostel for girls Mathura",
+    "student housing near GLA campus"
   ]
 };
 

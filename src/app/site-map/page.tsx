@@ -24,7 +24,6 @@ const SITEMAP_SECTIONS = [
         title: "Resident Portal",
         links: [
             { name: "Login", href: "/login" },
-            { name: "Create Account", href: "/signup" },
             { name: "Forgot Password", href: "/forgot-password" },
             { name: "Student Dashboard", href: "/student/dashboard" },
         ],

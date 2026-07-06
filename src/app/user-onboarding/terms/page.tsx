@@ -273,7 +273,7 @@ export default function TermsAndConditionsPage() {
                     </p>
                 )}
                 <button
-                    onClick={() => router.push("/signup")}
+                    onClick={() => router.push("/login")}
                     style={{
                         background: "none", border: "none", cursor: "pointer",
                         fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem",
@@ -282,7 +282,7 @@ export default function TermsAndConditionsPage() {
                     }}
                 >
                     <ArrowLeft size={11} style={{ display: "inline", verticalAlign: "middle", marginRight: 4 }} />
-                    Back to Sign Up
+                    Back to Login
                 </button>
             </motion.div>
         </motion.div>
