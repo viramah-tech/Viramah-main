@@ -1,9 +1,9 @@
 export const PAYMENT_CONFIG = {
   BANK_DETAILS: {
-    accountName: "",
-    accountNo: "",
-    ifsc: "",
-    bank: "",
+    accountName: "KRISHNA VALLEY U/O HI-VIEW CONST PVT.LTD.",
+    accountNo: "50200051621521",
+    ifsc: "HDFC0000942",
+    bank: "HDFC BANK",
     upiId: ""
   },
   QR_CODE_IMAGE_PATH: ""

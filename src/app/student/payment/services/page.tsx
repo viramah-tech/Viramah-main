@@ -107,7 +107,7 @@ export default function ServicePaymentsPage() {
           amount: Number(amount),
           utrNumber: transactionId.trim(),
           receiptUrl,
-          paymentMethod: "cash"
+          paymentMethod: "bank_transfer"
         }
       });
       
@@ -235,17 +235,20 @@ export default function ServicePaymentsPage() {
                   </div>
 
                   <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: 16, border: "1px dashed rgba(31,58,45,0.1)" }}>
-                     <p style={{ fontSize: "0.85rem", fontWeight: 600, color: GREEN, margin: "0 0 8px 0" }}>Cash Payment Instructions:</p>
-                     <p style={{ fontSize: "0.8rem", color: "rgba(31,58,45,0.7)", margin: 0, lineHeight: 1.4 }}>
-                        Please deposit the cash at our administration office. Once paid, make sure to get the official physical receipt. Enter the Receipt Number and upload a photo/scan of the receipt below.
-                     </p>
+                     <p style={{ fontSize: "0.85rem", fontWeight: 600, color: GREEN, margin: "0 0 12px 0" }}>Transfer to Viramah Bank Account:</p>
+                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ fontSize: "0.78rem", color: "rgba(31,58,45,0.6)" }}>Bank: <strong style={{ color: GREEN }}>{PAYMENT_CONFIG.BANK_DETAILS.bank}</strong></div>
+                        <div style={{ fontSize: "0.78rem", color: "rgba(31,58,45,0.6)" }}>Account Name: <strong style={{ color: GREEN }}>{PAYMENT_CONFIG.BANK_DETAILS.accountName}</strong></div>
+                        <div style={{ fontSize: "0.78rem", color: "rgba(31,58,45,0.6)" }}>Account Number: <strong style={{ color: GREEN }}>{PAYMENT_CONFIG.BANK_DETAILS.accountNo}</strong></div>
+                        <div style={{ fontSize: "0.78rem", color: "rgba(31,58,45,0.6)" }}>IFSC Code: <strong style={{ color: GREEN }}>{PAYMENT_CONFIG.BANK_DETAILS.ifsc}</strong></div>
+                     </div>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <FieldLabel>Cash Receipt Number</FieldLabel>
+                    <FieldLabel>Transaction UTR Number</FieldLabel>
                     <FieldInput 
                       type="text" 
-                      placeholder="Ex: Cash Receipt No."
+                      placeholder="Ex: 23456789012"
                       value={transactionId}
                       onChange={(e) => setTransactionId(e.target.value)}
                     />

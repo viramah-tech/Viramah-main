@@ -145,7 +145,7 @@ export default function StudentPaymentPage() {
                 method: "POST",
                 body: {
                     category: paymentCategory,
-                    method: "cash",
+                    method: "bank_transfer",
                     transactionId: transactionId.trim(),
                     proofUrl,
                     amount: parseFloat(Number(amount).toFixed(2)),
@@ -751,22 +751,59 @@ export default function StudentPaymentPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* Left Side: Forms and Details */}
                 <div className="lg:col-span-7 space-y-8">
-                    {/* Cash instructions */}
+                    {/* Bank & Transfer details */}
                     <div className="bg-white border border-sand-dark rounded-3xl p-6 space-y-4">
                         <div className="flex justify-between items-center border-b border-sand-dark pb-3">
                             <h3 className="font-display font-medium text-charcoal flex items-center gap-2">
-                                <Wallet className="w-5 h-5 text-[#1F3A2D]" /> Direct Cash Payment
+                                <Wallet className="w-5 h-5 text-[#1F3A2D]" /> Direct Bank Transfer
                             </h3>
                         </div>
 
-                        <div className="p-4 rounded-2xl bg-[#1F3A2D]/5 border border-[#1F3A2D]/12 space-y-2">
-                            <p className="text-xs text-[#1F3A2D] font-bold">Cash Payment Instructions:</p>
-                            <p className="text-xs text-charcoal/80 leading-relaxed font-body">
-                                Please deposit the cash at the Viramah Hostels administration office. Once paid, the accountant will issue an official physical receipt. 
-                            </p>
-                            <p className="text-xs text-charcoal/80 leading-relaxed font-body">
-                                Enter the physical receipt number and upload a clear photo/scan of the receipt below for verification.
-                            </p>
+                        <div className="space-y-3.5 text-sm">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 rounded-2xl bg-sand-light/20 border border-sand-dark/50">
+                                    <span className="text-[10px] font-mono text-charcoal/40 block uppercase tracking-wider">Bank Name</span>
+                                    <span className="font-bold text-xs text-charcoal">{PAYMENT_CONFIG.BANK_DETAILS.bank}</span>
+                                </div>
+                                <div className="p-3 rounded-2xl bg-sand-light/20 border border-sand-dark/50 flex justify-between items-center">
+                                    <div>
+                                        <span className="text-[10px] font-mono text-charcoal/40 block uppercase tracking-wider">IFSC Code</span>
+                                        <span className="font-mono font-bold text-charcoal text-xs">{PAYMENT_CONFIG.BANK_DETAILS.ifsc}</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleCopy(PAYMENT_CONFIG.BANK_DETAILS.ifsc, "ifsc")}
+                                        className="text-charcoal/30 hover:text-[#1F3A2D]"
+                                    >
+                                        {copiedField === "ifsc" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center p-3 rounded-2xl bg-sand-light/20 border border-sand-dark/50">
+                                <div>
+                                    <span className="text-[10px] font-mono text-charcoal/40 block uppercase tracking-wider">Account Number</span>
+                                    <span className="font-mono font-bold text-charcoal">{PAYMENT_CONFIG.BANK_DETAILS.accountNo}</span>
+                                </div>
+                                <button 
+                                    onClick={() => handleCopy(PAYMENT_CONFIG.BANK_DETAILS.accountNo, "acc")}
+                                    className="p-2 text-charcoal/40 hover:text-[#1F3A2D] transition-colors rounded-lg hover:bg-sand-light"
+                                >
+                                    {copiedField === "acc" ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                                </button>
+                            </div>
+
+                            <div className="flex justify-between items-center p-3 rounded-2xl bg-sand-light/20 border border-sand-dark/50">
+                                <div>
+                                    <span className="text-[10px] font-mono text-charcoal/40 block uppercase tracking-wider">Account Holder Name</span>
+                                    <span className="font-mono font-bold text-charcoal text-xs">{PAYMENT_CONFIG.BANK_DETAILS.accountName}</span>
+                                </div>
+                                <button 
+                                    onClick={() => handleCopy(PAYMENT_CONFIG.BANK_DETAILS.accountName, "holder")}
+                                    className="p-2 text-charcoal/40 hover:text-[#1F3A2D] transition-colors rounded-lg hover:bg-sand-light"
+                                >
+                                    {copiedField === "holder" ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -820,18 +857,18 @@ export default function StudentPaymentPage() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-mono text-charcoal/40 uppercase tracking-wider font-bold">Cash Receipt Number</label>
+                                    <label className="text-[10px] font-mono text-charcoal/40 uppercase tracking-wider font-bold">Transaction ID (UTR)</label>
                                     <input
                                         type="text"
                                         value={transactionId}
                                         onChange={(e) => setTransactionId(e.target.value)}
-                                        placeholder="Enter Cash Receipt Number"
+                                        placeholder="Enter UTR reference number"
                                         className="w-full px-4 py-3 rounded-xl bg-sand-light/20 border border-sand-dark text-sm text-charcoal font-mono focus:outline-none focus:border-[#1F3A2D]"
                                     />
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-mono text-charcoal/40 uppercase tracking-wider font-bold">Upload Cash Receipt Receipt/Photo</label>
+                                    <label className="text-[10px] font-mono text-charcoal/40 uppercase tracking-wider font-bold">Payment Screenshot Receipt</label>
                                     
                                     {receipt ? (
                                         <div className="relative w-full rounded-2xl overflow-hidden border border-sand-dark bg-sand-light/10 p-3 flex items-center justify-between">

@@ -142,7 +142,7 @@ export default function BookingFeePage() {
   const router = useRouter();
   const { user, loading: authLoading, refreshUser } = useAuth();
 
-  const [paymentMethod, setPaymentMethod] = useState<"upi" | "bank_transfer" | "cash">("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"upi" | "bank_transfer" | "cash">("bank_transfer");
   const [transactionId, setTransactionId] = useState("");
   const [amount, setAmount] = useState(String(FALLBACK_PRICING.suggestedAmount));
   const [receipt, setReceipt] = useState<{ name: string; preview: string } | null>(null);
@@ -334,26 +334,47 @@ export default function BookingFeePage() {
           <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, margin: 0 }}>
             Payment Method
           </p>
-          <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.8rem", fontWeight: 700, color: GREEN, background: "rgba(31,58,45,0.06)", padding: "4px 12px", borderRadius: 20 }}>
-            Cash Only
-          </span>
+          <div style={{ display: "flex", gap: 10 }}>
+            <SelectionButton label="Bank" selected={paymentMethod === "bank_transfer"} onClick={() => setPaymentMethod("bank_transfer")} />
+            <SelectionButton label="Cash" selected={paymentMethod === "cash"} onClick={() => setPaymentMethod("cash")} />
+          </div>
         </div>
 
-        <div style={{ padding: "12px", background: "rgba(216,181,106,0.1)", borderRadius: 8, border: "1px dashed rgba(216,181,106,0.4)" }}>
-          <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: GREEN, margin: 0, textAlign: "center" }}>
-            Please deposit the cash at our office. Upload the official Cash Receipt image below as proof of payment.
-          </p>
-        </div>
+        {paymentMethod === "bank_transfer" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {([
+              ["Account Name",   PAYMENT_CONFIG.BANK_DETAILS.accountName],
+              ["Account No",     PAYMENT_CONFIG.BANK_DETAILS.accountNo],
+              ["IFSC",           PAYMENT_CONFIG.BANK_DETAILS.ifsc],
+              ["Bank",           PAYMENT_CONFIG.BANK_DETAILS.bank],
+            ] as [string, string][]).map(([label, val]) => (
+              <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>
+                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.72rem", fontWeight: 700, color: GREEN }}>{val}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {paymentMethod === "cash" && (
+          <div style={{ padding: "12px", background: "rgba(216,181,106,0.1)", borderRadius: 8, border: "1px dashed rgba(216,181,106,0.4)" }}>
+            <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: GREEN, margin: 0, textAlign: "center" }}>
+              Please deposit the cash at our office. Upload the official Cash Receipt image below as proof of payment.
+            </p>
+          </div>
+        )}
       </FormCard>
 
       {/* Proof Form */}
       <FormCard>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <FieldLabel htmlFor="booking-txn-id">Cash Receipt Number</FieldLabel>
+          <FieldLabel htmlFor="booking-txn-id">
+            {paymentMethod === "cash" ? "Cash Receipt Number" : "Transaction ID / UTR"}
+          </FieldLabel>
           <FieldInput
             id="booking-txn-id"
             type="text"
-            placeholder="e.g. Cash Receipt Number"
+            placeholder={paymentMethod === "cash" ? "e.g. Cash Receipt Number" : "e.g. UTR123456789 or bank reference"}
             value={transactionId}
             onChange={(e) => setTransactionId(e.target.value)}
             focused={focused === "txnId"}
