@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
     Wallet, UtensilsCrossed, Dumbbell, Bell, Calendar,
@@ -97,36 +98,69 @@ export default function StudentDashboard() {
         >
             {/* ── Welcome Header ── */}
             <motion.div variants={itemVariants}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-                    <div>
-                        <span style={{
-                            fontFamily: "var(--font-mono, monospace)",
-                            fontSize: "0.6rem",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.3em",
-                            color: GOLD,
-                            fontWeight: 700,
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                        {/* Circular Profile Photo */}
+                        <div style={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: "50%",
+                            background: "linear-gradient(135deg, rgba(31,58,45,0.15), rgba(31,58,45,0.08))",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: `2.5px solid ${GOLD}`,
+                            overflow: "hidden",
+                            flexShrink: 0,
+                            boxShadow: "0 4px 14px rgba(31,58,45,0.06)",
                         }}>
-                            {greeting()}
-                        </span>
-                        <h1 style={{
-                            fontFamily: "var(--font-display, serif)",
-                            fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
-                            color: GREEN,
-                            lineHeight: 1.1,
-                            marginTop: 4,
-                            fontWeight: 400,
-                        }}>
-                            Welcome back, {user?.basicInfo?.fullName?.split(" ")[0] || "Student"}
-                        </h1>
-                        <p style={{
-                            fontFamily: "var(--font-body, sans-serif)",
-                            fontSize: "0.9rem",
-                            color: "rgba(31,58,45,0.5)",
-                            marginTop: 6,
-                        }}>
-                            Here&apos;s what&apos;s happening at Viramah today.
-                        </p>
+                            {user?.profilePhoto?.url ? (
+                                <img
+                                    src={user.profilePhoto.url}
+                                    alt="Profile Photo"
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                            ) : (
+                                <span style={{
+                                    fontFamily: "var(--font-mono, monospace)",
+                                    fontSize: "1.2rem",
+                                    color: GREEN,
+                                    fontWeight: 700,
+                                }}>
+                                    {user?.basicInfo?.fullName?.charAt(0) || "S"}
+                                </span>
+                            )}
+                        </div>
+                        <div>
+                            <span style={{
+                                fontFamily: "var(--font-mono, monospace)",
+                                fontSize: "0.6rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.3em",
+                                color: GOLD,
+                                fontWeight: 700,
+                            }}>
+                                {greeting()}
+                            </span>
+                            <h1 style={{
+                                fontFamily: "var(--font-display, serif)",
+                                fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
+                                color: GREEN,
+                                lineHeight: 1.1,
+                                marginTop: 4,
+                                fontWeight: 400,
+                            }}>
+                                Welcome back, {user?.basicInfo?.fullName?.split(" ")[0] || "Student"}
+                            </h1>
+                            <p style={{
+                                fontFamily: "var(--font-body, sans-serif)",
+                                fontSize: "0.9rem",
+                                color: "rgba(31,58,45,0.5)",
+                                marginTop: 6,
+                            }}>
+                                Here&apos;s what&apos;s happening at Viramah today.
+                            </p>
+                        </div>
                     </div>
                     {/* Date badge */}
                     <div style={{

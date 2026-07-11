@@ -96,12 +96,9 @@ function ReceiptUpload({
             <div style={{ marginTop: 8 }}>
                 {file ? (
                     <div style={{ position: "relative", maxWidth: 320, borderRadius: 12, overflow: "hidden", border: `2px solid ${GREEN}` }}>
-                        <Image
+                        <img
                             src={file.preview}
                             alt="Receipt"
-                            width={1200}
-                            height={900}
-                            unoptimized
                             style={{ width: "100%", height: "auto", display: "block" }}
                         />
                         <button
@@ -167,7 +164,7 @@ export default function PaymentBreakdownPage() {
     const [statusData, setStatusData] = useState<PaymentStatusData | null>(null);
 
     const [category, setCategory] = useState<FinalCategory | null>(null);
-    const [method, setMethod] = useState<PaymentMethod>("upi");
+    const [method, setMethod] = useState<PaymentMethod>("cash");
     const [amount, setAmount] = useState("");
     const [transactionId, setTransactionId] = useState("");
     const [receipt, setReceipt] = useState<{ name: string; preview: string } | null>(null);
@@ -485,62 +482,16 @@ export default function PaymentBreakdownPage() {
                     <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, margin: 0 }}>
                         Payment Method
                     </p>
-                    <div style={{ display: "flex", gap: 10 }}>
-                        <SelectionButton label="UPI" selected={method === "upi"} onClick={() => setMethod("upi")} />
-                        <SelectionButton label="Bank" selected={method === "bank_transfer"} onClick={() => setMethod("bank_transfer")} />
-                        <SelectionButton label="Cash" selected={method === "cash"} onClick={() => setMethod("cash")} />
-                    </div>
+                    <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.8rem", fontWeight: 700, color: GREEN, background: "rgba(31,58,45,0.06)", padding: "4px 12px", borderRadius: 20 }}>
+                        Cash Only
+                    </span>
                 </div>
 
-                {method === "upi" && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between", background: "rgba(31,58,45,0.02)", padding: 16, borderRadius: 12, border: "1px dashed rgba(31,58,45,0.15)" }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 200px" }}>
-                    {([
-                        ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName],
-                        ["UPI ID",       PAYMENT_CONFIG.BANK_DETAILS.upiId],
-                    ] as [string, string][]).map(([label, val]) => (
-                        <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.72rem", fontWeight: 700, color: GREEN }}>{val}</span>
-                        </div>
-                    ))}
-                    </div>
-                    <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <Image
-                        src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH}
-                        alt="UPI QR Code"
-                        width={120}
-                        height={120}
-                        style={{ borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }}
-                    />
-                    <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", marginTop: 6, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
-                    </div>
-                </div>
-                )}
-
-                {method === "bank_transfer" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, background: "rgba(31,58,45,0.02)", padding: 16, borderRadius: 12, border: "1px dashed rgba(31,58,45,0.15)" }}>
-                    {([
-                    ["Account Name",   PAYMENT_CONFIG.BANK_DETAILS.accountName],
-                    ["Account No",     PAYMENT_CONFIG.BANK_DETAILS.accountNo],
-                    ["IFSC",           PAYMENT_CONFIG.BANK_DETAILS.ifsc],
-                    ["Bank",           PAYMENT_CONFIG.BANK_DETAILS.bank],
-                    ] as [string, string][]).map(([label, val]) => (
-                    <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.72rem", fontWeight: 700, color: GREEN }}>{val}</span>
-                    </div>
-                    ))}
-                </div>
-                )}
-
-                {method === "cash" && (
                 <div style={{ padding: "12px", background: "rgba(216,181,106,0.1)", borderRadius: 8, border: "1px dashed rgba(216,181,106,0.4)" }}>
                     <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: GREEN, margin: 0, textAlign: "center" }}>
                     Please deposit the cash at our office. Upload the official Cash Receipt image below as proof of payment.
                     </p>
                 </div>
-                )}
 
                 {activeDue && activeDue.isRoomRent ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -652,13 +603,13 @@ export default function PaymentBreakdownPage() {
                 )}
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <FieldLabel htmlFor="final-txn">Transaction ID</FieldLabel>
+                    <FieldLabel htmlFor="final-txn">Cash Receipt Number</FieldLabel>
                     <FieldInput
                         id="final-txn"
                         type="text"
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}
-                        placeholder="e.g. UTR123456789"
+                        placeholder="e.g. Cash Receipt Number"
                         hasError={attempted && !!errors.transactionId}
                     />
                     {attempted && errors.transactionId && <FieldError>{errors.transactionId}</FieldError>}

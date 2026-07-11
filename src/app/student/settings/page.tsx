@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FormInput } from "@/components/ui/FormInput";
 import { Button } from "@/components/ui/Button";
+import Image from "next/image";
 import { User, Bell, Lock, Save } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -36,9 +37,26 @@ export default function SettingsPage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="bg-white rounded-2xl border border-sand-dark p-6"
             >
-                <div className="flex items-center gap-3 mb-6">
-                    <User className="w-5 h-5 text-terracotta-raw" />
-                    <span className="font-body font-medium text-charcoal">Profile Information</span>
+                <div className="flex items-center gap-6 mb-6">
+                    <div className="w-16 h-16 rounded-full border-2 border-[#D8B56A] overflow-hidden flex-shrink-0 bg-[#F6F4EF] flex items-center justify-center shadow-inner relative">
+                        {user?.profilePhoto?.url ? (
+                            <img
+                                src={user.profilePhoto.url}
+                                alt="Profile Photo"
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <User className="w-8 h-8 text-[#1F3A2D]/40" />
+                        )}
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="font-body font-medium text-charcoal">Profile Information</span>
+                        </div>
+                        <p className="font-mono text-[10px] uppercase tracking-wider text-charcoal/40">
+                            Resident ID: {user?.basicInfo?.userId || "-"}
+                        </p>
+                    </div>
                 </div>
                 <div className="space-y-4">
                     <FormInput

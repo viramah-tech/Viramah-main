@@ -84,12 +84,9 @@ function ReceiptUpload({
       <div style={{ marginTop: 8 }}>
         {file ? (
           <div style={{ position: "relative", maxWidth: 300, borderRadius: 12, overflow: "hidden", border: `2px solid ${GREEN}` }}>
-            <Image
+            <img
               src={file.preview}
               alt="Receipt"
-              width={1200}
-              height={900}
-              unoptimized
               style={{ width: "100%", height: "auto", display: "block" }}
             />
             <button
@@ -145,7 +142,7 @@ export default function BookingFeePage() {
   const router = useRouter();
   const { user, loading: authLoading, refreshUser } = useAuth();
 
-  const [paymentMethod, setPaymentMethod] = useState<"upi" | "bank_transfer" | "cash">("upi");
+  const [paymentMethod, setPaymentMethod] = useState<"upi" | "bank_transfer" | "cash">("cash");
   const [transactionId, setTransactionId] = useState("");
   const [amount, setAmount] = useState(String(FALLBACK_PRICING.suggestedAmount));
   const [receipt, setReceipt] = useState<{ name: string; preview: string } | null>(null);
@@ -337,72 +334,26 @@ export default function BookingFeePage() {
           <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", fontWeight: 700, color: GREEN, margin: 0 }}>
             Payment Method
           </p>
-          <div style={{ display: "flex", gap: 10 }}>
-            <SelectionButton label="UPI" selected={paymentMethod === "upi"} onClick={() => setPaymentMethod("upi")} />
-            <SelectionButton label="Bank" selected={paymentMethod === "bank_transfer"} onClick={() => setPaymentMethod("bank_transfer")} />
-            <SelectionButton label="Cash" selected={paymentMethod === "cash"} onClick={() => setPaymentMethod("cash")} />
-          </div>
+          <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.8rem", fontWeight: 700, color: GREEN, background: "rgba(31,58,45,0.06)", padding: "4px 12px", borderRadius: 20 }}>
+            Cash Only
+          </span>
         </div>
 
-        {paymentMethod === "upi" && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 200px" }}>
-              {([
-                ["Account Name", PAYMENT_CONFIG.BANK_DETAILS.accountName],
-                ["UPI ID",       PAYMENT_CONFIG.BANK_DETAILS.upiId],
-              ] as [string, string][]).map(([label, val]) => (
-                <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                  <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>
-                  <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.72rem", fontWeight: 700, color: GREEN }}>{val}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ textAlign: "center", flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-              <Image
-                src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH}
-                alt="UPI QR Code"
-                width={120}
-                height={120}
-                style={{ borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", objectFit: "contain" }}
-              />
-              <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", marginTop: 6, color: "rgba(31,58,45,0.5)" }}>Scan to Pay</p>
-            </div>
-          </div>
-        )}
-
-        {paymentMethod === "bank_transfer" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {([
-              ["Account Name",   PAYMENT_CONFIG.BANK_DETAILS.accountName],
-              ["Account No",     PAYMENT_CONFIG.BANK_DETAILS.accountNo],
-              ["IFSC",           PAYMENT_CONFIG.BANK_DETAILS.ifsc],
-              ["Bank",           PAYMENT_CONFIG.BANK_DETAILS.bank],
-            ] as [string, string][]).map(([label, val]) => (
-              <div key={label} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.65rem", color: "rgba(31,58,45,0.45)", minWidth: 100 }}>{label}:</span>
-                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.72rem", fontWeight: 700, color: GREEN }}>{val}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {paymentMethod === "cash" && (
-          <div style={{ padding: "12px", background: "rgba(216,181,106,0.1)", borderRadius: 8, border: "1px dashed rgba(216,181,106,0.4)" }}>
-            <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: GREEN, margin: 0, textAlign: "center" }}>
-              Please deposit the cash at our office. Upload the official Cash Receipt image below as proof of payment.
-            </p>
-          </div>
-        )}
+        <div style={{ padding: "12px", background: "rgba(216,181,106,0.1)", borderRadius: 8, border: "1px dashed rgba(216,181,106,0.4)" }}>
+          <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.85rem", color: GREEN, margin: 0, textAlign: "center" }}>
+            Please deposit the cash at our office. Upload the official Cash Receipt image below as proof of payment.
+          </p>
+        </div>
       </FormCard>
 
       {/* Proof Form */}
       <FormCard>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <FieldLabel htmlFor="booking-txn-id">Transaction / Reference ID</FieldLabel>
+          <FieldLabel htmlFor="booking-txn-id">Cash Receipt Number</FieldLabel>
           <FieldInput
             id="booking-txn-id"
             type="text"
-            placeholder="e.g. UTR123456789 or UPI reference"
+            placeholder="e.g. Cash Receipt Number"
             value={transactionId}
             onChange={(e) => setTransactionId(e.target.value)}
             focused={focused === "txnId"}

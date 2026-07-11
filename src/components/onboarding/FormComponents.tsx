@@ -199,13 +199,10 @@ export function PhotoUpload({
                         border: `2px solid ${GREEN}`,
                     }}
                 >
-                    <Image
+                    <img
                         src={file.preview}
                         alt={label}
-                        fill
-                        unoptimized
-                        sizes="(max-width: 768px) 100vw, 420px"
-                        style={{ objectFit: "cover" }}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                     <button
                         onClick={handleRemove}
@@ -357,13 +354,12 @@ export function AvatarUpload({
                             boxShadow: "0 6px 24px rgba(31,58,45,0.15)",
                         }}
                     >
-                        <Image
+                        <img
                             src={file.preview}
                             alt={label}
-                            fill
-                            unoptimized
-                            sizes="130px"
                             style={{
+                                width: "100%",
+                                height: "100%",
                                 objectFit: "cover",
                                 display: "block",
                             }}

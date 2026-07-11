@@ -13,6 +13,7 @@ import {
     Loader2,
     RefreshCw,
     XCircle,
+    Printer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useBookingStatus } from "@/hooks/useBookingStatus";
@@ -120,6 +121,307 @@ export default function PaymentStatusPage() {
     const { user, loading: authLoading } = useAuth();
     const { payments, summary, booking, timers, isLoading, error, refetch } = useBookingStatus();
 
+    const categoryLabels: Record<string, string> = {
+        room_rent: "Room Rent",
+        fine: "Fines",
+        mess: "Mess Fee",
+        transport: "Transport Fee",
+        booking: "Booking Payment",
+    };
+
+    const handlePrintReceipt = (p: any) => {
+        const printWindow = window.open("", "_blank");
+        if (!printWindow) {
+            alert("Popup blocker prevented opening the receipt. Please allow popups for this site.");
+            return;
+        }
+
+        const catLabel = categoryLabels[p.category || "room_rent"] || p.paymentType || "Payment";
+        const dateSettled = p.approvedAt ? new Date(p.approvedAt).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        }) : "-";
+        const dateSubmitted = p.uploadedAt ? new Date(p.uploadedAt).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        }) : "-";
+
+        const receiptHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Receipt - ${p.transactionId || p._id}</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                        color: #2E2A26;
+                        margin: 40px;
+                        line-height: 1.5;
+                        background-color: #faf9f6;
+                    }
+                    .receipt-container {
+                        max-width: 800px;
+                        margin: 0 auto;
+                        border: 1px solid #E8E5DF;
+                        border-radius: 24px;
+                        padding: 45px;
+                        background: #fff;
+                        box-shadow: 0 10px 30px rgba(31,58,45,0.03);
+                        position: relative;
+                    }
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        border-bottom: 2px solid #1F3A2D;
+                        padding-bottom: 25px;
+                        margin-bottom: 30px;
+                    }
+                    .logo-section h1 {
+                        font-family: Georgia, serif;
+                        color: #1F3A2D;
+                        margin: 0;
+                        font-size: 32px;
+                        letter-spacing: 0.5px;
+                        font-weight: normal;
+                    }
+                    .logo-section p {
+                        margin: 6px 0 0 0;
+                        font-size: 9px;
+                        text-transform: uppercase;
+                        letter-spacing: 3px;
+                        color: #D8B56A;
+                        font-weight: bold;
+                    }
+                    .receipt-title {
+                        text-align: right;
+                    }
+                    .receipt-title h2 {
+                        margin: 0;
+                        color: #1F3A2D;
+                        font-size: 22px;
+                        font-weight: 600;
+                        letter-spacing: 0.5px;
+                    }
+                    .receipt-title p {
+                        margin: 6px 0 0 0;
+                        font-family: monospace;
+                        font-size: 11px;
+                        color: #7A7570;
+                    }
+                    .details-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 50px;
+                        margin-bottom: 40px;
+                    }
+                    .details-block h3 {
+                        font-size: 11px;
+                        text-transform: uppercase;
+                        letter-spacing: 1.5px;
+                        color: #7A7570;
+                        border-bottom: 1px solid #E8E5DF;
+                        padding-bottom: 8px;
+                        margin-bottom: 14px;
+                        font-weight: bold;
+                    }
+                    .details-block p {
+                        margin: 6px 0;
+                        font-size: 13.5px;
+                    }
+                    .details-block .value {
+                        font-weight: 700;
+                        color: #1F3A2D;
+                    }
+                    .table-section {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 40px;
+                    }
+                    .table-section th {
+                        background: #F6F4EF;
+                        color: #1F3A2D;
+                        text-align: left;
+                        padding: 14px 18px;
+                        font-size: 11px;
+                        text-transform: uppercase;
+                        letter-spacing: 1.5px;
+                        border-bottom: 1px solid #E8E5DF;
+                        font-weight: bold;
+                    }
+                    .table-section td {
+                        padding: 18px;
+                        font-size: 14px;
+                        border-bottom: 1px solid #E8E5DF;
+                        color: #2E2A26;
+                    }
+                    .amount-row td {
+                        font-size: 18px;
+                        font-weight: bold;
+                        color: #1F3A2D;
+                        background: #fdfdfb;
+                    }
+                    .watermark {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%) rotate(-25deg);
+                        font-size: 75px;
+                        color: rgba(16, 185, 129, 0.08);
+                        border: 6px double rgba(16, 185, 129, 0.08);
+                        padding: 8px 25px;
+                        font-weight: 800;
+                        text-transform: uppercase;
+                        pointer-events: none;
+                        border-radius: 16px;
+                        letter-spacing: 5px;
+                    }
+                    .footer {
+                        text-align: center;
+                        margin-top: 50px;
+                        font-size: 11px;
+                        color: #7A7570;
+                        border-top: 1px dashed #E8E5DF;
+                        padding-top: 25px;
+                        line-height: 1.6;
+                    }
+                    @media print {
+                        body {
+                            margin: 0;
+                            background-color: #fff;
+                        }
+                        .receipt-container {
+                            border: none;
+                            box-shadow: none;
+                            padding: 0;
+                        }
+                        .watermark {
+                            color: rgba(16, 185, 129, 0.12) !important;
+                            border-color: rgba(16, 185, 129, 0.12) !important;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        .no-print {
+                            display: none;
+                        }
+                    }
+                    .print-btn-container {
+                        text-align: right;
+                        margin-bottom: 20px;
+                        max-width: 800px;
+                        margin-left: auto;
+                        margin-right: auto;
+                    }
+                    .print-btn {
+                        background: #1F3A2D;
+                        color: #F6F4EF;
+                        border: none;
+                        padding: 12px 24px;
+                        border-radius: 12px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        font-size: 13px;
+                        transition: all 0.2s;
+                        letter-spacing: 0.5px;
+                    }
+                    .print-btn:hover {
+                        background: #15271e;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-btn-container no-print">
+                    <button class="print-btn" onclick="window.print()">Print Receipt / Save PDF</button>
+                </div>
+                <div class="receipt-container">
+                    <div class="watermark">PAID</div>
+                    <div class="header">
+                        <div class="logo-section">
+                            <h1>VIRAMAH</h1>
+                            <p>Premium Student Living</p>
+                        </div>
+                        <div class="receipt-title">
+                            <h2>PAYMENT RECEIPT</h2>
+                            <p>Receipt No: REC-${p._id.slice(-6).toUpperCase()}</p>
+                        </div>
+                    </div>
+
+                    <div class="details-grid">
+                        <div class="details-block">
+                            <h3>PAID BY</h3>
+                            <p><span class="value">${user?.basicInfo?.fullName || "Student"}</span></p>
+                            <p>User ID: ${user?.basicInfo?.userId || "-"}</p>
+                            <p>Email: ${user?.basicInfo?.email || "-"}</p>
+                            <p>Phone: ${user?.basicInfo?.phone || "-"}</p>
+                        </div>
+                        <div class="details-block">
+                            <h3>PAID TO</h3>
+                            <p><span class="value">VIRAMAH STAY</span></p>
+                            <p>Premium Student Living & Hostels</p>
+                            <p>Near GLA University</p>
+                            <p>Mathura, Uttar Pradesh, India</p>
+                        </div>
+                    </div>
+
+                    <table class="table-section">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Transaction Ref (UTR)</th>
+                                <th>Payment Method</th>
+                                <th style="text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${catLabel} Settlement</td>
+                                <td><code style="font-family: monospace; font-size: 13px; font-weight: bold; color: #1F3A2D;">${p.transactionId || "-"}</code></td>
+                                <td style="text-transform: uppercase;">${p.method || "-"}</td>
+                                <td style="text-align: right; font-weight: bold;">₹${p.amount.toLocaleString('en-IN')}</td>
+                            </tr>
+                            <tr class="amount-row">
+                                <td colspan="3" style="text-align: right; font-weight: bold; border-top: 2px solid #1F3A2D;">Total Paid:</td>
+                                <td style="text-align: right; font-weight: bold; border-top: 2px solid #1F3A2D;">₹${p.amount.toLocaleString('en-IN')}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="details-grid" style="margin-bottom: 20px;">
+                        <div class="details-block">
+                            <h3>TRANSACTION TIMELINE</h3>
+                            <p>Submitted: <span class="value">${dateSubmitted}</span></p>
+                            <p>Settled/Approved: <span class="value">${dateSettled}</span></p>
+                        </div>
+                        <div class="details-block" style="text-align: right; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end;">
+                            <div style="border-top: 1px solid #2E2A26; width: 180px; padding-top: 6px; font-size: 11px; text-align: center; color: #7A7570;">
+                                Authorized Signatory
+                                <br><span style="font-weight: bold; color: #1F3A2D; font-family: Georgia, serif;">VIRAMAH ACCOUNTS</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        This is a computer-generated document and does not require a physical signature.<br>
+                        Thank you for staying at Viramah Stay! For queries, contact support@viramahstay.com
+                    </div>
+                </div>
+                <script>
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.print();
+                        }, 500);
+                    };
+                </script>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(receiptHtml);
+        printWindow.document.close();
+    };
+
     const [actionLoading, setActionLoading] = useState<"extension" | "refund" | "cancel" | null>(null);
     const [actionMessage, setActionMessage] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
@@ -225,6 +527,31 @@ export default function PaymentStatusPage() {
                 </div>
             </motion.div>
 
+            {booking?.status === "FULLY_PAID" && user?.onboarding?.currentStep !== "completed" && (
+                <motion.div
+                    variants={itemVariants}
+                    style={{
+                        background: "rgba(216,181,106,0.08)",
+                        border: "1px solid rgba(216,181,106,0.3)",
+                        borderRadius: 14,
+                        padding: 16,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                    }}
+                >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Clock size={18} color="#9a7a3a" />
+                        <span style={{ color: "#9a7a3a", fontWeight: 700, fontSize: "0.85rem" }}>
+                            Awaiting Document Verification
+                        </span>
+                    </div>
+                    <p style={{ margin: 0, color: "rgba(31,58,45,0.7)", fontSize: "0.8rem", lineHeight: 1.4 }}>
+                        Your payments are fully cleared! The administration team is now reviewing your uploaded identity documents. Once approved, you will be able to proceed to the move-in steps. Please refresh this page to check status changes.
+                    </p>
+                </motion.div>
+            )}
+
             {error && (
                 <motion.div variants={itemVariants} style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 10, padding: "10px 12px", color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}>
                     <AlertCircle size={16} />
@@ -283,7 +610,7 @@ export default function PaymentStatusPage() {
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         {payments.map((payment) => (
-                            <div key={payment._id} style={{ padding: 14, borderTop: "1px solid rgba(31,58,45,0.06)", display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
+                            <div key={payment._id} style={{ padding: 14, borderTop: "1px solid rgba(31,58,45,0.06)", display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr 1.2fr auto", gap: 8, alignItems: "center" }}>
                                 <div>
                                     <div style={{ fontSize: "0.82rem", fontWeight: 600, color: GREEN }}>
                                         {payment.paymentType.replace("_", " ")} {payment.category ? `(${payment.category})` : ""}
@@ -298,8 +625,30 @@ export default function PaymentStatusPage() {
                                 <div style={{ fontSize: "0.74rem", color: "rgba(31,58,45,0.6)", textTransform: "capitalize" }}>
                                     {payment.method || "-"}
                                 </div>
-                                <div style={{ fontSize: "0.74rem", color: "rgba(31,58,45,0.6)" }}>
-                                    {fmtDate(payment.approvedAt || payment.uploadedAt || undefined)}
+                                <div style={{ fontSize: "0.74rem", color: "rgba(31,58,45,0.6)", display: "flex", flexDirection: "column", gap: 4 }}>
+                                    <span>{fmtDate(payment.approvedAt || payment.uploadedAt || undefined)}</span>
+                                    {payment.status === 'approved' && (
+                                        <button
+                                            onClick={() => handlePrintReceipt(payment)}
+                                            style={{
+                                                border: "none",
+                                                background: "none",
+                                                cursor: "pointer",
+                                                color: "#166534",
+                                                fontSize: "0.68rem",
+                                                fontFamily: "var(--font-mono, monospace)",
+                                                fontWeight: "bold",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 4,
+                                                padding: 0,
+                                                textAlign: "left",
+                                                textDecoration: "underline",
+                                            }}
+                                        >
+                                            <Printer size={12} /> Print Receipt
+                                        </button>
+                                    )}
                                 </div>
                                 <PaymentPill status={payment.status} />
                             </div>
@@ -321,7 +670,13 @@ export default function PaymentStatusPage() {
                 ) : booking?.status === "REJECTED" ? (
                     <NavButton onClick={() => router.push("/user-onboarding/deposit")}>Re-submit Booking</NavButton>
                 ) : booking?.status === "FULLY_PAID" ? (
-                    <NavButton onClick={() => router.push("/student/move-in")}>View Next Steps</NavButton>
+                    user?.onboarding?.currentStep === "completed" ? (
+                        <NavButton onClick={() => router.push("/student/move-in")}>View Next Steps</NavButton>
+                    ) : (
+                        <NavButton onClick={() => refetch()}>
+                            Refresh Status
+                        </NavButton>
+                    )
                 ) : (
                     <NavButton onClick={() => refetch()}>Check Again</NavButton>
                 )}

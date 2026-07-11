@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import { PortalNav } from "@/components/layout/PortalNav";
 import { useAuth } from "@/context/AuthContext";
 import { Bell, Menu, X } from "lucide-react";
@@ -25,6 +26,12 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             return;
         }
 
+        const isCheckedIn = user.roomDetails?.status === "checked_in";
+        if (isCheckedIn) {
+            // Allow access to all portal routes once checked in
+            return;
+        }
+
         const allowedPaths = ["/student/move-in", "/student/payment", "/student/documents"];
         const isAllowed = allowedPaths.some(p => pathname === p || pathname.startsWith(p + "/"));
         if (!isAllowed) {
@@ -43,7 +50,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
     if (!isAuthenticated) return null;
 
-    const userName = user?.name || "Student";
+    const userName = user?.basicInfo?.fullName || "Student";
 
     return (
         <div style={{ minHeight: "100vh", background: "#F6F4EF", display: "flex" }}>
@@ -180,15 +187,24 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                             alignItems: "center",
                             justifyContent: "center",
                             border: `2px solid ${GOLD}`,
+                            overflow: "hidden",
                         }}>
-                            <span style={{
-                                fontFamily: "var(--font-mono, monospace)",
-                                fontSize: "0.65rem",
-                                color: GOLD,
-                                fontWeight: 700,
-                            }}>
-                                {userName.charAt(0)}
-                            </span>
+                            {user?.profilePhoto?.url ? (
+                                <img
+                                    src={user.profilePhoto.url}
+                                    alt="Profile"
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                            ) : (
+                                <span style={{
+                                    fontFamily: "var(--font-mono, monospace)",
+                                    fontSize: "0.65rem",
+                                    color: GOLD,
+                                    fontWeight: 700,
+                                }}>
+                                    {userName.charAt(0)}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </header>

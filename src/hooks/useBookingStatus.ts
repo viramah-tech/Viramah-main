@@ -28,6 +28,10 @@ export interface PaymentSummary {
   totalPending: number;
   paymentDeadline?: string;
   roomRent?: BackendLedger;
+  messFee?: BackendLedger;
+  transportFee?: BackendLedger;
+  fines?: BackendLedger;
+  grandTotal?: BackendLedger;
 }
 
 export interface V3Booking {
@@ -72,6 +76,7 @@ interface BackendPaymentSummary {
   roomRent?: BackendLedger;
   messFee?: BackendLedger;
   transportFee?: BackendLedger;
+  fines?: BackendLedger;
   grandTotal?: BackendLedger;
   isFullyPaid?: boolean;
 }
@@ -203,6 +208,10 @@ export function useBookingStatus(): UseBookingStatusResult {
         totalPending: p.filter((payment) => payment.status === "pending").length,
         paymentDeadline: deadline || undefined,
         roomRent: paymentSummary?.roomRent,
+        messFee: paymentSummary?.messFee,
+        transportFee: paymentSummary?.transportFee,
+        fines: paymentSummary?.fines,
+        grandTotal: paymentSummary?.grandTotal,
       };
 
       const latestBooking = [...backendRecords].reverse().find((record) => record.paymentType === "booking");

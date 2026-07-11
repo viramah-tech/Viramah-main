@@ -47,7 +47,11 @@ interface PortalNavProps {
 export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+    const isCheckedIn = user?.roomDetails?.status === "checked_in";
+    const allowedPaths = isCheckedIn
+        ? ["/student/dashboard", "/student/wallet", "/student/payment", "/student/documents", "/student/canteen", "/student/amenities", "/student/maintenance", "/student/settings"]
+        : ["/student/payment", "/student/documents"];
     const navItems = role === "student" ? STUDENT_NAV : STUDENT_NAV;
 
     const handleLogout = () => {
@@ -98,8 +102,17 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
                         alignItems: "center",
                         justifyContent: "center",
                         flexShrink: 0,
+                        overflow: "hidden",
                     }}>
-                        <User size={16} color={GREEN} />
+                        {user?.profilePhoto?.url ? (
+                            <img
+                                src={user.profilePhoto.url}
+                                alt="Profile Photo"
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                        ) : (
+                            <User size={16} color={GREEN} />
+                        )}
                     </div>
                     <div style={{ overflow: "hidden" }}>
                         <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", fontWeight: 600, color: GREEN, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -121,8 +134,7 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     {navItems.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                        const isAllowedPath = ["/student/payment", "/student/documents"].includes(item.href);
-                        const isLocked = role === "student" && !isAllowedPath;
+                        const isLocked = role === "student" && !allowedPaths.includes(item.href);
 
                         return (
                             <li key={item.href}>

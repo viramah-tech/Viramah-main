@@ -107,7 +107,7 @@ export default function ServicePaymentsPage() {
           amount: Number(amount),
           utrNumber: transactionId.trim(),
           receiptUrl,
-          paymentMethod: "UPI"
+          paymentMethod: "cash"
         }
       });
       
@@ -235,21 +235,17 @@ export default function ServicePaymentsPage() {
                   </div>
 
                   <div style={{ background: "rgba(31,58,45,0.03)", borderRadius: 12, padding: 16, border: "1px dashed rgba(31,58,45,0.1)" }}>
-                     <p style={{ fontSize: "0.85rem", fontWeight: 600, color: GREEN, margin: "0 0 12px 0" }}>Transfer via UPI:</p>
-                     <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                      <Image src={PAYMENT_CONFIG.QR_CODE_IMAGE_PATH} alt="QR" width={80} height={80} style={{ borderRadius: 8 }} />
-                       <div>
-                          <div style={{ fontSize: "0.85rem", color: "rgba(31,58,45,0.6)" }}>UPI ID:</div>
-                          <div style={{ fontSize: "1rem", color: GREEN, fontWeight: 700 }}>{PAYMENT_CONFIG.BANK_DETAILS.upiId}</div>
-                       </div>
-                     </div>
+                     <p style={{ fontSize: "0.85rem", fontWeight: 600, color: GREEN, margin: "0 0 8px 0" }}>Cash Payment Instructions:</p>
+                     <p style={{ fontSize: "0.8rem", color: "rgba(31,58,45,0.7)", margin: 0, lineHeight: 1.4 }}>
+                        Please deposit the cash at our administration office. Once paid, make sure to get the official physical receipt. Enter the Receipt Number and upload a photo/scan of the receipt below.
+                     </p>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <FieldLabel>Transaction UTR Number</FieldLabel>
+                    <FieldLabel>Cash Receipt Number</FieldLabel>
                     <FieldInput 
                       type="text" 
-                      placeholder="Ex: 23456789012"
+                      placeholder="Ex: Cash Receipt No."
                       value={transactionId}
                       onChange={(e) => setTransactionId(e.target.value)}
                     />
@@ -259,7 +255,7 @@ export default function ServicePaymentsPage() {
                     <FieldLabel>Payment Screenshot</FieldLabel>
                     {receipt ? (
                       <div style={{ position: "relative", width: "fit-content" }}>
-                        <Image src={receipt.preview} alt="Receipt" width={160} height={100} unoptimized style={{ height: 100, width: "auto", borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)" }} />
+                        <img src={receipt.preview} alt="Receipt" style={{ height: 100, width: "auto", borderRadius: 8, border: "2px solid rgba(31,58,45,0.1)", display: "block" }} />
                         <button onClick={() => setReceipt(null)} style={{ position: "absolute", top: -8, right: -8, background: "#dc2626", color: "#fff", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", display: "flex", alignItems: "center", justifyItems: "center" }}>
                            <X size={14} style={{ margin: "auto" }}/>
                         </button>
