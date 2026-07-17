@@ -14,6 +14,7 @@ import {
     RefreshCw,
     XCircle,
     Printer,
+    Trash2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useBookingStatus } from "@/hooks/useBookingStatus";
@@ -425,6 +426,27 @@ export default function PaymentStatusPage() {
     const [actionLoading, setActionLoading] = useState<"extension" | "refund" | "cancel" | null>(null);
     const [actionMessage, setActionMessage] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
+    const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
+
+    const handleDeletePayment = async (paymentId: string) => {
+        if (!confirm("Are you sure you want to delete this payment record? This action cannot be undone.")) {
+            return;
+        }
+        setDeletingPaymentId(paymentId);
+        setActionError(null);
+        setActionMessage(null);
+        try {
+            await apiFetch(API.payment.delete(paymentId), {
+                method: "DELETE",
+            });
+            setActionMessage("Payment deleted successfully.");
+            await refetch();
+        } catch (err) {
+            setActionError(err instanceof Error ? err.message : "Failed to delete payment");
+        } finally {
+            setDeletingPaymentId(null);
+        }
+    };
 
     useEffect(() => {
         if (authLoading) return;
@@ -650,7 +672,35 @@ export default function PaymentStatusPage() {
                                         </button>
                                     )}
                                 </div>
-                                <PaymentPill status={payment.status} />
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
+                                    <PaymentPill status={payment.status} />
+                                    {(payment.status === "pending" || payment.status === "rejected") && (
+                                        <button
+                                            onClick={() => handleDeletePayment(payment._id)}
+                                            disabled={deletingPaymentId !== null}
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                cursor: deletingPaymentId !== null ? "not-allowed" : "pointer",
+                                                padding: 4,
+                                                borderRadius: 6,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                color: "#dc2626",
+                                                opacity: deletingPaymentId !== null ? 0.4 : 0.8,
+                                                transition: "all 0.2s",
+                                            }}
+                                            title="Delete Payment"
+                                        >
+                                            {deletingPaymentId === payment._id ? (
+                                                <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
+                                            ) : (
+                                                <Trash2 size={13} />
+                                            )}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>

@@ -40,6 +40,7 @@ export const API = {
     extensionRequest: '/api/payment/extension-request',
     refundRequest: '/api/payment/refund-request',
     cancelBooking: '/api/payment/cancel-booking',
+    delete: (paymentId: string) => `/api/payment/${paymentId}`,
   },
 } as const;
 
