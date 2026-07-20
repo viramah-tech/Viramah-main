@@ -8,6 +8,7 @@ import { ScheduleVisitProvider } from "@/context/ScheduleVisitContext";
 import { LazyScheduleVisitModal } from "@/components/ui/LazyScheduleVisitModal";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/components/ui/Toast";
+import { CacheManager } from "@/components/CacheManager";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -220,6 +221,7 @@ export default function RootLayout({
           <ToastProvider>
             <EnquiryProvider>
               <ScheduleVisitProvider>
+                <CacheManager />
                 {children}
                 <LazyEnquiryModal />
                 <LazyScheduleVisitModal />

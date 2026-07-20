@@ -57,12 +57,19 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
-  /* Security Headers */
+  /* Security and Caching Headers */
   async headers() {
     return [
       {
-        source: "/(.*)",
+        // Default header: prevent caching of pages, JSON data, and APIs on disk
+        source: "/:path*",
         headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          },
+          { key: "Pragma", value: "no-cache" },
+          { key: "Expires", value: "0" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
@@ -84,7 +91,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Cache static assets aggressively (images, fonts, JS, CSS)
+        // Cache static assets aggressively (images, fonts, JS, CSS) to maintain performance
         source: "/(.*)\\.(jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2|js|css)",
         headers: [
           {
