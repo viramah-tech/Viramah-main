@@ -21,22 +21,13 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             router.push("/login");
             return;
         }
-        if (user.onboarding?.currentStep !== "completed") {
-            router.replace("/user-onboarding/payment-status");
-            return;
-        }
-
-        const isCheckedIn = user.roomDetails?.status === "checked_in";
-        if (isCheckedIn) {
-            // Allow access to all portal routes once checked in
-            return;
-        }
-
-        const allowedPaths = ["/student/move-in", "/student/payment", "/student/documents"];
-        const isAllowed = allowedPaths.some(p => pathname === p || pathname.startsWith(p + "/"));
-        if (!isAllowed) {
-            router.replace("/student/move-in");
-            return;
+        // Only /student/payment and /student/documents are unlocked
+        const unlockedPaths = ["/student/payment", "/student/documents"];
+        const isUnlocked = unlockedPaths.some(
+            (p) => pathname === p || pathname.startsWith(p + "/")
+        );
+        if (!isUnlocked) {
+            router.replace("/student/payment");
         }
     }, [loading, isAuthenticated, user, router, pathname]);
 

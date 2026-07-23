@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Wrench, CheckCircle2, Clock, AlertCircle,
     Plus, X, Send,
-    Thermometer, Lock
+    Thermometer, Lock, Zap, Droplets, Wifi, Sparkles, MoreHorizontal
 } from "lucide-react";
 
 const GREEN = "#1F3A2D";

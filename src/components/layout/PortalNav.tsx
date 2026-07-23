@@ -33,7 +33,7 @@ const STUDENT_NAV: NavItem[] = [
     { label: "Wallet", href: "/student/wallet", icon: Wallet },
     { label: "Payments", href: "/student/payment", icon: CreditCard },
     { label: "Documents", href: "/student/documents", icon: FileCheck },
-    { label: "Canteen", href: "/student/canteen", icon: UtensilsCrossed },
+    { label: "Mess", href: "/student/canteen", icon: UtensilsCrossed },
     { label: "Amenities", href: "/student/amenities", icon: Dumbbell },
     { label: "Maintenance", href: "/student/maintenance", icon: Wrench },
     { label: "Settings", href: "/student/settings", icon: Settings },
@@ -48,11 +48,17 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { logout, user } = useAuth();
-    const isCheckedIn = user?.roomDetails?.status === "checked_in";
-    const allowedPaths = isCheckedIn
-        ? ["/student/dashboard", "/student/wallet", "/student/payment", "/student/documents", "/student/canteen", "/student/amenities", "/student/maintenance", "/student/settings"]
-        : ["/student/payment", "/student/documents"];
-    const navItems = role === "student" ? STUDENT_NAV : STUDENT_NAV;
+    const allowedPaths = [
+        "/student/dashboard",
+        "/student/wallet",
+        "/student/payment",
+        "/student/documents",
+        "/student/canteen",
+        "/student/amenities",
+        "/student/maintenance",
+        "/student/settings"
+    ];
+    const navItems = STUDENT_NAV;
 
     const handleLogout = () => {
         logout();
@@ -134,7 +140,7 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     {navItems.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                        const isLocked = role === "student" && !allowedPaths.includes(item.href);
+                        const isLocked = item.href !== "/student/payment" && item.href !== "/student/documents";
 
                         return (
                             <li key={item.href}>
