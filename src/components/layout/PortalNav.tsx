@@ -15,7 +15,8 @@ import {
     User,
     Wrench,
     CreditCard,
-    FileCheck
+    FileCheck,
+    Bus
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -33,6 +34,7 @@ const STUDENT_NAV: NavItem[] = [
     { label: "Wallet", href: "/student/wallet", icon: Wallet },
     { label: "Payments", href: "/student/payment", icon: CreditCard },
     { label: "Documents", href: "/student/documents", icon: FileCheck },
+    { label: "Transport", href: "/student/transport", icon: Bus },
     { label: "Mess", href: "/student/canteen", icon: UtensilsCrossed },
     { label: "Amenities", href: "/student/amenities", icon: Dumbbell },
     { label: "Maintenance", href: "/student/maintenance", icon: Wrench },
@@ -140,7 +142,7 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     {navItems.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                        const isLocked = item.href !== "/student/payment" && item.href !== "/student/documents";
+                        const isLocked = item.href !== "/student/payment" && item.href !== "/student/documents" && item.href !== "/student/transport";
 
                         return (
                             <li key={item.href}>

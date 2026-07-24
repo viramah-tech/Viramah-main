@@ -15,6 +15,7 @@ import {
     XCircle,
     Printer,
     Trash2,
+    LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useBookingStatus } from "@/hooks/useBookingStatus";
@@ -134,28 +135,47 @@ export default function PaymentStatusPage() {
     const handlePrintReceipt = (p: any) => {
         const catLabel = categoryLabels[p.category || "room_rent"] || p.paymentType || "Payment";
         const dateSettled = p.approvedAt ? new Date(p.approvedAt).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'long',
+            day: '2-digit',
+            month: 'short',
             year: 'numeric'
         }) : "-";
         const dateSubmitted = p.uploadedAt ? new Date(p.uploadedAt).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'long',
+            day: '2-digit',
+            month: 'short',
             year: 'numeric'
         }) : "-";
+
+        const formattedTxns = (payments || []).map((tx: any) => ({
+            date: tx.uploadedAt ? new Date(tx.uploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+            category: tx.category || tx.paymentType,
+            paymentType: tx.paymentType,
+            method: tx.method,
+            transactionId: tx.transactionId,
+            receiptNumber: tx.receiptNumber,
+            status: tx.status,
+            amount: tx.amount,
+            rejectionReason: tx.rejectionReason,
+        }));
 
         const success = openReceiptWindow({
             payerName: user?.basicInfo?.fullName || "Student",
             userId: user?.basicInfo?.userId || "-",
             email: user?.basicInfo?.email || "-",
             phone: user?.basicInfo?.phone || "-",
+            roomNumber: (user as any)?.roomNumber || (user as any)?.roomAllocation?.roomNumber || "Allocated Room",
+            roomType: (user as any)?.roomType || "Standard Co-Living",
+            paymentPlan: "Standard Plan",
             description: `${catLabel} Settlement`,
             transactionId: p.transactionId || "-",
             method: p.method || "-",
             amount: p.amount,
-            receiptNo: `REC-${p._id.slice(-6).toUpperCase()}`,
+            status: p.status,
+            rejectionReason: p.rejectionReason,
+            receiptNo: `REC-${p._id ? p._id.slice(-6).toUpperCase() : '000000'}`,
             dateSubmitted,
             dateSettled,
+            transactions: formattedTxns,
+            isFullyPaid: false,
         });
 
         if (!success) {
@@ -260,10 +280,15 @@ export default function PaymentStatusPage() {
 
     return (
         <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 32 }}>
-            <motion.div variants={itemVariants} style={{ textAlign: "center" }}>
-                <StepBadge icon={CreditCard} label="Payment Status" />
-                <StepTitle>{view.title}</StepTitle>
-                <StepSubtitle>{view.subtitle}</StepSubtitle>
+            <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, borderBottom: "1px solid rgba(31,58,45,0.1)", paddingBottom: 16 }}>
+                <div>
+                    <StepBadge icon={CreditCard} label="Payment Status" />
+                    <StepTitle style={{ marginTop: 6 }}>{view.title}</StepTitle>
+                    <StepSubtitle>{view.subtitle}</StepSubtitle>
+                </div>
+                <SecondaryButton onClick={() => router.push("/student/dashboard")} style={{ background: GREEN, color: "#fff", border: "none" }}>
+                    <LayoutDashboard size={16} /> Go to Student Dashboard
+                </SecondaryButton>
             </motion.div>
 
             <motion.div

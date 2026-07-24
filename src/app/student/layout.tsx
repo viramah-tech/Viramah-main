@@ -21,8 +21,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             router.push("/login");
             return;
         }
-        // Only /student/payment and /student/documents are unlocked
-        const unlockedPaths = ["/student/payment", "/student/documents"];
+        // Only /student/payment, /student/documents, and /student/transport are unlocked
+        const unlockedPaths = ["/student/payment", "/student/documents", "/student/transport"];
         const isUnlocked = unlockedPaths.some(
             (p) => pathname === p || pathname.startsWith(p + "/")
         );

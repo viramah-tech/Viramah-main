@@ -13,6 +13,7 @@ import {
     Receipt,
     Upload,
     X,
+    LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -431,7 +432,10 @@ export default function PaymentBreakdownPage() {
                     <StepTitle>No Pending Final Dues</StepTitle>
                     <StepSubtitle>Your outstanding final payment appears to be cleared.</StepSubtitle>
                 </motion.div>
-                <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "center" }}>
+                <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+                    <SecondaryButton onClick={() => router.push("/student/dashboard")}>
+                        <LayoutDashboard size={16} /> Go to Student Dashboard
+                    </SecondaryButton>
                     <NavButton onClick={() => router.push("/user-onboarding/payment-status")}>
                         <CreditCard size={16} /> View Payment Status
                     </NavButton>
@@ -442,10 +446,15 @@ export default function PaymentBreakdownPage() {
 
     return (
         <motion.div variants={containerVariants} initial={false} animate="visible" style={{ display: "flex", flexDirection: "column", gap: 22, paddingBottom: 32 }}>
-            <motion.div variants={itemVariants} style={{ textAlign: "center", paddingBottom: 4 }}>
-                <StepBadge icon={Receipt} label="Final Payment" />
-                <StepTitle>Complete Final Payment</StepTitle>
-                <StepSubtitle>Submit your final payment proof for admin verification.</StepSubtitle>
+            <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, borderBottom: "1px solid rgba(31,58,45,0.1)", paddingBottom: 16 }}>
+                <div>
+                    <StepBadge icon={Receipt} label="Final Payment" />
+                    <StepTitle style={{ marginTop: 6 }}>Complete Final Payment</StepTitle>
+                    <StepSubtitle>Submit your final payment proof for admin verification.</StepSubtitle>
+                </div>
+                <SecondaryButton onClick={() => router.push("/student/dashboard")} style={{ background: GREEN, color: "#fff", border: "none" }}>
+                    <LayoutDashboard size={16} /> Go to Student Dashboard
+                </SecondaryButton>
             </motion.div>
 
             <motion.div variants={itemVariants} style={{ background: "#fff", borderRadius: 14, border: "1px solid rgba(31,58,45,0.12)", padding: 18 }}>
@@ -654,10 +663,15 @@ export default function PaymentBreakdownPage() {
                 </motion.div>
             )}
 
-            <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between" }}>
-                <SecondaryButton onClick={() => router.push("/user-onboarding/payment-status")}>
-                    <ArrowLeft size={16} /> Back
-                </SecondaryButton>
+            <motion.div variants={itemVariants} style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <SecondaryButton onClick={() => router.push("/user-onboarding/payment-status")}>
+                        <ArrowLeft size={16} /> Back
+                    </SecondaryButton>
+                    <SecondaryButton onClick={() => router.push("/student/dashboard")}>
+                        <LayoutDashboard size={16} /> Go to Dashboard
+                    </SecondaryButton>
+                </div>
                 <NavButton onClick={handleSubmit} disabled={submitting || !category}>
                     {submitting ? (
                         <>
