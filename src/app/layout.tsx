@@ -34,8 +34,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://viramahstay.com"),
-  title: "Viramah | Premium Student Living & Hostels near GLA University Mathura",
-  description: "Dignified student housing reimagined. Premium hostels and co-living spaces near GLA University Mathura with high-speed Wi-Fi, modern amenities, and active community focus.",
+  title: "Viramah | Premium Student Living & Co-Living near GLA University Mathura",
+  description: "Dignified student housing reimagined. Premium residences and co-living spaces near GLA University Mathura with high-speed Wi-Fi, modern amenities, and active community focus.",
   keywords: [
     "premium hostel in India",
     "experience focused hostel",
@@ -76,8 +76,8 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "Viramah | Premium Student Living & Hostels near GLA University Mathura",
-    description: "Premium student living reimagined — where comfort, community, and craft come together. Modern hostels near GLA University Mathura.",
+    title: "Viramah | Premium Student Living & Co-Living near GLA University Mathura",
+    description: "Premium student living reimagined — where comfort, community, and craft come together. Modern residences near GLA University Mathura.",
     url: "https://viramahstay.com",
     siteName: "Viramah",
     images: [
@@ -92,7 +92,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Viramah | Premium Student Living & Hostels near GLA University Mathura",
+    title: "Viramah | Premium Student Living & Co-Living near GLA University Mathura",
     description: "Premium student living reimagined near GLA University Mathura with dignity and comfort.",
     images: ["/logo.png"],
   },

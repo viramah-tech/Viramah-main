@@ -42,7 +42,7 @@ export default function StudentMessPage() {
     if (!pollData?.poll?._id) return;
     try {
       const userId = user?.basicInfo?.userId || user?._id || "RESIDENTIAL_STUDENT";
-      const studentName = user?.basicInfo?.fullName || "Hostel Resident";
+      const studentName = user?.basicInfo?.fullName || "Resident";
 
       const res = await fetch("http://localhost:5000/api/mess/poll/vote", {
         method: "POST",
@@ -106,7 +106,7 @@ export default function StudentMessPage() {
           <div className="flex items-center justify-between border-b border-white/15 pb-4">
             <div>
               <span className="px-2.5 py-0.5 rounded-full bg-[#25D366] text-[#075E54] text-[10px] font-mono font-bold uppercase">
-                Hostel WhatsApp Poll
+                Community WhatsApp Poll
               </span>
               <h2 className="text-xl sm:text-2xl font-bold font-display text-white mt-1">
                 {poll?.title || "Monthly Mess Menu Selection Poll"}

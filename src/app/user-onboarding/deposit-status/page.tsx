@@ -8,6 +8,7 @@ import {
     ArrowRight, RotateCcw, Shield, X, Printer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { openReceiptWindow } from "@/lib/generateReceiptHtml";
 import { useBookingStatus, type V3Booking } from "@/hooks/useBookingStatus";
 import { apiFetch } from "@/lib/api";
 import { API } from "@/lib/apiEndpoints";
@@ -261,12 +262,6 @@ export default function DepositStatusPage() {
     const { payments, booking, timers, isLoading, error, refetch } = useBookingStatus();
 
     const handlePrintReceipt = (p: any) => {
-        const printWindow = window.open("", "_blank");
-        if (!printWindow) {
-            alert("Popup blocker prevented opening the receipt. Please allow popups for this site.");
-            return;
-        }
-
         const dateSettled = p.approvedAt ? new Date(p.approvedAt).toLocaleDateString('en-IN', {
             day: 'numeric',
             month: 'long',
@@ -278,278 +273,23 @@ export default function DepositStatusPage() {
             year: 'numeric'
         }) : "-";
 
-        const receiptHtml = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Receipt - ${p.transactionId || p._id}</title>
-                <style>
-                    body {
-                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                        color: #2E2A26;
-                        margin: 40px;
-                        line-height: 1.5;
-                        background-color: #faf9f6;
-                    }
-                    .receipt-container {
-                        max-width: 800px;
-                        margin: 0 auto;
-                        border: 1px solid #E8E5DF;
-                        border-radius: 24px;
-                        padding: 45px;
-                        background: #fff;
-                        box-shadow: 0 10px 30px rgba(31,58,45,0.03);
-                        position: relative;
-                    }
-                    .header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: flex-start;
-                        border-bottom: 2px solid #1F3A2D;
-                        padding-bottom: 25px;
-                        margin-bottom: 30px;
-                    }
-                    .logo-section h1 {
-                        font-family: Georgia, serif;
-                        color: #1F3A2D;
-                        margin: 0;
-                        font-size: 32px;
-                        letter-spacing: 0.5px;
-                        font-weight: normal;
-                    }
-                    .logo-section p {
-                        margin: 6px 0 0 0;
-                        font-size: 9px;
-                        text-transform: uppercase;
-                        letter-spacing: 3px;
-                        color: #D8B56A;
-                        font-weight: bold;
-                    }
-                    .receipt-title {
-                        text-align: right;
-                    }
-                    .receipt-title h2 {
-                        margin: 0;
-                        color: #1F3A2D;
-                        font-size: 22px;
-                        font-weight: 600;
-                        letter-spacing: 0.5px;
-                    }
-                    .receipt-title p {
-                        margin: 6px 0 0 0;
-                        font-family: monospace;
-                        font-size: 11px;
-                        color: #7A7570;
-                    }
-                    .details-grid {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 50px;
-                        margin-bottom: 40px;
-                    }
-                    .details-block h3 {
-                        font-size: 11px;
-                        text-transform: uppercase;
-                        letter-spacing: 1.5px;
-                        color: #7A7570;
-                        border-bottom: 1px solid #E8E5DF;
-                        padding-bottom: 8px;
-                        margin-bottom: 14px;
-                        font-weight: bold;
-                    }
-                    .details-block p {
-                        margin: 6px 0;
-                        font-size: 13.5px;
-                    }
-                    .details-block .value {
-                        font-weight: 700;
-                        color: #1F3A2D;
-                    }
-                    .table-section {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-bottom: 40px;
-                    }
-                    .table-section th {
-                        background: #F6F4EF;
-                        color: #1F3A2D;
-                        text-align: left;
-                        padding: 14px 18px;
-                        font-size: 11px;
-                        text-transform: uppercase;
-                        letter-spacing: 1.5px;
-                        border-bottom: 1px solid #E8E5DF;
-                        font-weight: bold;
-                    }
-                    .table-section td {
-                        padding: 18px;
-                        font-size: 14px;
-                        border-bottom: 1px solid #E8E5DF;
-                        color: #2E2A26;
-                    }
-                    .amount-row td {
-                        font-size: 18px;
-                        font-weight: bold;
-                        color: #1F3A2D;
-                        background: #fdfdfb;
-                    }
-                    .watermark {
-                        position: absolute;
-                        top: 50%;
-                        left: 50%;
-                        transform: translate(-50%, -50%) rotate(-25deg);
-                        font-size: 75px;
-                        color: rgba(16, 185, 129, 0.08);
-                        border: 6px double rgba(16, 185, 129, 0.08);
-                        padding: 8px 25px;
-                        font-weight: 800;
-                        text-transform: uppercase;
-                        pointer-events: none;
-                        border-radius: 16px;
-                        letter-spacing: 5px;
-                    }
-                    .footer {
-                        text-align: center;
-                        margin-top: 50px;
-                        font-size: 11px;
-                        color: #7A7570;
-                        border-top: 1px dashed #E8E5DF;
-                        padding-top: 25px;
-                        line-height: 1.6;
-                    }
-                    @media print {
-                        body {
-                            margin: 0;
-                            background-color: #fff;
-                        }
-                        .receipt-container {
-                            border: none;
-                            box-shadow: none;
-                            padding: 0;
-                        }
-                        .watermark {
-                            color: rgba(16, 185, 129, 0.12) !important;
-                            border-color: rgba(16, 185, 129, 0.12) !important;
-                            -webkit-print-color-adjust: exact;
-                            print-color-adjust: exact;
-                        }
-                        .no-print {
-                            display: none;
-                        }
-                    }
-                    .print-btn-container {
-                        text-align: right;
-                        margin-bottom: 20px;
-                        max-width: 800px;
-                        margin-left: auto;
-                        margin-right: auto;
-                    }
-                    .print-btn {
-                        background: #1F3A2D;
-                        color: #F6F4EF;
-                        border: none;
-                        padding: 12px 24px;
-                        border-radius: 12px;
-                        font-weight: bold;
-                        cursor: pointer;
-                        font-size: 13px;
-                        transition: all 0.2s;
-                        letter-spacing: 0.5px;
-                    }
-                    .print-btn:hover {
-                        background: #15271e;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="print-btn-container no-print">
-                    <button class="print-btn" onclick="window.print()">Print Receipt / Save PDF</button>
-                </div>
-                <div class="receipt-container">
-                    <div class="watermark">PAID</div>
-                    <div class="header">
-                        <div class="logo-section">
-                            <h1>VIRAMAH</h1>
-                            <p>Premium Student Living</p>
-                        </div>
-                        <div class="receipt-title">
-                            <h2>PAYMENT RECEIPT</h2>
-                            <p>Receipt No: REC-${p._id.slice(-6).toUpperCase()}</p>
-                        </div>
-                    </div>
+        const success = openReceiptWindow({
+            payerName: user?.basicInfo?.fullName || "Student",
+            userId: user?.basicInfo?.userId || "-",
+            email: user?.basicInfo?.email || "-",
+            phone: user?.basicInfo?.phone || "-",
+            description: "Booking Deposit Settlement",
+            transactionId: p.transactionId || "-",
+            method: p.method || "-",
+            amount: p.amount,
+            receiptNo: `REC-${p._id.slice(-6).toUpperCase()}`,
+            dateSubmitted,
+            dateSettled,
+        });
 
-                    <div class="details-grid">
-                        <div class="details-block">
-                            <h3>PAID BY</h3>
-                            <p><span class="value">${user?.basicInfo?.fullName || "Student"}</span></p>
-                            <p>User ID: ${user?.basicInfo?.userId || "-"}</p>
-                            <p>Email: ${user?.basicInfo?.email || "-"}</p>
-                            <p>Phone: ${user?.basicInfo?.phone || "-"}</p>
-                        </div>
-                        <div class="details-block">
-                            <h3>PAID TO</h3>
-                            <p><span class="value">VIRAMAH STAY</span></p>
-                            <p>Premium Student Living & Hostels</p>
-                            <p>Near GLA University</p>
-                            <p>Mathura, Uttar Pradesh, India</p>
-                        </div>
-                    </div>
-
-                    <table class="table-section">
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th>Transaction Ref (UTR)</th>
-                                <th>Payment Method</th>
-                                <th style="text-align: right;">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Booking Deposit Settlement</td>
-                                <td><code style="font-family: monospace; font-size: 13px; font-weight: bold; color: #1F3A2D;">${p.transactionId || "-"}</code></td>
-                                <td style="text-transform: uppercase;">${p.method || "-"}</td>
-                                <td style="text-align: right; font-weight: bold;">₹${p.amount.toLocaleString('en-IN')}</td>
-                            </tr>
-                            <tr class="amount-row">
-                                <td colspan="3" style="text-align: right; font-weight: bold; border-top: 2px solid #1F3A2D;">Total Paid:</td>
-                                <td style="text-align: right; font-weight: bold; border-top: 2px solid #1F3A2D;">₹${p.amount.toLocaleString('en-IN')}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="details-grid" style="margin-bottom: 20px;">
-                        <div class="details-block">
-                            <h3>TRANSACTION TIMELINE</h3>
-                            <p>Submitted: <span class="value">${dateSubmitted}</span></p>
-                            <p>Settled/Approved: <span class="value">${dateSettled}</span></p>
-                        </div>
-                        <div class="details-block" style="text-align: right; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end;">
-                            <div style="border-top: 1px solid #2E2A26; width: 180px; padding-top: 6px; font-size: 11px; text-align: center; color: #7A7570;">
-                                Authorized Signatory
-                                <br><span style="font-weight: bold; color: #1F3A2D; font-family: Georgia, serif;">VIRAMAH ACCOUNTS</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="footer">
-                        This is a computer-generated document and does not require a physical signature.<br>
-                        Thank you for staying at Viramah Stay! For queries, contact support@viramahstay.com
-                    </div>
-                </div>
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                        }, 500);
-                    };
-                </script>
-            </body>
-            </html>
-        `;
-
-        printWindow.document.write(receiptHtml);
-        printWindow.document.close();
+        if (!success) {
+            alert("Popup blocker prevented opening the receipt. Please allow popups for this site.");
+        }
     };
 
     const approvedBookingPayment = payments.find(p => p.paymentType === "booking" && p.status === "approved");

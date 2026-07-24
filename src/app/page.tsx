@@ -31,11 +31,11 @@ const ClosingSection = dynamic(() => import("@/components/sections/ClosingSectio
 
 
 export const metadata: Metadata = {
-  title: "Viramah | Premium Student Living & Hostels near GLA University Mathura",
-  description: "Experience premium student living at Viramah. Modern hostels & co-living PGs near GLA University Mathura with high-speed Wi-Fi, gaming zone, nutritious food, and community events.",
+  title: "Viramah | Premium Student Living & Co-Living near GLA University Mathura",
+  description: "Experience premium student living at Viramah. Modern residences & co-living PGs near GLA University Mathura with high-speed Wi-Fi, gaming zone, nutritious food, and community events.",
   openGraph: {
-    title: "Viramah | Premium Student Living & Hostels near GLA University Mathura",
-    description: "Modern hostels and PGs near GLA University Mathura with high-speed Wi-Fi, gaming zone, nutritious food, and a thriving student community. The ultimate PG alternative.",
+    title: "Viramah | Premium Student Living & Co-Living near GLA University Mathura",
+    description: "Modern residences and PGs near GLA University Mathura with high-speed Wi-Fi, gaming zone, nutritious food, and a thriving student community. The ultimate PG alternative.",
     url: "https://viramahstay.com",
   },
   keywords: [

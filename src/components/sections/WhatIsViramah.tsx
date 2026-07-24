@@ -16,7 +16,7 @@ export function WhatIsViramah() {
                         </h2>
                         <div className="wv-intro-body">
                             <p>
-                                In a world of crowded hostels and ordinary PGs, Viramah was created as a pause —
+                                In a world of crowded PGs and ordinary accommodations, Viramah was created as a pause —
                                 a space where students can grow, focus, connect, and truly live.
                             </p>
                             <p>

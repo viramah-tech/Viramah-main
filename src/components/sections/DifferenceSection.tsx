@@ -200,7 +200,7 @@ export function DifferenceSection() {
                                 {/* Labels */}
                                 <div className="diff-labels">
                                     <span className="diff-label-tag">
-                                        TRADITIONAL HOSTEL
+                                        TRADITIONAL PG
                                     </span>
                                     <span className="diff-label-tag">
                                         VIRAMAH

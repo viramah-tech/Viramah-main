@@ -33,7 +33,7 @@ export function FoodSection() {
                         </h2>
                         <p className="food-subtitle">
                             Don't come expecting{" "}
-                            <span className="food-highlight">"hostel-PG food"</span>
+                            <span className="food-highlight">"typical PG food"</span>
                         </p>
                         <div className="food-body">
                             <p>
