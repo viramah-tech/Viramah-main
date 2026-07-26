@@ -1,124 +1,79 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { FormInput } from "@/components/ui/FormInput";
-import { Button } from "@/components/ui/Button";
-import Image from "next/image";
-import { User, Bell, Lock, Save } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { User, Mail, Phone, Home, ShieldCheck, LogOut, Key } from "lucide-react";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function SettingsPage() {
-    const { user } = useAuth();
-    const [profile, setProfile] = useState({
-        name: user?.basicInfo?.fullName || "",
-        email: user?.basicInfo?.email || "",
-        phone: user?.basicInfo?.phone || "+91 98XXX XXXXX",
-    });
+    const { user, logout } = useAuth();
 
     return (
-        <div className="space-y-8 max-w-2xl">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                <h1 className="font-display text-4xl text-charcoal">Settings</h1>
-                <p className="font-body text-charcoal/60 mt-2">
-                    Manage your profile and preferences
-                </p>
-            </motion.div>
+        <div className="min-h-screen bg-[#F4F6F4] p-8 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-8 max-w-5xl mx-auto">
+                <PageHeader
+                    title="Account & Profile Settings"
+                    subtitle="Manage resident profile information, contact details, and account security"
+                    badge="SECURITY & PREFERENCES"
+                />
 
-            {/* Profile Section */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="bg-white rounded-2xl border border-sand-dark p-6"
-            >
-                <div className="flex items-center gap-6 mb-6">
-                    <div className="w-16 h-16 rounded-full border-2 border-[#D8B56A] overflow-hidden flex-shrink-0 bg-[#F6F4EF] flex items-center justify-center shadow-inner relative">
-                        {user?.profilePhoto?.url ? (
-                            <img
-                                src={user.profilePhoto.url}
-                                alt="Profile Photo"
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            <User className="w-8 h-8 text-[#1F3A2D]/40" />
-                        )}
+                {/* Profile Information Card */}
+                <div className="p-6 rounded-2xl bg-white border border-emerald-900/10 shadow-sm space-y-4">
+                    <h3 className="font-serif text-xl font-bold text-[#1F3A2D] mb-4">Resident Profile</h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div className="p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                            <span className="font-mono text-[0.65rem] font-bold text-emerald-900/50 uppercase tracking-wider block mb-1">
+                                Full Name
+                            </span>
+                            <span className="font-bold text-[#1F3A2D] text-sm">
+                                {user?.basicInfo?.fullName || "Student Name"}
+                            </span>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                            <span className="font-mono text-[0.65rem] font-bold text-emerald-900/50 uppercase tracking-wider block mb-1">
+                                Resident User ID
+                            </span>
+                            <span className="font-bold text-[#1F3A2D] text-sm font-mono">
+                                {user?.basicInfo?.userId || "N/A"}
+                            </span>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                            <span className="font-mono text-[0.65rem] font-bold text-emerald-900/50 uppercase tracking-wider block mb-1">
+                                Email Address
+                            </span>
+                            <span className="font-bold text-[#1F3A2D] text-sm">
+                                {user?.basicInfo?.email || "student@viramah.com"}
+                            </span>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                            <span className="font-mono text-[0.65rem] font-bold text-emerald-900/50 uppercase tracking-wider block mb-1">
+                                Phone Number
+                            </span>
+                            <span className="font-bold text-[#1F3A2D] text-sm font-mono">
+                                {user?.basicInfo?.phone || "+91 XXXXXXXXXX"}
+                            </span>
+                        </div>
                     </div>
+                </div>
+
+                {/* Account Security & Actions */}
+                <div className="p-6 rounded-2xl bg-white border border-emerald-900/10 shadow-sm flex items-center justify-between flex-wrap gap-4">
                     <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="font-body font-medium text-charcoal">Profile Information</span>
-                        </div>
-                        <p className="font-mono text-[10px] uppercase tracking-wider text-charcoal/40">
-                            Resident ID: {user?.basicInfo?.userId || "-"}
-                        </p>
+                        <h4 className="font-serif text-lg font-bold text-[#1F3A2D] m-0">Sign Out of Session</h4>
+                        <p className="text-xs text-emerald-900/60 m-0 mt-0.5">Securely log out of the Viramah Student Portal</p>
                     </div>
-                </div>
-                <div className="space-y-4">
-                    <FormInput
-                        label="Full Name"
-                        value={profile.name}
-                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                    />
-                    <FormInput
-                        label="Email Address"
-                        type="email"
-                        value={profile.email}
-                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    />
-                    <FormInput
-                        label="Phone Number"
-                        type="tel"
-                        value={profile.phone}
-                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                    />
-                </div>
-                <div className="mt-6">
-                    <Button className="gap-2">
-                        <Save className="w-4 h-4" />
-                        Save Changes
-                    </Button>
-                </div>
-            </motion.div>
 
-            {/* Notifications Section */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-white rounded-2xl border border-sand-dark p-6"
-            >
-                <div className="flex items-center gap-3 mb-6">
-                    <Bell className="w-5 h-5 text-gold" />
-                    <span className="font-body font-medium text-charcoal">Notifications</span>
+                    <button
+                        onClick={() => logout()}
+                        className="px-5 py-2.5 rounded-xl bg-red-500/10 text-red-600 border border-red-500/20 font-bold text-xs hover:bg-red-500/20 transition-all flex items-center gap-2"
+                    >
+                        <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
                 </div>
-                <div className="space-y-4">
-                    {["Email notifications", "Push notifications", "SMS alerts"].map((item) => (
-                        <div key={item} className="flex items-center justify-between p-3 rounded-xl hover:bg-sand-light/50">
-                            <span className="font-body text-sm text-charcoal">{item}</span>
-                            <input type="checkbox" defaultChecked className="w-5 h-5 accent-terracotta-raw" />
-                        </div>
-                    ))}
-                </div>
-            </motion.div>
-
-            {/* Security Section */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white rounded-2xl border border-sand-dark p-6"
-            >
-                <div className="flex items-center gap-3 mb-6">
-                    <Lock className="w-5 h-5 text-sage-muted" />
-                    <span className="font-body font-medium text-charcoal">Security</span>
-                </div>
-                <Button variant="secondary">Change Password</Button>
-            </motion.div>
+            </div>
         </div>
     );
 }

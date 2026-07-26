@@ -1,232 +1,389 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { UtensilsCrossed, Calendar, Check, ZoomIn, Lock, Sparkles, MessageSquare } from "lucide-react";
-import Link from "next/link";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { UtensilsCrossed, CheckCircle2, Vote, RefreshCw, Coffee, Sunset, Moon, Sun, ImageIcon, Check, Calendar } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { apiGet, apiPost } from "@/lib/api";
+import { API } from "@/lib/apiEndpoints";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 
-export default function StudentMessPage() {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [pollData, setPollData] = useState<any>(null);
-  const [myVote, setMyVote] = useState<string | null>(null);
-  const [zoomImage, setZoomImage] = useState<{ isOpen: boolean; src: string | null; title: string }>({
-    isOpen: false,
-    src: null,
-    title: "",
-  });
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-  const loadStudentPoll = async () => {
-    setLoading(true);
-    try {
-      const userId = user?.basicInfo?.userId || user?._id || "RESIDENTIAL_STUDENT";
-      const res = await fetch(`http://localhost:5000/api/mess/poll/active?userId=${userId}`);
-      const data = await res.json();
-      if (data.success) {
-        setPollData(data.data);
-        setMyVote(data.data?.myVotedOptionId || null);
-      }
-    } catch (err) {
-      console.error("Failed to fetch mess poll:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function CanteenPage() {
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadStudentPoll();
-  }, [user]);
+    // Top Level View Switcher: 'menu' (Daily Schedule) vs 'vote' (Monthly Menu Poll)
+    const [viewMode, setViewMode] = useState<"menu" | "vote">("menu");
 
-  const handleVote = async (optionId: string) => {
-    if (!pollData?.poll?._id) return;
-    try {
-      const userId = user?.basicInfo?.userId || user?._id || "RESIDENTIAL_STUDENT";
-      const studentName = user?.basicInfo?.fullName || "Resident";
+    const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+    const [votingOptionId, setVotingOptionId] = useState<string | null>(null);
+    const [voteSuccessMsg, setVoteSuccessMsg] = useState<string | null>(null);
 
-      const res = await fetch("http://localhost:5000/api/mess/poll/vote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pollId: pollData.poll._id,
-          userId,
-          studentName,
-          roomNumber: "101",
-          optionId,
-        }),
-      });
+    // 1. Fetch Weekly Menu published by Admin
+    const { data: weeklyMenuData, isLoading: loadingWeekly, refetch: refetchWeekly } = useQuery({
+        queryKey: ["weekly-mess-menu"],
+        queryFn: () => apiGet<any[]>(API.mess.weeklyMenu),
+    });
 
-      const data = await res.json();
-      if (data.success) {
-        setMyVote(optionId);
-        loadStudentPoll();
-      }
-    } catch (err) {
-      console.error("Failed to vote:", err);
-    }
-  };
+    // 2. Fetch Active Monthly Menu Poll for Next Month created by Admin
+    const { data: pollResponse, isLoading: loadingPoll, refetch: refetchPoll } = useQuery({
+        queryKey: ["active-monthly-poll", user?.basicInfo?.userId],
+        queryFn: () => apiGet<any>(`${API.mess.activePoll}?userId=${user?.basicInfo?.userId || ""}`),
+    });
 
-  const poll = pollData?.poll;
-  const pollOptions = pollData?.optionsWithTally || [];
+    const activePollObj = pollResponse?.poll;
+    const optionsWithTally = pollResponse?.optionsWithTally || [];
+    const myVotedOptionId = pollResponse?.myVotedOptionId;
+    const totalPollVotes = pollResponse?.totalVotes || 0;
 
-  return (
-    <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-ivory p-6 rounded-3xl border border-gold/30 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-terracotta-raw/10 text-terracotta-raw flex items-center justify-center shrink-0 border border-terracotta-raw/20">
-            <UtensilsCrossed size={28} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold font-display text-charcoal">
-                Monthly Mess Menu Voting
-              </h1>
-              <span className="text-[10px] font-mono uppercase font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
-                Blind Polling System
-              </span>
-            </div>
-            <p className="text-xs text-charcoal/70 mt-1">
-              Review the Weekly Calendar Menu Images uploaded for each plan and tap to select your choice.
-            </p>
-          </div>
-        </div>
+    // Handle Vote on Monthly Poll Option
+    const handleCastVote = async (optionId: string) => {
+        if (!activePollObj?._id || !user?.basicInfo?.userId) return;
 
-        <div className="px-3.5 py-2 rounded-xl bg-charcoal/5 text-xs font-mono font-semibold text-charcoal/70 flex items-center gap-1.5 border border-charcoal/10">
-          <Lock size={13} className="text-emerald-600" /> Votes Private & Hidden
-        </div>
-      </div>
+        setVotingOptionId(optionId);
+        setVoteSuccessMsg(null);
 
-      {loading ? (
-        <div className="p-12 text-center text-xs text-charcoal/50">Loading Mess Poll...</div>
-      ) : (
-        /* WhatsApp-Style Blind Poll Container */
-        <div className="bg-[#075E54] text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-emerald-600/40 space-y-6 relative overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/15 pb-4">
-            <div>
-              <span className="px-2.5 py-0.5 rounded-full bg-[#25D366] text-[#075E54] text-[10px] font-mono font-bold uppercase">
-                Community WhatsApp Poll
-              </span>
-              <h2 className="text-xl sm:text-2xl font-bold font-display text-white mt-1">
-                {poll?.title || "Monthly Mess Menu Selection Poll"}
-              </h2>
-            </div>
-            <span className="text-xs font-mono px-3 py-1 rounded-xl bg-white/10 text-emerald-200 border border-white/15">
-              {poll?.month}
-            </span>
-          </div>
+        try {
+            await apiPost<any>(API.mess.voteMonthlyPoll, {
+                pollId: activePollObj._id,
+                userId: user.basicInfo.userId,
+                studentName: user.basicInfo.fullName || "Student",
+                roomNumber: user.roomNumber || user.roomDetails?.roomNumber || "",
+                optionId,
+            });
 
-          {/* Poll Options Grid */}
-          <div className="space-y-4">
-            {pollOptions.map((opt: any) => {
-              const isSelected = myVote === opt.optionId;
-              const isWinner = poll?.winningOptionId === opt.optionId;
+            await refetchPoll();
+            setVoteSuccessMsg("Your vote for next month's menu has been recorded!");
+        } catch (err: any) {
+            alert(err.message || "Failed to record vote.");
+        } finally {
+            setVotingOptionId(null);
+        }
+    };
 
-              return (
-                <div
-                  key={opt.optionId}
-                  onClick={() => poll?.status === "active" && handleVote(opt.optionId)}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer space-y-4 overflow-hidden ${
-                    isWinner
-                      ? "bg-emerald-950/90 border-amber-400 ring-2 ring-amber-400/50 shadow-lg"
-                      : isSelected
-                      ? "bg-emerald-900/90 border-[#25D366] shadow-md ring-2 ring-[#25D366]/40"
-                      : "bg-white/10 border-white/15 hover:bg-white/15"
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      {/* Radio Circle */}
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                          isSelected
-                            ? "bg-[#25D366] border-[#25D366] text-[#075E54]"
-                            : "border-white/40 text-transparent"
-                        }`}
-                      >
-                        <Check size={14} className="stroke-[3]" />
-                      </div>
+    const currentDayMenu = (weeklyMenuData || [])[selectedDayIndex] || (weeklyMenuData || [])[0];
+    const meals = currentDayMenu?.meals || {};
 
-                      {/* Weekly Calendar Menu Image Thumbnail */}
-                      {opt.image && (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setZoomImage({ isOpen: true, src: opt.image, title: `${opt.title} — Weekly Mess Menu Calendar` });
-                          }}
-                          className="w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-white/30 relative group shadow-sm bg-black/40"
+    const MEAL_CATEGORIES = [
+        {
+            key: "breakfast",
+            name: "Breakfast",
+            defaultTime: "08:00 AM – 10:00 AM",
+            icon: Sun,
+            iconBg: "bg-amber-500/10",
+            iconColor: "text-amber-700",
+            dotColor: "bg-amber-500",
+        },
+        {
+            key: "snacks",
+            name: "Evening Snacks",
+            defaultTime: "05:00 PM – 06:30 PM",
+            icon: Sunset,
+            iconBg: "bg-orange-500/10",
+            iconColor: "text-orange-700",
+            dotColor: "bg-orange-500",
+        },
+        {
+            key: "dinner",
+            name: "Dinner",
+            defaultTime: "08:00 PM – 10:00 PM",
+            icon: Moon,
+            iconBg: "bg-purple-500/10",
+            iconColor: "text-purple-700",
+            dotColor: "bg-purple-500",
+        },
+    ];
+
+    return (
+        <div className="min-h-screen bg-[#F4F6F4] p-8 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-8 max-w-5xl mx-auto">
+                <PageHeader
+                    title="Mess & Dining Portal"
+                    subtitle="Daily 3-meal schedule live-synchronized with the Admin Portal & Next Month Menu Selection Poll"
+                    badge="LIVE ADMIN SYNC"
+                    action={
+                        <button
+                            onClick={() => {
+                                refetchWeekly();
+                                refetchPoll();
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-emerald-900/15 text-[#1F3A2D] font-bold text-xs shadow-sm hover:bg-emerald-50 transition-all"
                         >
-                          <img src={opt.image} alt={opt.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-mono">
-                            <ZoomIn size={14} />
-                            <span>Zoom Menu</span>
-                          </div>
-                        </div>
-                      )}
+                            <RefreshCw className="w-4 h-4 text-[#1F3A2D]" /> Refresh Data
+                        </button>
+                    }
+                />
 
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-white font-display">{opt.title}</h3>
-                          {isSelected && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-[#25D366] text-[#075E54] text-[10px] font-bold">
-                              ✓ Your Choice
-                            </span>
-                          )}
-                        </div>
-                        {opt.description && (
-                          <p className="text-xs text-white/80 mt-1 max-w-xl">{opt.description}</p>
-                        )}
-
-                        {/* Dish Highlights */}
-                        {opt.highlights && opt.highlights.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-2">
-                            {opt.highlights.map((h: string, hIdx: number) => (
-                              <span
-                                key={hIdx}
-                                className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/15 text-emerald-100 border border-white/10"
-                              >
-                                {h}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Vote Action Button */}
-                    <div className="shrink-0 sm:self-center">
-                      <button
-                        type="button"
-                        className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                          isSelected
-                            ? "bg-[#25D366] text-[#075E54] font-bold shadow-sm"
-                            : "bg-white/20 text-white hover:bg-[#25D366] hover:text-[#075E54]"
+                {/* ── TOP-LEVEL VIEW SWITCHER TABS ── */}
+                <div className="flex items-center p-1.5 rounded-2xl bg-white border border-emerald-900/10 shadow-sm max-w-md">
+                    <button
+                        onClick={() => setViewMode("menu")}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                            viewMode === "menu"
+                                ? "bg-[#1F3A2D] text-white shadow-sm"
+                                : "text-emerald-900/70 hover:text-[#1F3A2D] hover:bg-emerald-50/50"
                         }`}
-                      >
-                        {isSelected ? "✓ Voted" : "Tap to Vote"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                    >
+                        <UtensilsCrossed className="w-4 h-4" />
+                        <span>Daily 3-Meal Schedule</span>
+                    </button>
 
-      {/* Image Zoom Modal */}
-      {zoomImage.isOpen && (
-        <div
-          onClick={() => setZoomImage({ isOpen: false, src: null, title: "" })}
-          className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4"
-        >
-          <div className="max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-white/20 shadow-2xl relative bg-black">
-            <img src={zoomImage.src!} alt={zoomImage.title} className="w-full h-full object-contain" />
-          </div>
-          <p className="text-white/80 font-mono text-xs mt-3">{zoomImage.title} — Click anywhere to close</p>
+                    <button
+                        onClick={() => setViewMode("vote")}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                            viewMode === "vote"
+                                ? "bg-[#1F3A2D] text-white shadow-sm"
+                                : "text-emerald-900/70 hover:text-[#1F3A2D] hover:bg-emerald-50/50"
+                        }`}
+                    >
+                        <Vote className="w-4 h-4 text-[#D8B56A]" />
+                        <span>Monthly Menu Poll</span>
+                        {myVotedOptionId && (
+                            <span className="w-2 h-2 rounded-full bg-[#D8B56A] border border-white" />
+                        )}
+                    </button>
+                </div>
+
+                {/* ── PAGE VIEW CONTENT ── */}
+                {viewMode === "menu" ? (
+                    /* VIEW MODE 1: DAILY 3-MEAL SCHEDULE (FETCHED FROM ADMIN) */
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div>
+                                <h3 className="font-serif text-xl font-bold text-[#1F3A2D] m-0">
+                                    Weekly Dining Schedule — {DAYS_OF_WEEK[selectedDayIndex]}
+                                </h3>
+                                <p className="text-xs text-emerald-900/60 m-0">
+                                    Live menu data configured and published by the Mess Incharge on the Admin Portal.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Day Selector Tabs */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-none">
+                            {DAYS_OF_WEEK.map((dayName, idx) => {
+                                const isSelected = selectedDayIndex === idx;
+                                return (
+                                    <button
+                                        key={dayName}
+                                        onClick={() => setSelectedDayIndex(idx)}
+                                        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                                            isSelected
+                                                ? "bg-[#1F3A2D] text-white shadow-sm"
+                                                : "bg-white border border-emerald-900/10 text-emerald-900/70 hover:bg-emerald-50"
+                                        }`}
+                                    >
+                                        {dayName}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* 3-Meal Grid Display (Breakfast, Evening Snacks, Dinner) */}
+                        {loadingWeekly ? (
+                            <LoadingSkeleton count={3} />
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                {MEAL_CATEGORIES.map((catConfig) => {
+                                    const Icon = catConfig.icon;
+                                    const mealData = meals[catConfig.key] || {};
+                                    const optionsList = mealData.options || [];
+                                    const timingStr = (mealData.startTime && mealData.endTime)
+                                        ? `${mealData.startTime} – ${mealData.endTime}`
+                                        : catConfig.defaultTime;
+
+                                    return (
+                                        <div
+                                            key={catConfig.key}
+                                            className="p-6 rounded-2xl bg-white border border-emerald-900/10 shadow-sm flex flex-col justify-between space-y-4"
+                                        >
+                                            <div>
+                                                <div className={`w-10 h-10 rounded-xl ${catConfig.iconBg} flex items-center justify-center mb-3`}>
+                                                    <Icon className={`w-5 h-5 ${catConfig.iconColor}`} />
+                                                </div>
+                                                <span className="font-mono text-[0.65rem] font-bold text-emerald-900/50 uppercase block mb-1">
+                                                    {timingStr}
+                                                </span>
+                                                <h4 className="font-serif text-lg font-bold text-[#1F3A2D] mb-3">
+                                                    {catConfig.name}
+                                                </h4>
+
+                                                {/* Render Options uploaded by Admin */}
+                                                {optionsList.length > 0 ? (
+                                                    <div className="space-y-3">
+                                                        {optionsList.map((opt: any, optIdx: number) => {
+                                                            const title = opt.title || `Option ${String.fromCharCode(65 + optIdx)}`;
+                                                            const dishes = opt.dishes || [];
+                                                            const description = opt.description || "";
+
+                                                            return (
+                                                                <div key={optIdx} className="p-3 rounded-xl bg-emerald-50/40 border border-emerald-900/5 space-y-1.5">
+                                                                    <span className="font-bold text-xs text-[#1F3A2D] block">
+                                                                        {title}
+                                                                    </span>
+                                                                    {description && (
+                                                                        <p className="text-[0.7rem] text-emerald-900/60 leading-tight m-0">
+                                                                            {description}
+                                                                        </p>
+                                                                    )}
+                                                                    {dishes.length > 0 && (
+                                                                        <div className="space-y-1 pt-1">
+                                                                            {dishes.map((dish: string, dIdx: number) => (
+                                                                                <div key={dIdx} className="flex items-center gap-2 text-xs text-emerald-900/80 font-medium">
+                                                                                    <div className={`w-1.5 h-1.5 rounded-full ${catConfig.dotColor}`} />
+                                                                                    <span>{dish}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs text-emerald-900/50 font-mono">
+                                                        No items specified by admin.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* VIEW MODE 2: MONTHLY MENU SELECTION POLL (NEXT MONTH) */
+                    <div className="p-6 rounded-2xl bg-white border border-emerald-900/10 shadow-sm space-y-6">
+                        <div className="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-emerald-900/10">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-[#1F3A2D]/10 flex items-center justify-center">
+                                    <Vote className="w-5 h-5 text-[#1F3A2D]" />
+                                </div>
+                                <div>
+                                    <span className="font-mono text-[0.65rem] font-bold text-[#D8B56A] uppercase tracking-wider block">
+                                        STUDENT DEMOCRACY POLL
+                                    </span>
+                                    <h3 className="font-serif text-xl font-bold text-[#1F3A2D] m-0">
+                                        {activePollObj?.title || "Next Month Mess Menu Selection"}
+                                    </h3>
+                                </div>
+                            </div>
+
+                            <div className="text-right font-mono text-xs">
+                                <span className="text-emerald-900/60 block">Total Student Votes</span>
+                                <span className="font-bold text-[#1F3A2D]">{totalPollVotes} Votes Recorded</span>
+                            </div>
+                        </div>
+
+                        {voteSuccessMsg && (
+                            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs font-bold flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                <span>{voteSuccessMsg}</span>
+                            </div>
+                        )}
+
+                        {loadingPoll ? (
+                            <LoadingSkeleton count={2} />
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {optionsWithTally.map((option: any) => {
+                                    const isMyVote = myVotedOptionId === option.optionId;
+
+                                    return (
+                                        <div
+                                            key={option.optionId}
+                                            className={`rounded-2xl border overflow-hidden flex flex-col justify-between transition-all ${
+                                                isMyVote ? "border-[#1F3A2D] ring-2 ring-[#1F3A2D]/20 bg-emerald-50/30" : "border-emerald-900/10 bg-white"
+                                            }`}
+                                        >
+                                            <div>
+                                                {/* Image uploaded by Admin */}
+                                                <div className="relative h-48 w-full bg-emerald-900/5 overflow-hidden">
+                                                    {option.image ? (
+                                                        <img
+                                                            src={option.image}
+                                                            alt={option.title}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex flex-col items-center justify-center text-emerald-900/40">
+                                                            <ImageIcon className="w-8 h-8 mb-1" />
+                                                            <span className="text-xs font-mono">Menu Chart Image</span>
+                                                        </div>
+                                                    )}
+
+                                                    {isMyVote && (
+                                                        <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-[#1F3A2D] text-[#D8B56A] text-[0.68rem] font-bold uppercase shadow-md flex items-center gap-1">
+                                                            <Check className="w-3.5 h-3.5" /> Your Voted Choice
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="p-5 space-y-3">
+                                                    <h4 className="font-serif text-lg font-bold text-[#1F3A2D] m-0">
+                                                        {option.title}
+                                                    </h4>
+                                                    <p className="text-xs text-emerald-900/70 leading-relaxed m-0">
+                                                        {option.description}
+                                                    </p>
+
+                                                    {/* Highlights */}
+                                                    {(option.highlights || []).length > 0 && (
+                                                        <div className="flex flex-wrap gap-1.5 pt-1">
+                                                            {option.highlights.map((item: string, i: number) => (
+                                                                <span key={i} className="px-2.5 py-1 rounded-lg bg-emerald-900/5 text-[0.68rem] font-semibold text-[#1F3A2D]">
+                                                                    {item}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="p-5 pt-0 space-y-3">
+                                                {/* Live Vote Percentage Bar */}
+                                                <div>
+                                                    <div className="flex justify-between text-xs font-mono font-bold mb-1 text-[#1F3A2D]">
+                                                        <span>Community Preference</span>
+                                                        <span>{option.percentage}% ({option.voteCount} votes)</span>
+                                                    </div>
+                                                    <div className="w-full h-2.5 rounded-full bg-emerald-900/10 overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-[#1F3A2D] rounded-full transition-all duration-500"
+                                                            style={{ width: `${option.percentage}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Action Button */}
+                                                <button
+                                                    onClick={() => handleCastVote(option.optionId)}
+                                                    disabled={votingOptionId === option.optionId || isMyVote}
+                                                    className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center justify-center gap-2 ${
+                                                        isMyVote
+                                                            ? "bg-[#1F3A2D] text-white cursor-default"
+                                                            : "bg-emerald-900/5 hover:bg-[#1F3A2D] text-[#1F3A2D] hover:text-white border border-emerald-900/15"
+                                                    }`}
+                                                >
+                                                    {votingOptionId === option.optionId
+                                                        ? "Submitting Vote..."
+                                                        : isMyVote
+                                                        ? "Voted Plan"
+                                                        : "Vote for Next Month Menu"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
-      )}
-    </div>
-  );
+    );
 }

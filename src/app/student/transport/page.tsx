@@ -1,527 +1,287 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Bus, MapPin, Clock, ShieldCheck, RefreshCw, CheckCircle2, ArrowRight, XCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import {
-  Bus,
-  Clock,
-  MapPin,
-  CheckCircle2,
-  Calendar,
-  X,
-  ChevronRight,
-  ShieldCheck,
-  Building,
-  CreditCard,
-  Banknote,
-  ArrowRight
-} from "lucide-react";
+import { apiGet, apiPost } from "@/lib/api";
+import { API } from "@/lib/apiEndpoints";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
+import Link from "next/link";
 
-import { PAYMENT_CONFIG } from "@/config/paymentConfig";
+export default function TransportPage() {
+    const { user, refreshUser } = useAuth();
+    const queryClient = useQueryClient();
 
-const GREEN = "#1F3A2D";
-const GOLD = "#D8B56A";
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const API_BASE = rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl.replace(/\/$/, "")}/api`;
+    const [selectedCycles, setSelectedCycles] = useState<Record<string, "monthly" | "yearly">>({});
+    const [subscribingId, setSubscribingId] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
+    const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
-interface TransportStop {
-  _id: string;
-  name: string;
-  pickupTime: string;
-  dropTime: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  description: string;
-  isActive: boolean;
-}
+    const { data: stopsData, isLoading: loadingStops, refetch } = useQuery({
+        queryKey: ["transport-stops"],
+        queryFn: () => apiGet<any[]>(API.transport.stops),
+    });
 
-const BANK_DETAILS = PAYMENT_CONFIG.BANK_DETAILS;
+    const activePass = user?.transportPass;
+    const hasAcquiredTransport = Boolean(activePass?.isOptedIn && activePass?.status === "active");
+    const transportSummary = user?.paymentSummary?.transportFee || {};
+    const baseFee = activePass?.basePrice || transportSummary.basePrice || (hasAcquiredTransport ? Math.round(transportSummary.total / 1.18) : 0);
+    const gstAmount = activePass?.gstAmount || transportSummary.gstAmount || (hasAcquiredTransport ? transportSummary.total - baseFee : 0);
+    const totalFee = activePass?.feeAmount || transportSummary.total || 0;
 
-export default function StudentTransportPage() {
-  const { user } = useAuth();
-  const router = useRouter();
-  const [stops, setStops] = useState<TransportStop[]>([]);
-  const [loadingStops, setLoadingStops] = useState(true);
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
-  const [selectedStop, setSelectedStop] = useState<TransportStop | null>(null);
-  const [isConfirmingModalOpen, setIsConfirmingModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+    // Handle Subscribe / Book Route Pass
+    const handleSubscribe = async (stopId: string) => {
+        setSubscribingId(stopId);
+        setActionError(null);
+        setActionSuccess(null);
 
-  // Active pass state from user object
-  const activePass = user?.transportPass?.status === "active" ? user.transportPass : null;
+        const cycle = selectedCycles[stopId] || "monthly";
 
-  useEffect(() => {
-    fetchStops();
-  }, []);
+        try {
+            const res = await apiPost<any>(API.transport.subscribe, {
+                stopId,
+                billingCycle: cycle,
+            });
 
-  const fetchStops = async () => {
-    try {
-      setLoadingStops(true);
-      const res = await fetch(`${API_BASE}/transport/stops`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        // Only show active, non-deleted stops
-        setStops(data.data.filter((s: TransportStop) => s.isActive !== false));
-      }
-    } catch (err) {
-      console.error("Failed to load transport stops:", err);
-    } finally {
-      setLoadingStops(false);
-    }
-  };
+            await refreshUser({ force: true });
+            queryClient.invalidateQueries({ queryKey: ["transport-stops"] });
+            setActionSuccess("Transport pass booked successfully! Your ledger and user schema have been updated in MongoDB.");
+        } catch (err: any) {
+            setActionError(err.message || "Failed to book transport pass.");
+        } finally {
+            setSubscribingId(null);
+        }
+    };
 
-  const handleOpenBooking = (stop: TransportStop) => {
-    setSelectedStop(stop);
-    setIsConfirmingModalOpen(true);
-    setActionMessage(null);
-  };
+    // Handle Cancel Transport Pass
+    const handleCancelPass = async () => {
+        if (!confirm("Are you sure you want to cancel your transport pass? This will remove pending transport dues.")) return;
 
-  const handleConfirmBooking = async () => {
-    if (!selectedStop) return;
-    try {
-      setSubmitting(true);
-      setActionMessage(null);
-      const res = await fetch(`${API_BASE}/transport/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          stopId: selectedStop._id,
-          billingCycle,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setActionMessage({
-          type: "success",
-          text: `Transport pass booked! Fee has been added to your ledger. Proceed to pay via Bank Transfer / Cash.`,
-        });
-        setIsConfirmingModalOpen(false);
-        // Navigate after brief delay or reload
-        setTimeout(() => {
-          router.push("/student/payment");
-        }, 1500);
-      } else {
-        setActionMessage({
-          type: "error",
-          text: data.error?.message || data.message || "Failed to book transport pass.",
-        });
-      }
-    } catch (err) {
-      setActionMessage({ type: "error", text: "Network error occurred while booking pass." });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+        setSubscribingId("cancel");
+        setActionError(null);
+        setActionSuccess(null);
 
-  const handleCancelPass = async () => {
-    if (!confirm("Are you sure you want to cancel your transport pass subscription?")) return;
-    try {
-      setSubmitting(true);
-      const res = await fetch(`${API_BASE}/transport/cancel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) {
-        window.location.reload();
-      } else {
-        alert(data.error?.message || "Failed to cancel pass");
-      }
-    } catch (err) {
-      alert("Error cancelling transport pass.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+        try {
+            await apiPost<any>(API.transport.cancel, {});
+            await refreshUser({ force: true });
+            queryClient.invalidateQueries({ queryKey: ["transport-stops"] });
+            setActionSuccess("Transport pass cancelled successfully and pending transport dues cleared.");
+        } catch (err: any) {
+            setActionError(err.message || "Failed to cancel transport pass.");
+        } finally {
+            setSubscribingId(null);
+        }
+    };
 
-  return (
-    <div style={{ padding: "24px 20px", maxWidth: 1200, margin: "0 auto", color: GREEN, fontFamily: "var(--font-body, sans-serif)" }}>
-      {/* Top Banner Header */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: `${GREEN}15`, display: "flex", alignItems: "center", justifyContent: "center", color: GREEN }}>
-            <Bus size={24} />
-          </div>
-          <div>
-            <h1 style={{ fontFamily: "var(--font-heading, serif)", fontSize: "1.75rem", fontWeight: 700, margin: 0, color: GREEN }}>
-              Travel & Bus Service Booking
-            </h1>
-            <p style={{ fontSize: "0.85rem", color: "rgba(31,58,45,0.6)", margin: 0 }}>
-              Select a drop point below. Fees can be paid via Bank Transfer, UPI, or Cash at Viramah Accounts counter.
-            </p>
-          </div>
-        </div>
-      </div>
+    return (
+        <div className="min-h-screen bg-[#F4F6F4] p-8 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-8 max-w-5xl mx-auto">
+                <PageHeader
+                    title="Campus Shuttle & Route Pass Booking"
+                    subtitle="Select your GLA University shuttle pickup route to acquire an active transport pass (+18% GST Applicable)"
+                    badge={hasAcquiredTransport ? "PASS ACTIVE" : "NO PASS ACQUIRED"}
+                    action={
+                        <button
+                            onClick={() => refetch()}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-emerald-900/15 text-[#1F3A2D] font-bold text-xs shadow-sm hover:bg-emerald-50 transition-all"
+                        >
+                            <RefreshCw className="w-4 h-4 text-[#1F3A2D]" /> Refresh Routes
+                        </button>
+                    }
+                />
 
-      {actionMessage && (
-        <div style={{
-          marginBottom: 24,
-          padding: "16px 20px",
-          borderRadius: 16,
-          fontSize: "0.88rem",
-          fontWeight: 600,
-          background: actionMessage.type === "success" ? "#f0fdf4" : "#fef2f2",
-          color: actionMessage.type === "success" ? "#166534" : "#991b1b",
-          border: `1px solid ${actionMessage.type === "success" ? "#bbf7d0" : "#fecaca"}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between"
-        }}>
-          <span>{actionMessage.text}</span>
-          <button
-            onClick={() => router.push("/student/payment")}
-            style={{
-              padding: "6px 14px",
-              borderRadius: 8,
-              background: GREEN,
-              color: "#fff",
-              border: "none",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              cursor: "pointer"
-            }}
-          >
-            Pay Now
-          </button>
-        </div>
-      )}
-
-      {/* Active Pass Card (If Subscribed) */}
-      {activePass && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            marginBottom: 36,
-            background: "linear-gradient(135deg, #1F3A2D 0%, #15271E 100%)",
-            color: "#fff",
-            borderRadius: 24,
-            padding: "28px 32px",
-            boxShadow: "0 20px 40px rgba(31,58,45,0.25)",
-            position: "relative",
-            overflow: "hidden"
-          }}
-        >
-          <div style={{ position: "absolute", top: -30, right: -30, width: 180, height: 180, borderRadius: "50%", background: `${GOLD}15`, pointerEvents: "none" }} />
-          
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
-            <div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: `${GOLD}30`, color: GOLD, fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
-                <CheckCircle2 size={14} /> ACTIVE TRANSPORT PASS
-              </div>
-              <h2 style={{ fontSize: "1.6rem", fontWeight: 700, margin: "0 0 6px", fontFamily: "var(--font-heading, serif)", color: "#fff" }}>
-                {activePass.stopName}
-              </h2>
-              <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                <Calendar size={15} color={GOLD} /> Valid Until: {activePass.validUntil ? new Date(activePass.validUntil).toLocaleDateString("en-IN") : "Active"}
-              </p>
-            </div>
-
-            <div style={{ textTransform: "capitalize", textAlign: "right" }}>
-              <span style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", display: "block" }}>
-                Subscribed Rate
-              </span>
-              <span style={{ fontSize: "1.4rem", fontWeight: 800, color: GOLD, fontFamily: "var(--font-mono, monospace)" }}>
-                ₹{activePass.feeAmount?.toLocaleString("en-IN")} <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.7)" }}>/ {activePass.billingCycle}</span>
-              </span>
-              {(() => {
-                const isTransportPaid = (user?.paymentSummary?.transportFee?.paid || 0) > 0 ||
-                  (user?.paymentSummary?.transportFee?.total > 0 && user?.paymentSummary?.transportFee?.remaining === 0);
-                
-                return (
-                  <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end", alignItems: "center" }}>
-                    {!isTransportPaid && (
-                      <button
-                        onClick={() => router.push("/student/payment")}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: 10,
-                          background: GOLD,
-                          color: GREEN,
-                          border: "none",
-                          fontSize: "0.75rem",
-                          fontWeight: 700,
-                          cursor: "pointer"
-                        }}
-                      >
-                        Pay Fee
-                      </button>
-                    )}
-
-                    {isTransportPaid ? (
-                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#86efac", background: "rgba(134,239,172,0.15)", padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(134,239,172,0.3)" }}>
-                        Paid ✓ (Contact admin to cancel)
-                      </span>
-                    ) : (
-                      <button
-                        onClick={handleCancelPass}
-                        disabled={submitting}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: 10,
-                          border: "1px solid rgba(255,255,255,0.2)",
-                          background: "rgba(255,255,255,0.1)",
-                          color: "#ff8888",
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
-                          cursor: "pointer"
-                        }}
-                      >
-                        Cancel Pass
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Plan Selector & Billing Cycle Toggle */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, marginBottom: 28 }}>
-        <div>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0 }}>Available Drop Points</h2>
-          <p style={{ fontSize: "0.8rem", color: "rgba(31,58,45,0.6)", margin: "4px 0 0" }}>Prices are set according to each drop point</p>
-        </div>
-
-        {/* Toggle Switch */}
-        <div style={{ display: "flex", alignItems: "center", background: "#EAE6DF", padding: 4, borderRadius: 14, border: "1px solid rgba(31,58,45,0.1)" }}>
-          <button
-            onClick={() => setBillingCycle("monthly")}
-            style={{
-              padding: "8px 20px",
-              borderRadius: 10,
-              fontSize: "0.82rem",
-              fontWeight: 700,
-              border: "none",
-              cursor: "pointer",
-              background: billingCycle === "monthly" ? GREEN : "transparent",
-              color: billingCycle === "monthly" ? "#fff" : GREEN,
-              transition: "all 0.2s"
-            }}
-          >
-            Monthly Rates
-          </button>
-          <button
-            onClick={() => setBillingCycle("yearly")}
-            style={{
-              padding: "8px 20px",
-              borderRadius: 10,
-              fontSize: "0.82rem",
-              fontWeight: 700,
-              border: "none",
-              cursor: "pointer",
-              background: billingCycle === "yearly" ? GREEN : "transparent",
-              color: billingCycle === "yearly" ? "#fff" : GREEN,
-              transition: "all 0.2s",
-              display: "flex",
-              alignItems: "center",
-              gap: 6
-            }}
-          >
-            Yearly Rates <span style={{ background: GOLD, color: GREEN, padding: "2px 6px", borderRadius: 6, fontSize: "0.65rem", fontWeight: 800 }}>SAVE</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Bus Stops Grid */}
-      {loadingStops ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "rgba(31,58,45,0.5)" }}>
-          Loading drop points...
-        </div>
-      ) : stops.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "60px 0", background: "#F9F8F6", borderRadius: 20, border: "1px dashed rgba(31,58,45,0.2)" }}>
-          <Bus size={36} color="rgba(31,58,45,0.3)" style={{ marginBottom: 12 }} />
-          <p style={{ margin: 0, fontWeight: 600, color: GREEN }}>No drop points currently available</p>
-          <p style={{ fontSize: "0.8rem", color: "rgba(31,58,45,0.5)", margin: "4px 0 0" }}>Check back soon for updated routes</p>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 24 }}>
-          {stops.map((stop) => {
-            const price = billingCycle === "yearly" ? stop.yearlyPrice : stop.monthlyPrice;
-            const isCurrentActiveStop = activePass && activePass.stopId === stop._id && activePass.billingCycle === billingCycle;
-
-            return (
-              <motion.div
-                key={stop._id}
-                whileHover={{ y: -4 }}
-                style={{
-                  background: "#fff",
-                  borderRadius: 20,
-                  padding: 24,
-                  border: isCurrentActiveStop ? `2px solid ${GREEN}` : "1px solid rgba(31,58,45,0.12)",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.04)",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  position: "relative"
-                }}
-              >
-                {isCurrentActiveStop && (
-                  <span style={{ position: "absolute", top: 16, right: 16, background: `${GREEN}15`, color: GREEN, padding: "4px 10px", borderRadius: 8, fontSize: "0.7rem", fontWeight: 700 }}>
-                    Active Stop ✓
-                  </span>
+                {actionError && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 text-xs font-semibold flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                        <span>{actionError}</span>
+                    </div>
                 )}
 
+                {actionSuccess && (
+                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        <span>{actionSuccess}</span>
+                    </div>
+                )}
+
+                {/* Digital Bus Pass Card */}
+                <div className={`p-6 rounded-2xl border shadow-md flex items-center justify-between flex-wrap gap-4 text-white ${
+                    hasAcquiredTransport ? "bg-[#1F3A2D] border-emerald-900/20" : "bg-neutral-800 border-neutral-700"
+                }`}>
+                    <div>
+                        <span className="font-mono text-xs text-[#D8B56A] uppercase font-bold tracking-wider block mb-1">
+                            Digital Shuttle Pass
+                        </span>
+                        <h3 className="font-serif text-2xl font-bold text-white m-0">
+                            {user?.basicInfo?.fullName || "Student Pass"}
+                        </h3>
+                        <p className="text-xs text-white/70 mt-1 m-0">
+                            {user?.basicInfo?.userId || "ID"} · {hasAcquiredTransport ? `Route: ${activePass?.stopName}` : "No Route Selected"}
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-4 flex-wrap">
+                        {hasAcquiredTransport ? (
+                            <>
+                                <div className="text-right">
+                                    <span className="font-mono text-[0.65rem] text-[#D8B56A] uppercase font-bold block">
+                                        Base: ₹{baseFee.toLocaleString("en-IN")} + 18% GST (₹{gstAmount.toLocaleString("en-IN")})
+                                    </span>
+                                    <span className="font-mono text-sm font-bold text-white block">
+                                        Total Fee: ₹{totalFee.toLocaleString("en-IN")} ({activePass?.billingCycle})
+                                    </span>
+                                </div>
+
+                                <div className="px-3.5 py-1.5 rounded-xl border bg-emerald-500/20 border-emerald-500/30 text-emerald-300 flex items-center gap-1.5">
+                                    <ShieldCheck className="w-4 h-4" />
+                                    <span className="font-mono text-xs font-bold uppercase">ACTIVE PASS</span>
+                                </div>
+
+                                {transportSummary.remaining > 0 && (
+                                    <Link
+                                        href="/student/payment"
+                                        className="px-4 py-2 rounded-xl bg-[#D8B56A] text-[#1F3A2D] font-bold text-xs hover:bg-amber-400 transition-all flex items-center gap-1.5 shadow-sm"
+                                    >
+                                        Pay Dues (₹{transportSummary.remaining.toLocaleString("en-IN")}) <ArrowRight className="w-3.5 h-3.5" />
+                                    </Link>
+                                )}
+
+                                <button
+                                    onClick={handleCancelPass}
+                                    disabled={subscribingId === "cancel"}
+                                    className="px-3.5 py-2 rounded-xl bg-red-500/15 text-red-300 border border-red-500/30 font-semibold text-xs hover:bg-red-500/25 transition-all flex items-center gap-1.5 shadow-xs"
+                                >
+                                    <XCircle className="w-4 h-4 text-red-400" /> Cancel Pass
+                                </button>
+                            </>
+                        ) : (
+                            <div className="px-4 py-2 rounded-xl border bg-red-500/20 border-red-500/30 text-red-300 flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4" />
+                                <span className="font-mono text-xs font-bold uppercase">NO ROUTE BOOKED</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Available Route Stops for Booking */}
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: `${GOLD}25`, display: "flex", alignItems: "center", justifyContent: "center", color: GREEN }}>
-                      <MapPin size={18} />
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="font-serif text-lg font-bold text-[#1F3A2D] m-0">Select Shuttle Pickup Route</h3>
+                            <p className="text-xs text-emerald-900/60 m-0">Select a route below to calculate 18% GST and book your digital pass directly to your MongoDB record.</p>
+                        </div>
                     </div>
-                    <h3 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0, color: GREEN }}>{stop.name}</h3>
-                  </div>
 
-                  {stop.description && (
-                    <p style={{ fontSize: "0.8rem", color: "rgba(31,58,45,0.65)", margin: "0 0 16px", lineHeight: 1.4 }}>
-                      {stop.description}
-                    </p>
-                  )}
+                    <div className="bg-white rounded-2xl border border-emerald-900/10 overflow-hidden shadow-sm">
+                        {loadingStops ? (
+                            <div className="p-8">
+                                <LoadingSkeleton count={3} />
+                            </div>
+                        ) : (stopsData || []).length === 0 ? (
+                            <div className="p-12 text-center text-xs text-emerald-900/50">
+                                No transport route stops available for booking right now.
+                            </div>
+                        ) : (
+                            <div className="p-6 space-y-4">
+                                {(stopsData || []).map((stopItem: any) => {
+                                    const stopId = stopItem._id || stopItem.id;
+                                    const cycle = selectedCycles[stopId] || "monthly";
 
-                  <div style={{ display: "flex", gap: 16, padding: "10px 14px", background: "#F9F8F6", borderRadius: 12, marginBottom: 20, fontSize: "0.78rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(31,58,45,0.7)" }}>
-                      <Clock size={14} color={GREEN} /> Pickup: <span style={{ fontWeight: 700, color: GREEN }}>{stop.pickupTime}</span>
+                                    const basePrice = cycle === "yearly"
+                                        ? (stopItem.yearly?.basePrice || Number(stopItem.yearlyPrice) || 20000)
+                                        : (stopItem.monthly?.basePrice || Number(stopItem.monthlyPrice) || 2000);
+
+                                    const gstVal = Math.round(basePrice * 0.18);
+                                    const totalWithGst = basePrice + gstVal;
+                                    const isCurrentRoute = activePass?.stopId === stopId && activePass?.status === "active";
+
+                                    return (
+                                        <div
+                                            key={stopId}
+                                            className={`p-5 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                                                isCurrentRoute ? "bg-emerald-50/50 border-emerald-900/30" : "bg-white border-emerald-900/10 hover:border-emerald-900/25"
+                                            }`}
+                                        >
+                                            <div className="flex items-start gap-3.5">
+                                                <div className="w-10 h-10 rounded-xl bg-emerald-900/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                    <Bus className="w-5 h-5 text-[#1F3A2D]" />
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <h4 className="font-serif text-base font-bold text-[#1F3A2D] m-0">
+                                                            {stopItem.stopName || stopItem.name}
+                                                        </h4>
+                                                        {isCurrentRoute && (
+                                                            <span className="px-2 py-0.5 rounded-full text-[0.65rem] font-bold uppercase bg-emerald-500/15 text-emerald-800">
+                                                                SELECTED ROUTE
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <p className="text-xs text-emerald-900/60 mt-1 m-0 font-mono">
+                                                        Pickup: {stopItem.pickupTime || "07:30 AM"} · Drop: {stopItem.dropTime || "05:30 PM"}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-4 flex-wrap self-end md:self-center">
+                                                {/* Cycle Switcher */}
+                                                <div className="flex items-center p-1 rounded-xl bg-emerald-900/5 border border-emerald-900/10 text-xs">
+                                                    <button
+                                                        onClick={() => setSelectedCycles((prev) => ({ ...prev, [stopId]: "monthly" }))}
+                                                        className={`px-3 py-1.5 rounded-lg font-bold text-[0.7rem] transition-all ${
+                                                            cycle === "monthly" ? "bg-[#1F3A2D] text-white shadow-xs" : "text-emerald-900/70 hover:text-[#1F3A2D]"
+                                                        }`}
+                                                    >
+                                                        Monthly
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setSelectedCycles((prev) => ({ ...prev, [stopId]: "yearly" }))}
+                                                        className={`px-3 py-1.5 rounded-lg font-bold text-[0.7rem] transition-all ${
+                                                            cycle === "yearly" ? "bg-[#1F3A2D] text-white shadow-xs" : "text-emerald-900/70 hover:text-[#1F3A2D]"
+                                                        }`}
+                                                    >
+                                                        Yearly
+                                                    </button>
+                                                </div>
+
+                                                {/* Price Breakdown */}
+                                                <div className="text-right">
+                                                    <span className="text-[0.68rem] text-emerald-900/60 font-mono block">
+                                                        Base ₹{basePrice.toLocaleString("en-IN")} + 18% GST (₹{gstVal.toLocaleString("en-IN")})
+                                                    </span>
+                                                    <span className="font-mono text-sm font-bold text-[#1F3A2D] block">
+                                                        ₹{totalWithGst.toLocaleString("en-IN")} <span className="text-[0.68rem] font-normal text-emerald-900/60">/{cycle}</span>
+                                                    </span>
+                                                </div>
+
+                                                {/* Booking Action Button */}
+                                                <button
+                                                    onClick={() => handleSubscribe(stopId)}
+                                                    disabled={subscribingId === stopId || isCurrentRoute}
+                                                    className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-sm ${
+                                                        isCurrentRoute
+                                                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-default"
+                                                            : "bg-[#1F3A2D] text-white hover:bg-emerald-900 border border-emerald-950"
+                                                    }`}
+                                                >
+                                                    {subscribingId === stopId
+                                                        ? "Updating Schema..."
+                                                        : isCurrentRoute
+                                                        ? "Active Route"
+                                                        : `Book ${cycle === "yearly" ? "Yearly" : "Monthly"} Pass`}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(31,58,45,0.7)" }}>
-                      Return: <span style={{ fontWeight: 700, color: GREEN }}>{stop.dropTime}</span>
-                    </div>
-                  </div>
                 </div>
-
-                <div style={{ borderTop: "1px solid rgba(31,58,45,0.08)", paddingTop: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <span style={{ fontSize: "0.68rem", textTransform: "uppercase", color: "rgba(31,58,45,0.45)", display: "block" }}>
-                      {billingCycle === "yearly" ? "Yearly Price" : "Monthly Price"}
-                    </span>
-                    <span style={{ fontSize: "1.35rem", fontWeight: 800, color: GREEN, fontFamily: "var(--font-mono, monospace)" }}>
-                      ₹{price.toLocaleString("en-IN")}
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => handleOpenBooking(stop)}
-                    style={{
-                      padding: "10px 18px",
-                      borderRadius: 12,
-                      background: GREEN,
-                      color: "#fff",
-                      border: "none",
-                      fontSize: "0.82rem",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      transition: "transform 0.15s"
-                    }}
-                  >
-                    Book Pass <ChevronRight size={16} />
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
+            </div>
         </div>
-      )}
-
-      {/* Booking Confirmation & Bank/Cash Payment Guidance Modal */}
-      <AnimatePresence>
-        {isConfirmingModalOpen && selectedStop && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(31,58,45,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              style={{ background: "#fff", borderRadius: 24, padding: 32, maxWidth: 520, width: "100%", boxShadow: "0 20px 50px rgba(0,0,0,0.2)" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: GREEN }}>Confirm Pass Booking</h3>
-                <button onClick={() => setIsConfirmingModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(31,58,45,0.4)" }}>
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Selected Stop Summary */}
-              <div style={{ background: "#F9F8F6", borderRadius: 16, padding: 18, marginBottom: 20, border: "1px solid rgba(31,58,45,0.1)" }}>
-                <p style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(31,58,45,0.5)", margin: "0 0 4px" }}>Selected Drop Point</p>
-                <p style={{ fontSize: "1.1rem", fontWeight: 700, margin: "0 0 12px", color: GREEN }}>{selectedStop.name}</p>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, borderTop: "1px solid rgba(31,58,45,0.1)", paddingTop: 12, fontSize: "0.8rem" }}>
-                  <div>
-                    <span style={{ color: "rgba(31,58,45,0.5)", display: "block" }}>Billing Plan</span>
-                    <span style={{ fontWeight: 700, textTransform: "capitalize", color: GREEN }}>{billingCycle} Pass</span>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <span style={{ color: "rgba(31,58,45,0.5)", display: "block" }}>Fee Amount</span>
-                    <span style={{ fontWeight: 800, color: GREEN, fontFamily: "var(--font-mono, monospace)", fontSize: "1.05rem" }}>
-                      ₹{(billingCycle === "yearly" ? selectedStop.yearlyPrice : selectedStop.monthlyPrice).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Methods Guidance (Bank Transfer / Cash) */}
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ fontSize: "0.82rem", fontWeight: 700, color: GREEN, margin: "0 0 10px" }}>
-                  How to Pay for Your Transport Pass:
-                </p>
-                
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {/* Bank Details Box */}
-                  <div style={{ padding: 14, borderRadius: 14, background: `${GREEN}08`, border: `1px solid ${GREEN}20`, fontSize: "0.78rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, color: GREEN, marginBottom: 6 }}>
-                      <Building size={16} /> Method 1: Bank Transfer / UPI
-                    </div>
-                    <div style={{ color: "rgba(31,58,45,0.75)", lineHeight: 1.5 }}>
-                      <div>Bank Name: <strong>{BANK_DETAILS.bank}</strong></div>
-                      <div>Account Name: <strong>{BANK_DETAILS.accountName}</strong></div>
-                      <div>Account Number: <strong>{BANK_DETAILS.accountNo}</strong></div>
-                      <div>IFSC Code: <strong>{BANK_DETAILS.ifsc}</strong></div>
-                      {BANK_DETAILS.upiId && <div>UPI ID: <strong>{BANK_DETAILS.upiId}</strong></div>}
-                    </div>
-                    <p style={{ fontSize: "0.72rem", color: "rgba(31,58,45,0.6)", margin: "6px 0 0", italic: true }}>
-                      *After booking, submit your UTR / transaction proof on the Payments page.
-                    </p>
-                  </div>
-
-                  {/* Cash Box */}
-                  <div style={{ padding: 14, borderRadius: 14, background: "#fff", border: "1px solid rgba(31,58,45,0.12)", fontSize: "0.78rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, color: GREEN }}>
-                      <Banknote size={16} /> Method 2: Cash Payment
-                    </div>
-                    <p style={{ fontSize: "0.75rem", color: "rgba(31,58,45,0.7)", margin: "4px 0 0" }}>
-                      You can pay in cash directly at the Viramah Stay Accounts Counter.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 12 }}>
-                <button
-                  onClick={() => setIsConfirmingModalOpen(false)}
-                  style={{ flex: 1, padding: "12px", borderRadius: 12, border: "1px solid rgba(31,58,45,0.2)", background: "none", color: GREEN, fontWeight: 700, cursor: "pointer" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmBooking}
-                  disabled={submitting}
-                  style={{ flex: 1.5, padding: "12px", borderRadius: 12, border: "none", background: GREEN, color: "#fff", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-                >
-                  {submitting ? "Processing..." : "Confirm & Update Fee"}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+    );
 }

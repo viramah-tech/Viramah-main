@@ -1,257 +1,114 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
-import { FileCheck, AlertTriangle, UploadCloud } from "lucide-react";
-import { apiPostForm } from "@/lib/api";
-import { API } from "@/lib/apiEndpoints";
+import { FileCheck, ShieldCheck, Upload, AlertCircle, ExternalLink } from "lucide-react";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function DocumentsPage() {
-    const { user, refreshUser } = useAuth();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+    const { user } = useAuth();
 
-    // Form states
-    const [idFront, setIdFront] = useState<File | null>(null);
-    const [idBack, setIdBack] = useState<File | null>(null);
-    const [guardianIdFront, setGuardianIdFront] = useState<File | null>(null);
-    const [guardianIdBack, setGuardianIdBack] = useState<File | null>(null);
-
-    const isRejected = user?.verification?.documentVerificationStatus === "rejected";
-    const isPending = user?.verification?.documentVerificationStatus === "pending";
-    const isApproved = user?.verification?.documentVerificationStatus === "approved";
-
-    const handleUpload = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-        setSuccess("");
-        
-        if (!idFront && !idBack && !guardianIdFront && !guardianIdBack) {
-            setError("Please select at least one file to upload.");
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            const formData = new FormData();
-            if (idFront) formData.append("idFront", idFront);
-            if (idBack) formData.append("idBack", idBack);
-            if (guardianIdFront) formData.append("guardianIdFront", guardianIdFront);
-            if (guardianIdBack) formData.append("guardianIdBack", guardianIdBack);
-
-            await apiPostForm(API.upload.reupload, formData);
-            
-            // Clear form
-            setIdFront(null);
-            setIdBack(null);
-            setGuardianIdFront(null);
-            setGuardianIdBack(null);
-            
-            setSuccess("Documents successfully uploaded and are pending verification.");
-            await refreshUser({ force: true });
-        } catch (err: any) {
-            setError(err.message || "Failed to upload documents. Please try again.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    const verification = user?.verification || {};
+    const docStatus = verification.documentVerificationStatus || "pending";
+    const proofs = user?.userIdProof || {};
+    const guardianProofs = user?.guardianDetails?.idProof || {};
 
     return (
-        <div className="space-y-8 max-w-3xl">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                <h1 className="font-display text-4xl text-charcoal">Documents</h1>
-                <p className="font-body text-charcoal/60 mt-2">
-                    Manage your uploaded identification and compliance documents
-                </p>
-            </motion.div>
+        <div className="min-h-screen bg-[#F4F6F4] p-8 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-8 max-w-5xl mx-auto">
+                <PageHeader
+                    title="Document & KYC Compliance"
+                    subtitle="Review verified identification scans and guardian compliance records"
+                    badge="KYC STATUS"
+                />
 
-            {/* Status Alert */}
-            {isRejected && (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-status-danger-light border-l-4 border-status-danger p-5 rounded-r-xl"
-                >
-                    <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-5 h-5 text-status-danger shrink-0 mt-0.5" />
+                {/* Overall Verification Status Card */}
+                <div className="p-6 rounded-2xl bg-white border border-emerald-900/10 shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                            <ShieldCheck className="w-6 h-6 text-emerald-700" />
+                        </div>
                         <div>
-                            <h3 className="text-status-danger font-semibold font-display text-lg">Documents Rejected</h3>
-                            <p className="text-status-danger/80 text-sm mt-1">
-                                Your recently uploaded documents were rejected for the following reason:
-                            </p>
-                            <p className="mt-2 font-medium bg-white/50 p-3 rounded text-status-danger/90">
-                                "{user?.verification?.documentRejectionReason || 'Please provide clearer images of your ID.'}"
-                            </p>
-                            <p className="text-sm mt-3 text-status-danger/80">
-                                Please re-upload the corrected documents using the form below.
-                            </p>
+                            <span className="font-mono text-xs font-bold text-emerald-900/50 uppercase tracking-wider block">
+                                Verification Status
+                            </span>
+                            <span className="font-serif text-xl font-bold text-[#1F3A2D] uppercase">
+                                {docStatus}
+                            </span>
                         </div>
                     </div>
-                </motion.div>
-            )}
 
-            {isPending && (
-                <div className="bg-status-warning-light border border-status-warning/30 p-5 rounded-xl flex items-center gap-3">
-                    <FileCheck className="w-5 h-5 text-status-warning shrink-0" />
-                    <p className="text-status-warning font-medium">Your documents are currently under review by our team.</p>
+                    <span className="px-3.5 py-1.5 rounded-full font-mono text-xs font-bold uppercase bg-emerald-500/10 text-emerald-800">
+                        {docStatus === "approved" || docStatus === "verified" ? "COMPLIANT" : "UNDER REVIEW"}
+                    </span>
                 </div>
-            )}
 
-            {isApproved && (
-                <div className="bg-status-success-light border border-status-success/30 p-5 rounded-xl flex items-center gap-3">
-                    <FileCheck className="w-5 h-5 text-status-success shrink-0" />
-                    <p className="text-status-success font-medium">All your documents have been successfully verified.</p>
-                </div>
-            )}
-
-            {/* Upload Section (visible if rejected or pending, though mostly used for rejected) */}
-            {(isRejected || isPending) && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                    className="bg-white rounded-2xl border border-sand-dark p-6"
-                >
-                    <div className="flex items-center gap-3 mb-6 border-b border-sand-dark pb-4">
-                        <UploadCloud className="w-5 h-5 text-terracotta-raw" />
-                        <h2 className="font-display font-medium text-xl text-charcoal">Update Documents</h2>
-                    </div>
-
-                    {error && (
-                        <div className="mb-4 p-3 bg-status-danger-light text-status-danger rounded-lg text-sm">
-                            {error}
-                        </div>
-                    )}
-                    {success && (
-                        <div className="mb-4 p-3 bg-status-success-light text-status-success rounded-lg text-sm">
-                            {success}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleUpload} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Personal ID */}
-                            <div className="space-y-4">
-                                <div>
-                                    <h3 className="font-semibold text-charcoal text-sm mb-2">Personal ID Proof</h3>
-                                    <p className="text-xs text-charcoal/50 mb-3">Upload clear images of your primary ID</p>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-charcoal/70 mb-1">Front Image</label>
-                                    <input 
-                                        type="file" 
-                                        accept="image/jpeg,image/png,image/webp,application/pdf"
-                                        onChange={(e) => setIdFront(e.target.files?.[0] || null)}
-                                        className="w-full text-sm text-charcoal/70 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-sand-light file:text-charcoal hover:file:bg-sand-dark cursor-pointer border border-sand-dark rounded-xl p-2"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-charcoal/70 mb-1">Back Image</label>
-                                    <input 
-                                        type="file" 
-                                        accept="image/jpeg,image/png,image/webp,application/pdf"
-                                        onChange={(e) => setIdBack(e.target.files?.[0] || null)}
-                                        className="w-full text-sm text-charcoal/70 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-sand-light file:text-charcoal hover:file:bg-sand-dark cursor-pointer border border-sand-dark rounded-xl p-2"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Guardian ID */}
-                            <div className="space-y-4">
-                                <div>
-                                    <h3 className="font-semibold text-charcoal text-sm mb-2">Guardian ID Proof</h3>
-                                    <p className="text-xs text-charcoal/50 mb-3">Upload clear images of guardian's ID</p>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-charcoal/70 mb-1">Front Image</label>
-                                    <input 
-                                        type="file" 
-                                        accept="image/jpeg,image/png,image/webp,application/pdf"
-                                        onChange={(e) => setGuardianIdFront(e.target.files?.[0] || null)}
-                                        className="w-full text-sm text-charcoal/70 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-sand-light file:text-charcoal hover:file:bg-sand-dark cursor-pointer border border-sand-dark rounded-xl p-2"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-charcoal/70 mb-1">Back Image</label>
-                                    <input 
-                                        type="file" 
-                                        accept="image/jpeg,image/png,image/webp,application/pdf"
-                                        onChange={(e) => setGuardianIdBack(e.target.files?.[0] || null)}
-                                        className="w-full text-sm text-charcoal/70 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-sand-light file:text-charcoal hover:file:bg-sand-dark cursor-pointer border border-sand-dark rounded-xl p-2"
-                                    />
-                                </div>
-                            </div>
+                {/* Document Scans Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* Student ID Proof Card */}
+                    <div className="p-6 rounded-2xl bg-white border border-emerald-900/10 shadow-sm">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-serif text-lg font-bold text-[#1F3A2D] m-0">Student Aadhaar / ID Proof</h3>
+                            <FileCheck className="w-5 h-5 text-emerald-900/40" />
                         </div>
 
-                        <div className="pt-4 border-t border-sand-dark flex justify-end">
-                            <Button 
-                                type="submit" 
-                                disabled={isSubmitting || (!idFront && !idBack && !guardianIdFront && !guardianIdBack)}
-                                className="min-w-[150px]"
-                            >
-                                {isSubmitting ? "Uploading..." : "Upload Documents"}
-                            </Button>
-                        </div>
-                    </form>
-                </motion.div>
-            )}
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                            {proofs.frontImage ? (
+                                <a href={proofs.frontImage} target="_blank" rel="noopener noreferrer" className="group relative">
+                                    <img src={proofs.frontImage} alt="Front ID" className="w-full h-28 object-cover rounded-xl border border-emerald-900/10 group-hover:scale-105 transition-all" />
+                                    <span className="text-[0.65rem] font-bold text-[#1F3A2D] mt-1 block">ID Front Scan</span>
+                                </a>
+                            ) : (
+                                <div className="h-28 rounded-xl bg-emerald-900/5 border border-dashed border-emerald-900/20 flex flex-col items-center justify-center text-xs text-emerald-900/40">
+                                    No Front Image
+                                </div>
+                            )}
 
-            {/* Current Documents Viewer */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-white rounded-2xl border border-sand-dark p-6"
-            >
-                <div className="flex items-center gap-3 mb-6">
-                    <FileCheck className="w-5 h-5 text-charcoal/60" />
-                    <span className="font-body font-medium text-charcoal">Current Documents on File</span>
-                </div>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="p-4 border border-sand-dark rounded-xl bg-sand-light/30">
-                        <p className="text-xs text-charcoal/60 mb-2">Personal ID (Front)</p>
-                        {user?.userIdProof?.frontImage ? (
-                            <a href={user.userIdProof.frontImage} target="_blank" rel="noopener noreferrer" className="text-terracotta text-sm font-medium hover:underline">View File</a>
-                        ) : (
-                            <p className="text-charcoal/30 text-sm">Not found</p>
-                        )}
+                            {proofs.backImage ? (
+                                <a href={proofs.backImage} target="_blank" rel="noopener noreferrer" className="group relative">
+                                    <img src={proofs.backImage} alt="Back ID" className="w-full h-28 object-cover rounded-xl border border-emerald-900/10 group-hover:scale-105 transition-all" />
+                                    <span className="text-[0.65rem] font-bold text-[#1F3A2D] mt-1 block">ID Back Scan</span>
+                                </a>
+                            ) : (
+                                <div className="h-28 rounded-xl bg-emerald-900/5 border border-dashed border-emerald-900/20 flex flex-col items-center justify-center text-xs text-emerald-900/40">
+                                    No Back Image
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <div className="p-4 border border-sand-dark rounded-xl bg-sand-light/30">
-                        <p className="text-xs text-charcoal/60 mb-2">Personal ID (Back)</p>
-                        {user?.userIdProof?.backImage ? (
-                            <a href={user.userIdProof.backImage} target="_blank" rel="noopener noreferrer" className="text-terracotta text-sm font-medium hover:underline">View File</a>
-                        ) : (
-                            <p className="text-charcoal/30 text-sm">Not found</p>
-                        )}
-                    </div>
-                    <div className="p-4 border border-sand-dark rounded-xl bg-sand-light/30">
-                        <p className="text-xs text-charcoal/60 mb-2">Guardian ID (Front)</p>
-                        {user?.guardianDetails?.idProof?.frontImage ? (
-                            <a href={user.guardianDetails.idProof.frontImage} target="_blank" rel="noopener noreferrer" className="text-terracotta text-sm font-medium hover:underline">View File</a>
-                        ) : (
-                            <p className="text-charcoal/30 text-sm">Not found</p>
-                        )}
-                    </div>
-                    <div className="p-4 border border-sand-dark rounded-xl bg-sand-light/30">
-                        <p className="text-xs text-charcoal/60 mb-2">Guardian ID (Back)</p>
-                        {user?.guardianDetails?.idProof?.backImage ? (
-                            <a href={user.guardianDetails.idProof.backImage} target="_blank" rel="noopener noreferrer" className="text-terracotta text-sm font-medium hover:underline">View File</a>
-                        ) : (
-                            <p className="text-charcoal/30 text-sm">Not found</p>
-                        )}
+
+                    {/* Guardian ID Proof Card */}
+                    <div className="p-6 rounded-2xl bg-white border border-emerald-900/10 shadow-sm">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-serif text-lg font-bold text-[#1F3A2D] m-0">Guardian ID Proof</h3>
+                            <FileCheck className="w-5 h-5 text-emerald-900/40" />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                            {guardianProofs.frontImage ? (
+                                <a href={guardianProofs.frontImage} target="_blank" rel="noopener noreferrer" className="group relative">
+                                    <img src={guardianProofs.frontImage} alt="Guardian Front ID" className="w-full h-28 object-cover rounded-xl border border-emerald-900/10 group-hover:scale-105 transition-all" />
+                                    <span className="text-[0.65rem] font-bold text-[#1F3A2D] mt-1 block">Guardian ID Front</span>
+                                </a>
+                            ) : (
+                                <div className="h-28 rounded-xl bg-emerald-900/5 border border-dashed border-emerald-900/20 flex flex-col items-center justify-center text-xs text-emerald-900/40">
+                                    No Guardian Front
+                                </div>
+                            )}
+
+                            {guardianProofs.backImage ? (
+                                <a href={guardianProofs.backImage} target="_blank" rel="noopener noreferrer" className="group relative">
+                                    <img src={guardianProofs.backImage} alt="Guardian Back ID" className="w-full h-28 object-cover rounded-xl border border-emerald-900/10 group-hover:scale-105 transition-all" />
+                                    <span className="text-[0.65rem] font-bold text-[#1F3A2D] mt-1 block">Guardian ID Back</span>
+                                </a>
+                            ) : (
+                                <div className="h-28 rounded-xl bg-emerald-900/5 border border-dashed border-emerald-900/20 flex flex-col items-center justify-center text-xs text-emerald-900/40">
+                                    No Guardian Back
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </motion.div>
-
+            </div>
         </div>
     );
 }

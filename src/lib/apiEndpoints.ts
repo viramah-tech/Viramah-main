@@ -42,6 +42,25 @@ export const API = {
     cancelBooking: '/api/payment/cancel-booking',
     delete: (paymentId: string) => `/api/payment/${paymentId}`,
   },
+  maintenance: {
+    create: '/api/maintenance/create',
+    studentRequests: '/api/maintenance/student/requests',
+  },
+  mess: {
+    todayMenu: '/api/mess/menu/today',
+    weeklyMenu: '/api/mess/menu/weekly',
+    vote: '/api/mess/vote',
+    activePoll: '/api/mess/poll/active',
+    voteMonthlyPoll: '/api/mess/poll/vote',
+    createPoll: '/api/mess/poll',
+    closePoll: '/api/mess/poll/close',
+    uploadImage: '/api/mess/upload-image',
+  },
+  transport: {
+    stops: '/api/transport/stops',
+    subscribe: '/api/transport/subscribe',
+    cancel: '/api/transport/cancel',
+  },
 } as const;
 
 /** Onboarding state machine — see backend UserSchema.onboarding.currentStep. */

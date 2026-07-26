@@ -1,526 +1,223 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
 import {
-    Wallet, UtensilsCrossed, Dumbbell, Bell, Calendar,
-    ArrowRight, TrendingUp, Wrench, ChevronRight,
-    Clock, CheckCircle2, AlertCircle, Plus
+    Wallet, UtensilsCrossed, Dumbbell, Wrench, Bus, FileCheck, CreditCard,
+    AlertCircle, CheckCircle2, ChevronRight, User, Bell, Sparkles, RefreshCw
 } from "lucide-react";
-import { useAuth, type AuthUser } from "@/context/AuthContext";
-import { useSocket } from "@/hooks/useSocket";
-import Phase2Banner from "@/components/Phase2Banner";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { apiGet } from "@/lib/api";
+import { API } from "@/lib/apiEndpoints";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { StatCard } from "@/components/ui/StatCard";
+import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 
-const GREEN = "#1F3A2D";
 const GOLD = "#D8B56A";
+const GREEN = "#1F3A2D";
 
-// ── Quick Actions ──────────────────────────────────────────
 const QUICK_ACTIONS = [
-    { label: "Add Funds", href: "/student/wallet", icon: Wallet, bg: "#1F3A2D", fg: GOLD },
-    { label: "Order Food", href: "/student/canteen", icon: UtensilsCrossed, bg: "#D8B56A", fg: "#1F3A2D" },
-    { label: "Amenities", href: "/student/amenities", icon: Dumbbell, bg: "rgba(31,58,45,0.1)", fg: "#1F3A2D" },
-    { label: "Maintenance", href: "/student/maintenance", icon: Wrench, bg: "rgba(216,181,106,0.15)", fg: "#9a7a3a" },
+    { label: "Add Funds", href: "/student/wallet", icon: Wallet, bg: "bg-[#1F3A2D]", fg: "text-[#D8B56A]" },
+    { label: "Mess & Menu", href: "/student/canteen", icon: UtensilsCrossed, bg: "bg-[#D8B56A]", fg: "text-[#1F3A2D]" },
+    { label: "Amenities", href: "/student/amenities", icon: Dumbbell, bg: "bg-[#1F3A2D]/10", fg: "text-[#1F3A2D]" },
+    { label: "Maintenance", href: "/student/maintenance", icon: Wrench, bg: "bg-[#D8B56A]/20", fg: "text-[#9a7a3a]" },
+    { label: "Transport", href: "/student/transport", icon: Bus, bg: "bg-emerald-500/10", fg: "text-emerald-800" },
+    { label: "Documents", href: "/student/documents", icon: FileCheck, bg: "bg-[#1F3A2D]", fg: "text-white" },
 ];
 
-// ── Stats ──────────────────────────────────────────────────
-const STATS = [
-    { label: "Wallet Balance", value: "₹2,450", sub: "+₹500 this week", icon: Wallet, trend: "up" },
-    { label: "Meals This Week", value: "12", sub: "4 pending", icon: UtensilsCrossed, trend: "neutral" },
-    { label: "Gym Sessions", value: "4", sub: "2 booked ahead", icon: Dumbbell, trend: "up" },
-    { label: "Open Requests", value: "1", sub: "In progress", icon: Wrench, trend: "warn" },
-];
+export default function StudentDashboardPage() {
+    const { user, refreshUser } = useAuth();
 
-// ── Notifications ──────────────────────────────────────────
-const NOTIFICATIONS = [
-    { text: "Your laundry is ready for pickup", time: "2 hours ago", type: "info" },
-    { text: "Rent reminder: Due in 5 days", time: "Yesterday", type: "warn" },
-    { text: "Maintenance request #MR-003 resolved", time: "2 days ago", type: "success" },
-];
+    // Fetch maintenance requests count
+    const { data: maintenanceData, isLoading: loadingMaintenance, refetch: refetchMaintenance } = useQuery({
+        queryKey: ["student-maintenance-requests"],
+        queryFn: () => apiGet<any[]>(API.maintenance.studentRequests),
+    });
 
-// ── Events ─────────────────────────────────────────────────
-const EVENTS = [
-    { title: "Yoga Session", time: "6:00 AM", day: "Tomorrow", tag: "Wellness" },
-    { title: "Community Dinner", time: "7:30 PM", day: "Saturday", tag: "Social" },
-    { title: "Study Group", time: "4:00 PM", day: "Sunday", tag: "Academic" },
-];
+    // Fetch today's mess menu
+    const { data: messMenuData } = useQuery({
+        queryKey: ["today-mess-menu"],
+        queryFn: () => apiGet<any>(API.mess.todayMenu),
+    });
 
-// ── Recent Maintenance ─────────────────────────────────────
-const RECENT_MAINTENANCE = [
-    { id: "MR-003", type: "Electrician", issue: "Fan not working in room", status: "resolved", date: "2 days ago" },
-    { id: "MR-004", type: "Plumber", issue: "Tap leaking in bathroom", status: "in_progress", date: "Today" },
-];
+    const openMaintenanceCount = (maintenanceData || []).filter(
+        (r) => r.status !== "resolved" && r.status !== "closed"
+    ).length;
 
-const STATUS_CONFIG = {
-    resolved: { label: "Resolved", icon: CheckCircle2, color: "#1F3A2D", bg: "rgba(31,58,45,0.08)" },
-    in_progress: { label: "In Progress", icon: Clock, color: "#D8B56A", bg: "rgba(216,181,106,0.12)" },
-    pending: { label: "Pending", icon: AlertCircle, color: "#c0392b", bg: "rgba(192,57,43,0.08)" },
-};
-
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
-};
-const itemVariants = {
-    hidden: { y: 16, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.45, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] } },
-};
-
-export default function StudentDashboard() {
-    const [hoveredAction, setHoveredAction] = useState<string | null>(null);
-    const { user, updateUser, loading } = useAuth();
-    const router = useRouter();
-    // Access is globally guarded by student/layout.tsx
-
-    // Real-time sync: update user data when socket events arrive
-    const handleSocketEvent = useCallback((event: string, data: unknown) => {
-        if (event === "user:updated" && data) {
-            updateUser(data as Partial<AuthUser>);
-        }
-    }, [updateUser]);
-    useSocket(user?._id, handleSocketEvent);
-
-    const greeting = () => {
-        const hour = new Date().getHours();
-        if (hour < 12) return "Good morning";
-        if (hour < 17) return "Good afternoon";
-        return "Good evening";
-    };
+    const remainingDue = user?.paymentSummary?.grandTotal?.remaining || 0;
+    const isFullyPaid = user?.paymentSummary?.isFullyPaid || remainingDue <= 0;
 
     return (
-        <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            style={{ display: "flex", flexDirection: "column", gap: 28 }}
-        >
-            {/* ── Welcome Header ── */}
-            <motion.div variants={itemVariants}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                        {/* Circular Profile Photo */}
-                        <div style={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: "50%",
-                            background: "linear-gradient(135deg, rgba(31,58,45,0.15), rgba(31,58,45,0.08))",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            border: `2.5px solid ${GOLD}`,
-                            overflow: "hidden",
-                            flexShrink: 0,
-                            boxShadow: "0 4px 14px rgba(31,58,45,0.06)",
-                        }}>
-                            {user?.profilePhoto?.url ? (
-                                <img
-                                    src={user.profilePhoto.url}
-                                    alt="Profile Photo"
-                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                />
-                            ) : (
-                                <span style={{
-                                    fontFamily: "var(--font-mono, monospace)",
-                                    fontSize: "1.2rem",
-                                    color: GREEN,
-                                    fontWeight: 700,
-                                }}>
-                                    {user?.basicInfo?.fullName?.charAt(0) || "S"}
-                                </span>
-                            )}
-                        </div>
-                        <div>
-                            <span style={{
-                                fontFamily: "var(--font-mono, monospace)",
-                                fontSize: "0.6rem",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.3em",
-                                color: GOLD,
-                                fontWeight: 700,
-                            }}>
-                                {greeting()}
-                            </span>
-                            <h1 style={{
-                                fontFamily: "var(--font-display, serif)",
-                                fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
-                                color: GREEN,
-                                lineHeight: 1.1,
-                                marginTop: 4,
-                                fontWeight: 400,
-                            }}>
-                                Welcome back, {user?.basicInfo?.fullName?.split(" ")[0] || "Student"}
-                            </h1>
-                            <p style={{
-                                fontFamily: "var(--font-body, sans-serif)",
-                                fontSize: "0.9rem",
-                                color: "rgba(31,58,45,0.5)",
-                                marginTop: 6,
-                            }}>
-                                Here&apos;s what&apos;s happening at Viramah today.
-                            </p>
-                        </div>
-                    </div>
-                    {/* Date badge */}
-                    <div style={{
-                        padding: "8px 16px",
-                        borderRadius: 999,
-                        background: "#fff",
-                        border: "1px solid rgba(31,58,45,0.1)",
-                        boxShadow: "0 2px 12px rgba(31,58,45,0.06)",
-                    }}>
-                        <span style={{
-                            fontFamily: "var(--font-mono, monospace)",
-                            fontSize: "0.65rem",
-                            color: "rgba(31,58,45,0.5)",
-                            letterSpacing: "0.05em",
-                        }}>
-                            {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })}
-                        </span>
-                    </div>
+        <div className="min-h-screen bg-[#F4F6F4] p-8 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-8 max-w-5xl mx-auto">
+                {/* Header */}
+                <PageHeader
+                    title={`Welcome back, ${user?.basicInfo?.fullName?.split(" ")[0] || "Student"}!`}
+                    subtitle={`Room ${user?.roomNumber || user?.roomDetails?.roomNumber || "Unassigned"} · ${user?.basicInfo?.userId || "ID"}`}
+                    badge="ACTIVE RESIDENT"
+                    action={
+                        <button
+                            onClick={() => { refreshUser(); refetchMaintenance(); }}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-emerald-900/15 text-[#1F3A2D] font-bold text-xs shadow-sm hover:bg-emerald-50 transition-all"
+                        >
+                            <RefreshCw className="w-4 h-4 text-[#1F3A2D]" /> Sync Dashboard
+                        </button>
+                    }
+                />
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <StatCard
+                        label="Payment Status"
+                        value={isFullyPaid ? "Fully Paid" : `₹${remainingDue.toLocaleString("en-IN")}`}
+                        subtext={isFullyPaid ? "No pending rent dues" : "Outstanding balance"}
+                        icon={CreditCard}
+                        color={isFullyPaid ? "#10b981" : "#ef4444"}
+                    />
+                    <StatCard
+                        label="Open Maintenance Tickets"
+                        value={loadingMaintenance ? "..." : openMaintenanceCount}
+                        subtext={openMaintenanceCount > 0 ? "Under resolution" : "All issues resolved"}
+                        icon={Wrench}
+                        color={openMaintenanceCount > 0 ? "#f59e0b" : "#1F3A2D"}
+                    />
+                    <StatCard
+                        label="Document Verification"
+                        value={user?.verification?.documentVerificationStatus?.toUpperCase() || "VERIFIED"}
+                        subtext="KYC compliance status"
+                        icon={FileCheck}
+                        color="#1F3A2D"
+                    />
                 </div>
-            </motion.div>
 
-            {/* ── Phase 2 Payment Banner ── */}
-            <motion.div variants={itemVariants}>
-                <Phase2Banner />
-            </motion.div>
-
-            {/* ── Quick Actions ── */}
-            <motion.div variants={itemVariants}>
-                <SectionLabel>Quick Actions</SectionLabel>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, marginTop: 12 }}>
-                    {QUICK_ACTIONS.map((action) => {
-                        const Icon = action.icon;
-                        const isHovered = hoveredAction === action.label;
-                        return (
-                            <Link key={action.label} href={action.href} style={{ textDecoration: "none" }}>
-                                <motion.div
-                                    onMouseEnter={() => setHoveredAction(action.label)}
-                                    onMouseLeave={() => setHoveredAction(null)}
-                                    whileHover={{ y: -4 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    style={{
-                                        background: "#fff",
-                                        borderRadius: 16,
-                                        border: `1.5px solid ${isHovered ? "rgba(31,58,45,0.2)" : "rgba(31,58,45,0.08)"}`,
-                                        padding: "20px 16px",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        gap: 10,
-                                        cursor: "pointer",
-                                        boxShadow: isHovered ? "0 8px 24px rgba(31,58,45,0.1)" : "0 2px 8px rgba(31,58,45,0.04)",
-                                        transition: "border-color 0.25s, box-shadow 0.25s",
-                                    }}
+                {/* Quick Actions */}
+                <div>
+                    <span className="font-mono text-xs font-bold text-emerald-900/50 uppercase tracking-wider block mb-3">
+                        Quick Actions
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                        {QUICK_ACTIONS.map((action) => {
+                            const Icon = action.icon;
+                            return (
+                                <Link
+                                    key={action.label}
+                                    href={action.href}
+                                    className="p-4 rounded-2xl bg-white border border-emerald-900/10 shadow-sm hover:border-emerald-900/30 hover:shadow-md transition-all flex flex-col items-center gap-2 text-center group"
                                 >
-                                    <div style={{
-                                        width: 48,
-                                        height: 48,
-                                        borderRadius: 12,
-                                        background: action.bg,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}>
-                                        <Icon size={22} color={action.fg} />
+                                    <div className={`w-10 h-10 rounded-xl ${action.bg} ${action.fg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                        <Icon className="w-5 h-5" />
                                     </div>
-                                    <span style={{
-                                        fontFamily: "var(--font-body, sans-serif)",
-                                        fontSize: "0.8rem",
-                                        fontWeight: 600,
-                                        color: GREEN,
-                                        textAlign: "center",
-                                    }}>
+                                    <span className="font-semibold text-xs text-[#1F3A2D]">
                                         {action.label}
                                     </span>
-                                    <ArrowRight size={14} color={isHovered ? GOLD : "rgba(31,58,45,0.25)"} style={{ transition: "color 0.2s" }} />
-                                </motion.div>
-                            </Link>
-                        );
-                    })}
-                </div>
-            </motion.div>
-
-            {/* ── Stats Row ── */}
-            <motion.div variants={itemVariants}>
-                <SectionLabel>Overview</SectionLabel>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginTop: 12 }}>
-                    {STATS.map((stat) => {
-                        const Icon = stat.icon;
-                        return (
-                            <div key={stat.label} style={{
-                                background: "#fff",
-                                borderRadius: 16,
-                                border: "1px solid rgba(31,58,45,0.08)",
-                                padding: "20px",
-                                boxShadow: "0 2px 8px rgba(31,58,45,0.04)",
-                            }}>
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                                    <span style={{
-                                        fontFamily: "var(--font-mono, monospace)",
-                                        fontSize: "0.58rem",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.2em",
-                                        color: "rgba(31,58,45,0.45)",
-                                        fontWeight: 700,
-                                    }}>
-                                        {stat.label}
-                                    </span>
-                                    <div style={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 8,
-                                        background: "rgba(31,58,45,0.06)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}>
-                                        <Icon size={15} color={GREEN} />
-                                    </div>
-                                </div>
-                                <div style={{
-                                    fontFamily: "var(--font-display, serif)",
-                                    fontSize: "2rem",
-                                    color: GREEN,
-                                    lineHeight: 1,
-                                    marginBottom: 6,
-                                }}>
-                                    {stat.value}
-                                </div>
-                                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                                    {stat.trend === "up" && <TrendingUp size={11} color="#1F3A2D" />}
-                                    {stat.trend === "warn" && <AlertCircle size={11} color={GOLD} />}
-                                    <span style={{
-                                        fontFamily: "var(--font-mono, monospace)",
-                                        fontSize: "0.6rem",
-                                        color: stat.trend === "warn" ? "#9a7a3a" : "rgba(31,58,45,0.4)",
-                                    }}>
-                                        {stat.sub}
-                                    </span>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </motion.div>
-
-            {/* ── Two Column: Notifications + Events ── */}
-            <motion.div variants={itemVariants} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
-                {/* Notifications */}
-                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.08)", padding: 24, boxShadow: "0 2px 8px rgba(31,58,45,0.04)" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(31,58,45,0.07)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Bell size={16} color={GREEN} />
-                            </div>
-                            <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 600, color: GREEN }}>Notifications</span>
-                        </div>
-                        <span style={{ padding: "3px 10px", borderRadius: 999, background: "rgba(31,58,45,0.08)", fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: GREEN, fontWeight: 700 }}>
-                            3 new
-                        </span>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {NOTIFICATIONS.map((n, i) => (
-                            <div key={i} style={{
-                                padding: "12px 14px",
-                                borderRadius: 10,
-                                background: "rgba(246,244,239,0.7)",
-                                border: "1px solid rgba(31,58,45,0.07)",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 4,
-                            }}>
-                                <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                                    <div style={{
-                                        width: 6,
-                                        height: 6,
-                                        borderRadius: "50%",
-                                        background: n.type === "success" ? GREEN : n.type === "warn" ? GOLD : "rgba(31,58,45,0.3)",
-                                        marginTop: 5,
-                                        flexShrink: 0,
-                                    }} />
-                                    <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", color: GREEN, margin: 0, lineHeight: 1.4 }}>{n.text}</p>
-                                </div>
-                                <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)", paddingLeft: 14 }}>{n.time}</span>
-                            </div>
-                        ))}
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* Events */}
-                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.08)", padding: 24, boxShadow: "0 2px 8px rgba(31,58,45,0.04)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-                        <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(216,181,106,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Calendar size={16} color={GOLD} />
-                        </div>
-                        <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.9rem", fontWeight: 600, color: GREEN }}>Upcoming Events</span>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {EVENTS.map((event, i) => (
-                            <div key={i} style={{
-                                padding: "12px 14px",
-                                borderRadius: 10,
-                                background: "rgba(246,244,239,0.7)",
-                                border: "1px solid rgba(31,58,45,0.07)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                            }}>
-                                <div style={{
-                                    width: 42,
-                                    height: 42,
-                                    borderRadius: 10,
-                                    background: "rgba(216,181,106,0.12)",
-                                    border: "1px solid rgba(216,181,106,0.25)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    flexShrink: 0,
-                                }}>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: "#9a7a3a", fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>
-                                        {event.day.slice(0, 3).toUpperCase()}
-                                    </span>
+                {/* Live Section Rows: Today's Menu & Recent Activity */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Today's Mess Menu Card */}
+                    <div className="p-6 rounded-2xl bg-white border border-emerald-900/10 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <UtensilsCrossed className="w-5 h-5 text-[#1F3A2D]" />
+                                    <h3 className="font-serif text-lg font-bold text-[#1F3A2D] m-0">Today&apos;s Mess Menu</h3>
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                    <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", fontWeight: 600, color: GREEN, margin: 0 }}>{event.title}</p>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.4)" }}>{event.time} · {event.day}</span>
-                                </div>
-                                <span style={{
-                                    padding: "3px 8px",
-                                    borderRadius: 999,
-                                    background: "rgba(31,58,45,0.07)",
-                                    fontFamily: "var(--font-mono, monospace)",
-                                    fontSize: "0.55rem",
-                                    color: GREEN,
-                                    letterSpacing: "0.05em",
-                                }}>
-                                    {event.tag}
+                                <span className="font-mono text-[0.65rem] font-bold text-emerald-900/40 uppercase bg-emerald-900/5 px-2.5 py-1 rounded-full">
+                                    FRESH TODAY
                                 </span>
                             </div>
-                        ))}
+
+                            {messMenuData ? (
+                                <div className="space-y-3 text-xs text-emerald-900/80">
+                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                                        <strong className="text-[#1F3A2D] block mb-1">Breakfast:</strong>
+                                        {messMenuData.breakfast || "Aloo Paratha, Curd, Tea/Coffee"}
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                                        <strong className="text-[#1F3A2D] block mb-1">Lunch:</strong>
+                                        {messMenuData.lunch || "Paneer Butter Masala, Dal Makhani, Rice, Roti"}
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                                        <strong className="text-[#1F3A2D] block mb-1">Dinner:</strong>
+                                        {messMenuData.dinner || "Mix Veg, Dal Tadka, Jeera Rice, Gulab Jamun"}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 text-xs text-emerald-900/80">
+                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                                        <strong className="text-[#1F3A2D] block mb-1">Breakfast (8:00 AM - 10:00 AM):</strong>
+                                        Puri Bhaji, Sprouted Moong, Tea & Coffee
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                                        <strong className="text-[#1F3A2D] block mb-1">Lunch (12:30 PM - 2:30 PM):</strong>
+                                        Shahi Paneer, Chana Dal, Jeera Rice, Chapati, Salad
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                                        <strong className="text-[#1F3A2D] block mb-1">Dinner (8:00 PM - 10:00 PM):</strong>
+                                        Veg Kolhapuri, Dal Fry, Steamed Rice, Phulka, Sweet
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <Link
+                            href="/student/canteen"
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#1F3A2D] hover:underline mt-4"
+                        >
+                            View Weekly Schedule & Polls <ChevronRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+
+                    {/* Maintenance Quick Status Card */}
+                    <div className="p-6 rounded-2xl bg-white border border-emerald-900/10 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Wrench className="w-5 h-5 text-[#1F3A2D]" />
+                                    <h3 className="font-serif text-lg font-bold text-[#1F3A2D] m-0">Recent Maintenance Requests</h3>
+                                </div>
+                                <span className="font-mono text-[0.65rem] font-bold text-emerald-900/40 uppercase bg-emerald-900/5 px-2.5 py-1 rounded-full">
+                                    LIVE S3
+                                </span>
+                            </div>
+
+                            {loadingMaintenance ? (
+                                <LoadingSkeleton count={3} />
+                            ) : (maintenanceData || []).length === 0 ? (
+                                <div className="p-8 text-center text-xs text-emerald-900/50">
+                                    No maintenance requests. All room amenities in good standing!
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {(maintenanceData || []).slice(0, 3).map((req: any) => (
+                                        <div key={req._id} className="p-3 rounded-xl border border-emerald-900/5 flex items-center justify-between">
+                                            <div>
+                                                <span className="font-semibold text-xs text-[#1F3A2D] block">{req.issueTitle}</span>
+                                                <span className="font-mono text-[0.65rem] text-emerald-900/40">{req.ticketId} · {req.department?.toUpperCase()}</span>
+                                            </div>
+                                            <span className="px-2.5 py-1 rounded-full text-[0.65rem] font-bold uppercase bg-emerald-500/10 text-emerald-800">
+                                                {req.status}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <Link
+                            href="/student/maintenance"
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#1F3A2D] hover:underline mt-4"
+                        >
+                            Go to Maintenance Portal <ChevronRight className="w-4 h-4" />
+                        </Link>
                     </div>
                 </div>
-            </motion.div>
-
-            {/* ── Recent Maintenance Requests ── */}
-            <motion.div variants={itemVariants}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <SectionLabel>Recent Maintenance</SectionLabel>
-                    <Link href="/student/maintenance" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: GOLD, letterSpacing: "0.05em" }}>View all</span>
-                        <ChevronRight size={12} color={GOLD} />
-                    </Link>
-                </div>
-                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(31,58,45,0.08)", overflow: "hidden", boxShadow: "0 2px 8px rgba(31,58,45,0.04)" }}>
-                    {RECENT_MAINTENANCE.map((req, i) => {
-                        const cfg = STATUS_CONFIG[req.status as keyof typeof STATUS_CONFIG];
-                        const StatusIcon = cfg.icon;
-                        return (
-                            <div key={req.id} style={{
-                                padding: "16px 20px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 14,
-                                borderBottom: i < RECENT_MAINTENANCE.length - 1 ? "1px solid rgba(31,58,45,0.07)" : "none",
-                            }}>
-                                <div style={{
-                                    width: 38,
-                                    height: 38,
-                                    borderRadius: 10,
-                                    background: "rgba(31,58,45,0.06)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    flexShrink: 0,
-                                }}>
-                                    <Wrench size={16} color={GREEN} />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        <span style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.82rem", fontWeight: 600, color: GREEN }}>{req.type}</span>
-                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: "rgba(31,58,45,0.35)" }}>{req.id}</span>
-                                    </div>
-                                    <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "0.75rem", color: "rgba(31,58,45,0.5)", margin: "2px 0 0" }}>{req.issue}</p>
-                                </div>
-                                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                                    <div style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 5,
-                                        padding: "4px 10px",
-                                        borderRadius: 999,
-                                        background: cfg.bg,
-                                    }}>
-                                        <StatusIcon size={11} color={cfg.color} />
-                                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.58rem", color: cfg.color, fontWeight: 700 }}>{cfg.label}</span>
-                                    </div>
-                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.55rem", color: "rgba(31,58,45,0.35)" }}>{req.date}</span>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </motion.div>
-
-            {/* ── Raise New Request CTA ── */}
-            <motion.div variants={itemVariants}>
-                <Link href="/student/maintenance" style={{ textDecoration: "none" }}>
-                    <motion.div
-                        whileHover={{ y: -3 }}
-                        style={{
-                            background: "linear-gradient(135deg, #1F3A2D 0%, #162b1e 100%)",
-                            borderRadius: 16,
-                            padding: "24px 28px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            cursor: "pointer",
-                            boxShadow: "0 8px 28px rgba(31,58,45,0.2)",
-                        }}
-                    >
-                        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                            <div style={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: 12,
-                                background: "rgba(216,181,106,0.15)",
-                                border: "1px solid rgba(216,181,106,0.25)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}>
-                                <Plus size={22} color={GOLD} />
-                            </div>
-                            <div>
-                                <p style={{ fontFamily: "var(--font-body, sans-serif)", fontSize: "1rem", fontWeight: 600, color: "#fff", margin: 0 }}>
-                                    Raise a Maintenance Request
-                                </p>
-                                <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "rgba(246,244,239,0.5)", margin: "4px 0 0", letterSpacing: "0.03em" }}>
-                                    Electricity · Plumbing · WiFi · Housekeeping · More
-                                </p>
-                            </div>
-                        </div>
-                        <ArrowRight size={20} color={GOLD} />
-                    </motion.div>
-                </Link>
-            </motion.div>
-        </motion.div>
-    );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-    return (
-        <span style={{
-            fontFamily: "var(--font-mono, monospace)",
-            fontSize: "0.6rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.25em",
-            color: "rgba(31,58,45,0.45)",
-            fontWeight: 700,
-        }}>
-            {children}
-        </span>
+            </div>
+        </div>
     );
 }

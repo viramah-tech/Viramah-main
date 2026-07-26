@@ -16,7 +16,8 @@ import {
     Wrench,
     CreditCard,
     FileCheck,
-    Bus
+    Bus,
+    UserCheck
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -55,6 +56,7 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
         "/student/wallet",
         "/student/payment",
         "/student/documents",
+        "/student/transport",
         "/student/canteen",
         "/student/amenities",
         "/student/maintenance",
@@ -142,7 +144,7 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     {navItems.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                        const isLocked = item.href !== "/student/payment" && item.href !== "/student/documents" && item.href !== "/student/transport";
+                        const isLocked = !allowedPaths.includes(item.href);
 
                         return (
                             <li key={item.href}>
