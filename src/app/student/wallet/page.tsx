@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { Wallet, CreditCard, ArrowUpRight, ArrowDownLeft, ShieldCheck, RefreshCw } from "lucide-react";
+import { Wallet, CreditCard, ArrowUpRight, ArrowDownLeft, ShieldCheck, RefreshCw, Receipt } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 
@@ -11,24 +11,49 @@ export default function WalletPage() {
     const paymentDetails = user?.paymentDetails || [];
     const grandTotal = user?.paymentSummary?.grandTotal || {};
     const remainingDue = grandTotal.remaining || 0;
-    const totalPaid = grandTotal.received || 0;
+    const totalPaid = grandTotal.paid || grandTotal.received || 0;
+    const totalPackage = grandTotal.total || 0;
+    const basePriceSum = grandTotal.basePrice || Math.round(totalPackage / 1.18);
+    const gstAmountSum = grandTotal.gstAmount || (totalPackage - basePriceSum);
 
     return (
         <div className="min-h-screen bg-[#F4F6F4] p-8 max-w-7xl mx-auto">
             <div className="flex flex-col gap-8 max-w-5xl mx-auto">
                 <PageHeader
                     title="Student Digital Ledger"
-                    subtitle="Track rent payments, security deposits, and transaction receipts"
+                    subtitle="Track rent payments, security deposits, GST breakdown, and transaction receipts"
                     badge="ENCRYPTED LEDGER"
                     action={
                         <button
-                            onClick={() => refreshUser()}
+                            onClick={() => refreshUser({ force: true })}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-emerald-900/15 text-[#1F3A2D] font-bold text-xs shadow-sm hover:bg-emerald-50 transition-all"
                         >
                             <RefreshCw className="w-4 h-4 text-[#1F3A2D]" /> Sync Ledger
                         </button>
                     }
                 />
+
+                {/* Overall Package with GST Banner */}
+                <div className="p-6 rounded-2xl bg-[#1F3A2D] text-white shadow-md flex items-center justify-between flex-wrap gap-4 border border-emerald-900/20">
+                    <div>
+                        <span className="font-mono text-xs text-[#D8B56A] uppercase font-bold tracking-wider block mb-1">
+                            Overall Package Summary
+                        </span>
+                        <h3 className="font-serif text-2xl font-bold text-white m-0">
+                            Total Payable: ₹{totalPackage.toLocaleString("en-IN")}
+                        </h3>
+                        <p className="text-xs text-white/70 mt-1 m-0 font-mono">
+                            Base: ₹{basePriceSum.toLocaleString("en-IN")} + 18% GST: ₹{gstAmountSum.toLocaleString("en-IN")}
+                        </p>
+                    </div>
+
+                    <div className="text-right">
+                        <span className="font-mono text-xs text-white/60 uppercase block">Ledger Status</span>
+                        <span className={`font-mono text-sm font-bold uppercase ${remainingDue <= 0 ? "text-emerald-400" : "text-amber-300"}`}>
+                            {remainingDue <= 0 ? "FULLY PAID" : `DUES REMAINING: ₹${remainingDue.toLocaleString("en-IN")}`}
+                        </span>
+                    </div>
+                </div>
 
                 {/* Metrics Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -48,7 +73,7 @@ export default function WalletPage() {
                     />
                     <StatCard
                         label="Security Deposit"
-                        value={`₹${(user?.paymentSummary?.securityDeposit?.received || 10000).toLocaleString("en-IN")}`}
+                        value={`₹${(user?.paymentSummary?.securityDeposit?.total || 15000).toLocaleString("en-IN")}`}
                         subtext="Refundable deposit held"
                         icon={ShieldCheck}
                         color="#1F3A2D"
@@ -58,48 +83,44 @@ export default function WalletPage() {
                 {/* Transactions History Table */}
                 <div>
                     <span className="font-mono text-xs font-bold text-emerald-900/50 uppercase tracking-wider block mb-3">
-                        Payment Transaction History
+                        Verified Payment Receipts
                     </span>
 
                     <div className="bg-white rounded-2xl border border-emerald-900/10 overflow-hidden shadow-sm">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-emerald-900/5 border-b border-emerald-900/10 text-[0.72rem] font-bold text-emerald-900/60 uppercase tracking-wider">
-                                    <th className="py-3.5 px-6">Date</th>
-                                    <th className="py-3.5 px-6">Payment Category</th>
-                                    <th className="py-3.5 px-6">Amount</th>
-                                    <th className="py-3.5 px-6">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-emerald-900/5">
-                                {paymentDetails.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="py-12 text-center text-xs text-emerald-900/50">
-                                            No payment transactions recorded yet.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    paymentDetails.map((tx: any, idx: number) => (
-                                        <tr key={idx} className="hover:bg-emerald-50/40 transition-all text-xs">
-                                            <td className="py-4 px-6 font-mono text-emerald-900/60">
-                                                {new Date(tx.paidAt || tx.reviewedAt || Date.now()).toLocaleDateString("en-IN")}
-                                            </td>
-                                            <td className="py-4 px-6 font-semibold text-[#1F3A2D] capitalize">
-                                                {tx.paymentType?.replace(/_/g, " ") || tx.category || "Booking Fee"}
-                                            </td>
-                                            <td className="py-4 px-6 font-mono font-bold text-emerald-800">
-                                                ₹{Number(tx.amounts?.totalAmount || tx.amount || 0).toLocaleString("en-IN")}
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                <span className="px-2.5 py-1 rounded-full text-[0.68rem] font-bold uppercase bg-emerald-500/10 text-emerald-800">
-                                                    {tx.status || "APPROVED"}
+                        {paymentDetails.length === 0 ? (
+                            <div className="p-12 text-center text-xs text-emerald-900/50">
+                                No payment receipts found.
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-emerald-900/5">
+                                {paymentDetails.map((tx: any, idx: number) => (
+                                    <div key={idx} className="p-4 flex items-center justify-between flex-wrap gap-2 text-xs">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-700 flex items-center justify-center">
+                                                <Receipt className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <span className="font-bold text-[#1F3A2D] block capitalize">
+                                                    {tx.category || tx.paymentType || "Payment"}
                                                 </span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                                <span className="text-[0.68rem] text-emerald-900/50 font-mono">
+                                                    {tx.transactionId || tx.paymentId} · {tx.method}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-right font-mono">
+                                            <span className="font-bold text-emerald-700 block">
+                                                +₹{(tx.amounts?.totalAmount || tx.amount || 0).toLocaleString("en-IN")}
+                                            </span>
+                                            <span className="text-[0.65rem] text-emerald-900/40 capitalize">
+                                                {tx.status || "approved"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
