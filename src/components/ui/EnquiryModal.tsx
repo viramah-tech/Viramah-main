@@ -380,6 +380,7 @@ function SubmitButton({ loading, text = "Send Dispatch" }: { loading: boolean, t
 // ── Main Component ───────────────────────────────────────────
 export function EnquiryModal() {
     const pathname = usePathname();
+    if (pathname?.startsWith("/student")) return null;
     const isUserOnboarding = pathname?.startsWith("/user-onboarding");
     const [isOpen, setIsOpen] = useState(false);
     const [form, setForm] = useState<FormState>(INITIAL_FORM);

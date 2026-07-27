@@ -36,7 +36,7 @@ export default function StudentDashboardPage() {
     });
 
     // Fetch today's mess menu
-    const { data: messMenuData } = useQuery({
+    const { data: messMenuData, refetch: refetchMessMenu } = useQuery({
         queryKey: ["today-mess-menu"],
         queryFn: () => apiGet<any>(API.mess.todayMenu),
     });
@@ -48,6 +48,37 @@ export default function StudentDashboardPage() {
     const remainingDue = user?.paymentSummary?.grandTotal?.remaining || 0;
     const isFullyPaid = user?.paymentSummary?.isFullyPaid || remainingDue <= 0;
 
+    const mealsData = messMenuData?.meals || messMenuData || {};
+
+    const getMealDisplayString = (categoryObj: any, fallbackStr: string): string => {
+        if (!categoryObj) return fallbackStr;
+        if (typeof categoryObj === "string") return categoryObj;
+
+        if (Array.isArray(categoryObj.options) && categoryObj.options.length > 0) {
+            const parts = categoryObj.options.map((opt: any) => {
+                if (Array.isArray(opt.dishes) && opt.dishes.length > 0) {
+                    return opt.dishes.join(", ");
+                }
+                if (opt.title) return opt.title;
+                if (opt.description) return opt.description;
+                return "";
+            }).filter(Boolean);
+            if (parts.length > 0) return parts.join(" | ");
+        }
+
+        if (Array.isArray(categoryObj.dishes) && categoryObj.dishes.length > 0) {
+            return categoryObj.dishes.join(", ");
+        }
+        if (categoryObj.title) return categoryObj.title;
+        if (categoryObj.description) return categoryObj.description;
+
+        return fallbackStr;
+    };
+
+    const breakfastText = getMealDisplayString(mealsData.breakfast, "Aloo Paratha & Fresh Curd, Hot Ginger Tea");
+    const snacksText = getMealDisplayString(mealsData.snacks, "Crispy Samosa & Kulhad Masala Chai");
+    const dinnerText = getMealDisplayString(mealsData.dinner, "Kashmiri Rajma Chawal, Tawa Roti, Gulab Jamun");
+
     return (
         <div className="w-full max-w-7xl mx-auto">
             <div className="flex flex-col gap-8 max-w-5xl mx-auto">
@@ -58,7 +89,7 @@ export default function StudentDashboardPage() {
                     badge="ACTIVE RESIDENT"
                     action={
                         <button
-                            onClick={() => { refreshUser(); refetchMaintenance(); }}
+                            onClick={() => { refreshUser(); refetchMaintenance(); refetchMessMenu(); }}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-emerald-900/15 text-[#1F3A2D] font-bold text-xs shadow-sm hover:bg-emerald-50 transition-all"
                         >
                             <RefreshCw className="w-4 h-4 text-[#1F3A2D]" /> Sync Dashboard
@@ -132,37 +163,26 @@ export default function StudentDashboardPage() {
                                 </span>
                             </div>
 
-                            {messMenuData ? (
-                                <div className="space-y-3 text-xs text-emerald-900/80">
-                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
-                                        <strong className="text-[#1F3A2D] block mb-1">Breakfast:</strong>
-                                        {messMenuData.breakfast || "Aloo Paratha, Curd, Tea/Coffee"}
-                                    </div>
-                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
-                                        <strong className="text-[#1F3A2D] block mb-1">Lunch:</strong>
-                                        {messMenuData.lunch || "Paneer Butter Masala, Dal Makhani, Rice, Roti"}
-                                    </div>
-                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
-                                        <strong className="text-[#1F3A2D] block mb-1">Dinner:</strong>
-                                        {messMenuData.dinner || "Mix Veg, Dal Tadka, Jeera Rice, Gulab Jamun"}
-                                    </div>
+                            <div className="space-y-3 text-xs text-emerald-900/80">
+                                <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                                    <strong className="text-[#1F3A2D] block mb-1">
+                                        Breakfast {mealsData.breakfast?.startTime ? `(${mealsData.breakfast.startTime} - ${mealsData.breakfast.endTime})` : "(8:00 AM - 10:00 AM)"}:
+                                    </strong>
+                                    {breakfastText}
                                 </div>
-                            ) : (
-                                <div className="space-y-3 text-xs text-emerald-900/80">
-                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
-                                        <strong className="text-[#1F3A2D] block mb-1">Breakfast (8:00 AM - 10:00 AM):</strong>
-                                        Puri Bhaji, Sprouted Moong, Tea & Coffee
-                                    </div>
-                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
-                                        <strong className="text-[#1F3A2D] block mb-1">Lunch (12:30 PM - 2:30 PM):</strong>
-                                        Shahi Paneer, Chana Dal, Jeera Rice, Chapati, Salad
-                                    </div>
-                                    <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
-                                        <strong className="text-[#1F3A2D] block mb-1">Dinner (8:00 PM - 10:00 PM):</strong>
-                                        Veg Kolhapuri, Dal Fry, Steamed Rice, Phulka, Sweet
-                                    </div>
+                                <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                                    <strong className="text-[#1F3A2D] block mb-1">
+                                        Evening Snacks {mealsData.snacks?.startTime ? `(${mealsData.snacks.startTime} - ${mealsData.snacks.endTime})` : "(5:00 PM - 6:30 PM)"}:
+                                    </strong>
+                                    {snacksText}
                                 </div>
-                            )}
+                                <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-900/5">
+                                    <strong className="text-[#1F3A2D] block mb-1">
+                                        Dinner {mealsData.dinner?.startTime ? `(${mealsData.dinner.startTime} - ${mealsData.dinner.endTime})` : "(8:00 PM - 10:00 PM)"}:
+                                    </strong>
+                                    {dinnerText}
+                                </div>
+                            </div>
                         </div>
 
                         <Link

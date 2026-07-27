@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -134,6 +135,8 @@ const inputStyle = (focused: boolean): React.CSSProperties => ({
 
 // ── Main Component ───────────────────────────────────────────
 export function ScheduleVisitModal() {
+    const pathname = usePathname();
+    if (pathname?.startsWith("/student")) return null;
     const [isOpen, setIsOpen] = useState(false);
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [selectedDate, setSelectedDate] = useState<string>("");
