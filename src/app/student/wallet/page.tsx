@@ -17,7 +17,7 @@ export default function WalletPage() {
     const gstAmountSum = grandTotal.gstAmount || (totalPackage - basePriceSum);
 
     return (
-        <div className="min-h-screen bg-[#F4F6F4] p-8 max-w-7xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto">
             <div className="flex flex-col gap-8 max-w-5xl mx-auto">
                 <PageHeader
                     title="Student Digital Ledger"
