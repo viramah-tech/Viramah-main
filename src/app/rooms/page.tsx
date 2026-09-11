@@ -9,13 +9,6 @@ import { ROOMS as STATIC_ROOMS, type RoomType } from "@/data/rooms";
 
 export const revalidate = 60;
 
-const ROOM_NAME_MAP: Record<string, string> = {
-    "nexus-plus": "NEXUS",
-    "collective-plus": "COLLECTIVE",
-    "axis": "AXIS",
-    "studio": "AXIS+",
-};
-
 interface BackendRoomType {
     name: string;
     basePrice?: number;
@@ -25,16 +18,16 @@ interface BackendRoomType {
 }
 
 async function fetchRooms(): Promise<RoomType[]> {
-    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
     try {
         const res = await fetch(`${base}/api/rooms`, { next: { revalidate: 60 } });
         if (!res.ok) return STATIC_ROOMS;
-        const json = (await res.json()) as { data?: { roomTypes?: BackendRoomType[] } };
-        const beRooms = json?.data?.roomTypes;
+        const json = (await res.json()) as { data?: { roomTypes?: BackendRoomType[]; rooms?: BackendRoomType[] } };
+        const beRooms = json?.data?.roomTypes || json?.data?.rooms;
         if (!beRooms) return STATIC_ROOMS;
 
         return STATIC_ROOMS.map((staticRoom) => {
-            const beRoom = beRooms.find((r) => r.name === ROOM_NAME_MAP[staticRoom.id]);
+            const beRoom = beRooms.find((r) => r.name.toLowerCase() === staticRoom.backendId?.toLowerCase());
             if (!beRoom) return staticRoom;
             const origPrice = beRoom.pricing?.original ?? beRoom.basePrice ?? staticRoom.price;
             const discPrice = beRoom.pricing?.discounted ?? beRoom.discountedPrice ?? staticRoom.price;

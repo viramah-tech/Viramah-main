@@ -7,7 +7,7 @@ import { API, type OnboardingStep } from "@/lib/apiEndpoints";
 export interface AuthUser {
     _id: string;
     role: "user" | "admin";
-    accountStatus: "pending" | "active" | "suspended" | "blocked";
+    accountStatus: "pending" | "active" | "suspended" | "blocked" | "cancelled";
     basicInfo: {
         userId: string;
         fullName?: string;

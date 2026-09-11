@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
         }
 
         // ── 3b. Sync to Backend Database (viramah-backend) ───────
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
         try {
             console.log(`[Backend Sync] Synchronizing lead to: ${backendUrl}/api/website/leads`);
             const backendRes = await fetch(`${backendUrl}/api/website/leads`, {

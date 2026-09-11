@@ -19,6 +19,7 @@ export interface RoomType {
 export const ROOMS: RoomType[] = [
     {
         id: "nexus-plus",
+        backendId: "Nexus",
         title: "VIRAMAH NEXUS",
         type: "4 Seater",
         price: 9090,
@@ -43,6 +44,7 @@ export const ROOMS: RoomType[] = [
     },
     {
         id: "collective-plus",
+        backendId: "Collective",
         title: "VIRAMAH COLLECTIVE",
         type: "3 Seater",
         price: 10990,
@@ -64,6 +66,7 @@ export const ROOMS: RoomType[] = [
     },
     {
         id: "axis",
+        backendId: "Axis",
         title: "VIRAMAH AXIS",
         type: "2 Seater",
         price: 14490,
@@ -81,6 +84,7 @@ export const ROOMS: RoomType[] = [
     },
     {
         id: "studio",
+        backendId: "Axis+",
         title: "VIRAMAH AXIS+",
         type: "1 Seater",
         price: 16490,

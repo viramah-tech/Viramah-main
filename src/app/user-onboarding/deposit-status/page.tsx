@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { openReceiptWindow } from "@/lib/generateReceiptHtml";
 import { useBookingStatus, type V3Booking } from "@/hooks/useBookingStatus";
+import { usePricingConfig } from "@/hooks/usePricingConfig";
 import { apiFetch } from "@/lib/api";
 import { API } from "@/lib/apiEndpoints";
 import BookingTimeline from "@/components/BookingTimeline";
@@ -29,7 +30,7 @@ const STATUS_CONFIG = {
         badge: "Under Review", badgeColor: "#9a7a3a",
         badgeBg: "rgba(216,181,106,0.1)", badgeBorder: "rgba(216,181,106,0.25)",
         title: "Your deposit is under review",
-        subtitle: "An admin will verify your payment within 24 hours. Your 21-day countdown only starts after approval.",
+        subtitle: "An admin will verify your payment within 24 hours. Your payment countdown only starts after approval.",
     },
     active: {
         icon: Shield, iconColor: GREEN, iconBg: "rgba(31,58,45,0.1)",
@@ -57,7 +58,7 @@ const STATUS_CONFIG = {
         badge: "Expired", badgeColor: "#dc2626",
         badgeBg: "rgba(220,38,38,0.06)", badgeBorder: "rgba(220,38,38,0.18)",
         title: "Booking window has expired",
-        subtitle: "Your 21-day payment window has closed. The room has been released. Contact us if you have questions.",
+        subtitle: "Your payment window has closed. The room has been released. Contact us if you have questions.",
     },
     rejected: {
         icon: XCircle, iconColor: "#dc2626", iconBg: "rgba(220,38,38,0.08)",
@@ -260,6 +261,8 @@ export default function DepositStatusPage() {
     const router = useRouter();
     const { user } = useAuth();
     const { payments, booking, timers, isLoading, error, refetch } = useBookingStatus();
+    const { config: pricingConfig } = usePricingConfig();
+    const deadlineDays = pricingConfig.paymentDeadlineDays;
 
     const handlePrintReceipt = (p: any) => {
         const dateSettled = p.approvedAt ? new Date(p.approvedAt).toLocaleDateString('en-IN', {
@@ -709,7 +712,7 @@ export default function DepositStatusPage() {
                     style={{ background: "rgba(216,181,106,0.07)", border: "1px solid rgba(216,181,106,0.18)", borderRadius: 12, padding: "12px 18px", textAlign: "center" }}
                 >
                     <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.62rem", color: "#9a7a3a", margin: 0, lineHeight: 1.6 }}>
-                        <strong>Policy:</strong> Security deposit (₹15,000) refundable within 7 days · Non-refundable after 7 days{holdAdvance > 0 ? ` · Advance (${inr(holdAdvance)}) always refundable` : ''} · ₹1,000 registration fee never refundable · Room released after 21 days
+                        <strong>Policy:</strong> Security deposit (₹15,000) refundable within 7 days · Non-refundable after 7 days{holdAdvance > 0 ? ` · Advance (${inr(holdAdvance)}) always refundable` : ''} · ₹1,000 registration fee never refundable · Room released after {deadlineDays} days
                     </p>
                 </motion.div>
             </motion.div>
