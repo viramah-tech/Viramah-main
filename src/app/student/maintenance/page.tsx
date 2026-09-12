@@ -7,7 +7,7 @@ import {
     Monitor, HardHat, Zap, MoreHorizontal, ChevronDown, Image as ImageIcon,
     User, MessageSquare, ShieldCheck, Sparkles, RefreshCw
 } from "lucide-react";
-import { apiGet, apiPostForm } from "@/lib/api";
+import { apiGet, apiPostForm, apiPatch } from "@/lib/api";
 import { API } from "@/lib/apiEndpoints";
 
 const GREEN = "#1F3A2D";
@@ -114,6 +114,14 @@ export default function StudentMaintenancePage() {
     const [submittedTicketId, setSubmittedTicketId] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Close ticket state
+    const [closingTicketId, setClosingTicketId] = useState<string | null>(null);
+    const [closeModal, setCloseModal] = useState<{ isOpen: boolean; ticket: MaintenanceRequest | null }>({
+        isOpen: false,
+        ticket: null,
+    });
+    const [closeReason, setCloseReason] = useState("");
+
     // Detail view
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -121,7 +129,9 @@ export default function StudentMaintenancePage() {
 
     // Fetch requests
     const fetchRequests = useCallback(async (silent = false) => {
-        if (!silent) setIsRefreshing(true);
+        if (!silent) {
+            setIsRefreshing(true);
+        }
         try {
             const data = await apiGet<MaintenanceRequest[]>(API.maintenance.studentRequests);
             setRequests(data || []);
@@ -133,10 +143,47 @@ export default function StudentMaintenancePage() {
         }
     }, []);
 
+    // Close ticket handler
+    const handleCloseTicket = async () => {
+        if (!closeModal.ticket) return;
+        setClosingTicketId(closeModal.ticket._id);
+        try {
+            await apiPatch(API.maintenance.closeStudentRequest(closeModal.ticket._id), {
+                note: closeReason.trim() || "Closed by resident",
+            });
+            await fetchRequests(false);
+            setCloseModal({ isOpen: false, ticket: null });
+            setCloseReason("");
+        } catch (err: unknown) {
+            console.error("Close ticket error:", err);
+            const msg = err instanceof Error ? err.message : "Failed to close ticket. Please try again.";
+            alert(msg);
+        } finally {
+            setClosingTicketId(null);
+        }
+    };
+
     useEffect(() => {
-        fetchRequests();
-        const interval = setInterval(() => fetchRequests(true), 3000);
-        return () => clearInterval(interval);
+        let isMounted = true;
+        (async () => {
+            try {
+                const data = await apiGet<MaintenanceRequest[]>(API.maintenance.studentRequests);
+                if (isMounted) setRequests(data || []);
+            } catch (err) {
+                console.error("Initial fetch error:", err);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        })();
+
+        const interval = setInterval(() => {
+            if (isMounted) fetchRequests(true);
+        }, 5000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, [fetchRequests]);
 
     // Image upload handlers
@@ -370,6 +417,21 @@ export default function StudentMaintenancePage() {
                                                 {cfg.label}
                                             </div>
 
+                                            {req.status !== "closed" && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setCloseModal({ isOpen: true, ticket: req });
+                                                        setCloseReason("");
+                                                    }}
+                                                    className="px-3 py-1 rounded-xl bg-emerald-900/5 hover:bg-emerald-900/15 text-[#1F3A2D] font-bold text-xs border border-emerald-900/15 transition-all shrink-0 hover:border-emerald-900/30 cursor-pointer"
+                                                    title="Close this ticket"
+                                                >
+                                                    Close Ticket
+                                                </button>
+                                            )}
+
                                             <ChevronDown className={`w-4 h-4 text-emerald-900/40 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                                         </div>
 
@@ -453,6 +515,33 @@ export default function StudentMaintenancePage() {
                                                                         );
                                                                     })}
                                                                 </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Student Close Ticket Action Banner */}
+                                                        {req.status !== "closed" && (
+                                                            <div className="p-4 rounded-2xl bg-white border border-emerald-900/10 shadow-sm flex items-center justify-between flex-wrap gap-3 mt-1">
+                                                                <div>
+                                                                    <p className="text-xs font-bold text-[#1F3A2D] m-0">
+                                                                        Has this issue been addressed?
+                                                                    </p>
+                                                                    <p className="text-[11px] text-emerald-900/60 m-0 mt-0.5">
+                                                                        You can mark this ticket as closed anytime once satisfied.
+                                                                    </p>
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setCloseModal({ isOpen: true, ticket: req });
+                                                                        setCloseReason("");
+                                                                    }}
+                                                                    disabled={closingTicketId === req._id}
+                                                                    className="px-4 py-2 rounded-xl bg-emerald-900/10 hover:bg-[#1F3A2D] hover:text-[#D8B56A] text-[#1F3A2D] font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+                                                                >
+                                                                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                                                                    {closingTicketId === req._id ? "Closing..." : "Close This Ticket"}
+                                                                </button>
                                                             </div>
                                                         )}
                                                     </div>
@@ -650,6 +739,85 @@ export default function StudentMaintenancePage() {
                                     </button>
                                 </>
                             )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ── Student Close Ticket Confirmation Modal ── */}
+            <AnimatePresence>
+                {closeModal.isOpen && closeModal.ticket && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setCloseModal({ isOpen: false, ticket: null })}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-3xl p-7 max-w-md w-full border border-emerald-900/10 shadow-2xl space-y-4"
+                        >
+                            <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-700 shrink-0">
+                                        <CheckCircle2 className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-serif text-lg font-bold text-[#1F3A2D] m-0">
+                                            Close Maintenance Ticket
+                                        </h3>
+                                        <p className="font-mono text-xs text-emerald-900/50 m-0 mt-0.5">
+                                            {closeModal.ticket.ticketId} · {closeModal.ticket.issueTitle}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setCloseModal({ isOpen: false, ticket: null })}
+                                    className="w-8 h-8 rounded-xl bg-emerald-900/5 hover:bg-emerald-900/10 flex items-center justify-center text-emerald-900/60 transition-all cursor-pointer"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <p className="text-xs text-emerald-900/70 leading-relaxed m-0">
+                                Are you sure you want to close this ticket? This will mark the issue as completed and close it in the system.
+                            </p>
+
+                            <div>
+                                <label className="font-mono text-[0.65rem] font-bold text-emerald-900/50 uppercase tracking-wider block mb-1.5">
+                                    Closing Remarks (Optional)
+                                </label>
+                                <textarea
+                                    rows={2}
+                                    value={closeReason}
+                                    onChange={(e) => setCloseReason(e.target.value)}
+                                    placeholder="e.g. Issue was resolved by technician, thank you..."
+                                    className="w-full p-3 rounded-xl border border-emerald-900/15 text-xs text-[#1F3A2D] focus:outline-none focus:border-[#1F3A2D] resize-none"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setCloseModal({ isOpen: false, ticket: null })}
+                                    className="px-4 py-2.5 rounded-xl border border-emerald-900/15 text-emerald-900/70 hover:bg-emerald-50 text-xs font-semibold transition-all cursor-pointer"
+                                >
+                                    Keep Open
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleCloseTicket}
+                                    disabled={closingTicketId === closeModal.ticket._id}
+                                    className="px-5 py-2.5 rounded-xl bg-[#1F3A2D] hover:bg-[#162b1e] text-[#D8B56A] text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    {closingTicketId === closeModal.ticket._id ? "Closing..." : "Yes, Close Ticket"}
+                                </button>
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}

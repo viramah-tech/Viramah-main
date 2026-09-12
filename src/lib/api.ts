@@ -98,3 +98,8 @@ export async function apiPostForm<T>(path: string, formData: FormData, init?: Om
   const env = await apiFetch<ApiEnvelope<T>>(path, { ...init, method: 'POST', formData });
   return env.data;
 }
+
+export async function apiPatch<T>(path: string, body?: unknown, init?: Omit<ApiOptions, 'method' | 'body'>): Promise<T> {
+  const env = await apiFetch<ApiEnvelope<T>>(path, { ...init, method: 'PATCH', body });
+  return env.data;
+}

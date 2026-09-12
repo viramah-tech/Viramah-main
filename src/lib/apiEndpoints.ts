@@ -45,6 +45,7 @@ export const API = {
   maintenance: {
     create: '/api/maintenance/create',
     studentRequests: '/api/maintenance/student/requests',
+    closeStudentRequest: (id: string) => `/api/maintenance/student/${id}/close`,
   },
   mess: {
     todayMenu: '/api/mess/menu/today',
