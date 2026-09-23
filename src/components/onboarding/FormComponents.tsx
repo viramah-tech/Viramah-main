@@ -127,7 +127,73 @@ export function FieldTextarea({ focused, hasError, style, ...props }: FieldTexta
         />
     );
 }
+/**
+ * Client-side image compression helper to ensure photos taken on high-res mobile phones
+ * (which can be 8MB-15MB) are smoothly downscaled and compressed before uploading.
+ * Avoids upload timeouts, body-parser/multer limit rejections, and browser memory spikes.
+ */
+async function compressImageIfNeeded(
+    file: File,
+    maxDim = 1600,
+    quality = 0.85
+): Promise<{ name: string; preview: string }> {
+    // If not an image (e.g. PDF), read as normal data URL without canvas draw
+    if (!file.type.startsWith("image/")) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve({ name: file.name, preview: reader.result as string });
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
 
+    // If already small (< 1 MB), no need to compress
+    if (file.size <= 1024 * 1024) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve({ name: file.name, preview: reader.result as string });
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Compress via canvas downscaling
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new window.Image();
+            img.onload = () => {
+                let { width, height } = img;
+                if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+                    const safeName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+                    resolve({ name: safeName, preview: dataUrl });
+                    return;
+                }
+                resolve({ name: file.name, preview: e.target?.result as string });
+            };
+            img.onerror = () => {
+                resolve({ name: file.name, preview: e.target?.result as string });
+            };
+            img.src = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+    });
+}
 
 export function PhotoUpload({
     label,
@@ -145,15 +211,30 @@ export function PhotoUpload({
     const inputRef = useRef<HTMLInputElement>(null);
     const [hovered, setHovered] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [processing, setProcessing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
-        if (selectedFile) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                onUpload({ name: selectedFile.name, preview: reader.result as string });
-            };
-            reader.readAsDataURL(selectedFile);
+        if (!selectedFile) return;
+
+        // Size check (max 15MB raw input limit)
+        if (selectedFile.size > 15 * 1024 * 1024) {
+            setError("File is too large (max 15MB). Please select a smaller photo or document.");
+            return;
+        }
+
+        setError(null);
+        setProcessing(true);
+        try {
+            const processed = await compressImageIfNeeded(selectedFile, 1600, 0.85);
+            onUpload(processed);
+        } catch (err) {
+            console.error("Failed to process document file:", err);
+            setError("Could not read file. Please choose another image or PDF.");
+        } finally {
+            setProcessing(false);
+            if (inputRef.current) inputRef.current.value = "";
         }
     };
 
@@ -170,6 +251,7 @@ export function PhotoUpload({
                 setDeleting(false);
             }
         }
+        setError(null);
         onRemove();
     };
 
@@ -235,7 +317,9 @@ export function PhotoUpload({
                 </div>
             ) : (
                 <button
+                    type="button"
                     onClick={() => inputRef.current?.click()}
+                    disabled={processing}
                     onMouseEnter={() => setHovered(true)}
                     onMouseLeave={() => setHovered(false)}
                     style={{
@@ -244,7 +328,7 @@ export function PhotoUpload({
                         borderRadius: 12,
                         border: `2px dashed ${hovered ? GREEN : "rgba(31,58,45,0.2)"}`,
                         background: hovered ? "rgba(31,58,45,0.04)" : "rgba(255,255,255,0.5)",
-                        cursor: "pointer",
+                        cursor: processing ? "wait" : "pointer",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
@@ -265,7 +349,11 @@ export function PhotoUpload({
                             justifyContent: "center",
                         }}
                     >
-                        <Upload size={18} color={hovered ? GREEN : "rgba(31,58,45,0.35)"} />
+                        {processing ? (
+                            <Loader2 size={18} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
+                        ) : (
+                            <Upload size={18} color={hovered ? GREEN : "rgba(31,58,45,0.35)"} />
+                        )}
                     </div>
                     <span
                         style={{
@@ -275,11 +363,30 @@ export function PhotoUpload({
                             letterSpacing: "0.05em",
                         }}
                     >
-                        Click to upload
+                        {processing ? "Optimizing photo..." : "Click to upload"}
                     </span>
                 </button>
             )}
-            <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
+            {error && (
+                <p
+                    style={{
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontSize: "0.6rem",
+                        color: "#c0392b",
+                        marginTop: 4,
+                        lineHeight: 1.3,
+                    }}
+                >
+                    {error}
+                </p>
+            )}
+            <input
+                ref={inputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+            />
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     );
@@ -303,15 +410,29 @@ export function AvatarUpload({
     const inputRef = useRef<HTMLInputElement>(null);
     const [hovered, setHovered] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [processing, setProcessing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
-        if (selectedFile) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                onUpload({ name: selectedFile.name, preview: reader.result as string });
-            };
-            reader.readAsDataURL(selectedFile);
+        if (!selectedFile) return;
+
+        if (selectedFile.size > 15 * 1024 * 1024) {
+            setError("Photo is too large (max 15MB). Please select a smaller photo.");
+            return;
+        }
+
+        setError(null);
+        setProcessing(true);
+        try {
+            const processed = await compressImageIfNeeded(selectedFile, 800, 0.85);
+            onUpload(processed);
+        } catch (err) {
+            console.error("Failed to process profile photo:", err);
+            setError("Could not read photo. Please select another image.");
+        } finally {
+            setProcessing(false);
+            if (inputRef.current) inputRef.current.value = "";
         }
     };
 
@@ -328,6 +449,7 @@ export function AvatarUpload({
                 setDeleting(false);
             }
         }
+        setError(null);
         onRemove();
     };
 
@@ -419,7 +541,9 @@ export function AvatarUpload({
                 </div>
             ) : (
                 <button
+                    type="button"
                     onClick={() => inputRef.current?.click()}
+                    disabled={processing}
                     onMouseEnter={() => setHovered(true)}
                     onMouseLeave={() => setHovered(false)}
                     style={{
@@ -430,7 +554,7 @@ export function AvatarUpload({
                         background: hovered
                             ? "rgba(31,58,45,0.05)"
                             : "linear-gradient(145deg, rgba(246,244,239,0.6), rgba(255,255,255,0.8))",
-                        cursor: "pointer",
+                        cursor: processing ? "wait" : "pointer",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
@@ -455,11 +579,15 @@ export function AvatarUpload({
                             transition: "all 0.3s ease",
                         }}
                     >
-                        <Camera
-                            size={20}
-                            color={hovered ? GREEN : "rgba(31,58,45,0.35)"}
-                            style={{ transition: "color 0.3s ease" }}
-                        />
+                        {processing ? (
+                            <Loader2 size={20} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
+                        ) : (
+                            <Camera
+                                size={20}
+                                color={hovered ? GREEN : "rgba(31,58,45,0.35)"}
+                                style={{ transition: "color 0.3s ease" }}
+                            />
+                        )}
                     </div>
                     <span
                         style={{
@@ -472,7 +600,7 @@ export function AvatarUpload({
                             transition: "color 0.3s ease",
                         }}
                     >
-                        Add Photo
+                        {processing ? "Optimizing..." : "Add Photo"}
                     </span>
                 </button>
             )}
@@ -488,6 +616,19 @@ export function AvatarUpload({
             >
                 {label}
             </span>
+            {error && (
+                <p
+                    style={{
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontSize: "0.6rem",
+                        color: "#c0392b",
+                        marginTop: -4,
+                        textAlign: "center",
+                    }}
+                >
+                    {error}
+                </p>
+            )}
             <input
                 ref={inputRef}
                 type="file"
