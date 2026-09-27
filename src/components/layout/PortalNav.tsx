@@ -17,7 +17,8 @@ import {
     CreditCard,
     FileCheck,
     Bus,
-    UserCheck
+    UserCheck,
+    Fingerprint
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -32,6 +33,7 @@ interface NavItem {
 
 const STUDENT_NAV: NavItem[] = [
     { label: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
+    { label: "Attendance", href: "/student/attendance", icon: Fingerprint },
     { label: "Wallet", href: "/student/wallet", icon: Wallet },
     { label: "Payments", href: "/student/payment", icon: CreditCard },
     { label: "Documents", href: "/student/documents", icon: FileCheck },
@@ -53,6 +55,7 @@ export function PortalNav({ role, userName = "Guest" }: PortalNavProps) {
     const { logout, user } = useAuth();
     const allowedPaths = [
         "/student/dashboard",
+        "/student/attendance",
         "/student/wallet",
         "/student/payment",
         "/student/documents",

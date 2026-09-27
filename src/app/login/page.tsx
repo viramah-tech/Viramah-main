@@ -50,8 +50,11 @@ export default function LoginPage() {
         ? "Password is required" : "";
 
     const getRedirectPath = (u: { onboarding?: { currentStep?: string }; role?: string }): string => {
-        // Admin users go to dashboard
-        if (u.role === "admin") return "/admin/dashboard";
+        // Staff and admin users belong in the Viramah Admin Portal
+        const staffRoles = ["admin", "super_admin", "sales_member", "accountant", "hostel_incharge"];
+        if (staffRoles.includes(u.role || "")) {
+            return process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+        }
 
         // Use the onboarding step to route (backend enforces the state machine)
         const STEP_TO_PATH: Record<string, string> = {
@@ -95,6 +98,16 @@ export default function LoginPage() {
         try {
             const loggedInUser = await login(email, password);
             showToast("Login successful! Redirecting...", "success");
+
+            const staffRoles = ["admin", "super_admin", "sales_member", "accountant", "hostel_incharge"];
+            if (staffRoles.includes(loggedInUser.role || "")) {
+                const adminPort = process.env.NEXT_PUBLIC_ADMIN_PORT || "3001";
+                const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
+                const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || `http://${host}:${adminPort}`;
+                window.location.href = adminUrl;
+                return;
+            }
+
             // If redirect param exists, use it; otherwise use normal redirect path
             const path = redirectParam || getRedirectPath(loggedInUser);
             router.replace(path);
