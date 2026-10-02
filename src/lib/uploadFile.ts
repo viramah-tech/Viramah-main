@@ -11,9 +11,33 @@ export type DocType =
 
 /** Convert a base64 data URL (FileReader result) to a `File`. */
 export function dataURLtoFile(dataUrl: string, filename: string): File {
-    const [header, base64] = dataUrl.split(",");
+    // Guard: if this is a server URL (already uploaded), skip conversion
+    if (!dataUrl || !dataUrl.startsWith("data:")) {
+        throw new Error(
+            `Expected a data URL but received "${dataUrl?.substring(0, 50) || "(empty)"}". ` +
+            "Please re-select the file and try again."
+        );
+    }
+
+    const commaIndex = dataUrl.indexOf(",");
+    if (commaIndex === -1) {
+        throw new Error("Invalid data URL format. Please re-select the file and try again.");
+    }
+
+    const header = dataUrl.substring(0, commaIndex);
+    const base64 = dataUrl.substring(commaIndex + 1);
     const mime = header.match(/:(.*?);/)?.[1] || "image/jpeg";
-    const bytes = atob(base64);
+
+    let bytes: string;
+    try {
+        bytes = atob(base64);
+    } catch {
+        throw new Error(
+            "Failed to decode the file data. The file may be corrupted. " +
+            "Please remove it and upload again."
+        );
+    }
+
     const arr = new Uint8Array(bytes.length);
     for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
     return new File([arr], filename, { type: mime });

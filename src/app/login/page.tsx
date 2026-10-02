@@ -49,7 +49,7 @@ export default function LoginPage() {
     const passwordError = touched.password && password.length === 0
         ? "Password is required" : "";
 
-    const getRedirectPath = (u: { onboarding?: { currentStep?: string }; role?: string }): string => {
+    const getRedirectPath = (u: { onboarding?: { currentStep?: string }; role?: string; roomDetails?: { status?: string }; accountStatus?: string }): string => {
         // Staff and admin users belong in the Viramah Admin Portal
         const staffRoles = ["admin", "super_admin", "sales_member", "accountant", "hostel_incharge"];
         if (staffRoles.includes(u.role || "")) {
@@ -64,9 +64,12 @@ export default function LoginPage() {
             guardian_details: "/user-onboarding/step-2",
             room_selection: "/user-onboarding/step-3",
             review: "/user-onboarding/step-4",
-            booking_payment: "/user-onboarding/deposit",
-            final_payment: "/user-onboarding/payment-breakdown",
-            completed: (u as any)?.roomDetails?.status === "checked_in" ? "/student/dashboard" : "/student/move-in",
+            // Users at booking/final payment should land on dashboard — they can
+            // navigate to payment themselves. Forcing them to the deposit page
+            // trapped users in a redirect loop where they could never reach dashboard.
+            booking_payment: "/student/dashboard",
+            final_payment: "/student/dashboard",
+            completed: u?.roomDetails?.status === "checked_in" ? "/student/dashboard" : "/student/move-in",
         };
 
         const currentStep = u.onboarding?.currentStep;

@@ -23,6 +23,26 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             router.push("/login");
             return;
         }
+
+        // Allow users who have progressed far enough in onboarding to access the student portal.
+        // Users at earlier onboarding steps should be redirected to complete onboarding first.
+        const currentStep = user.onboarding?.currentStep;
+        const allowedSteps = ["booking_payment", "final_payment", "completed"];
+        if (currentStep && !allowedSteps.includes(currentStep)) {
+            const stepRedirects: Record<string, string> = {
+                compliance: "/user-onboarding/terms",
+                verification: "/verify-contact",
+                personal_details: "/user-onboarding/step-1",
+                guardian_details: "/user-onboarding/step-2",
+                room_selection: "/user-onboarding/step-3",
+                review: "/user-onboarding/step-4",
+            };
+            const redirectPath = stepRedirects[currentStep];
+            if (redirectPath) {
+                router.push(redirectPath);
+                return;
+            }
+        }
     }, [loading, isAuthenticated, user, router, pathname]);
 
     if (loading) {

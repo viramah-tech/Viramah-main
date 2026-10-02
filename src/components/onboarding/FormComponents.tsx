@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { Upload, X, Camera, Trash2, Loader2 } from "lucide-react";
+import { Upload, X, Camera, Trash2, Loader2, FileText } from "lucide-react";
 import type { UploadedFile } from "@/context/OnboardingContext";
 
 // ── Design Tokens ────────────────────────────────────────────
@@ -127,22 +127,31 @@ export function FieldTextarea({ focused, hasError, style, ...props }: FieldTexta
         />
     );
 }
+/** Allowed MIME types for document uploads. */
+const ALLOWED_UPLOAD_MIMES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
 /**
  * Client-side image compression helper to ensure photos taken on high-res mobile phones
  * (which can be 8MB-15MB) are smoothly downscaled and compressed before uploading.
  * Avoids upload timeouts, body-parser/multer limit rejections, and browser memory spikes.
+ *
+ * PDF files are read as data URLs without any canvas processing.
  */
 async function compressImageIfNeeded(
     file: File,
     maxDim = 1600,
     quality = 0.85
 ): Promise<{ name: string; preview: string }> {
-    // If not an image (e.g. PDF), read as normal data URL without canvas draw
+    // If not an image (e.g. PDF), read as normal data URL without canvas draw.
+    // Also guard against very large PDFs (>8 MB) that could bloat memory as base64.
     if (!file.type.startsWith("image/")) {
+        if (file.type === "application/pdf" && file.size > 8 * 1024 * 1024) {
+            throw new Error("PDF file is too large (max 8 MB). Please compress or reduce page count.");
+        }
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve({ name: file.name, preview: reader.result as string });
-            reader.onerror = reject;
+            reader.onerror = () => reject(new Error("Failed to read file. Please try another."));
             reader.readAsDataURL(file);
         });
     }
@@ -152,13 +161,13 @@ async function compressImageIfNeeded(
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve({ name: file.name, preview: reader.result as string });
-            reader.onerror = reject;
+            reader.onerror = () => reject(new Error("Failed to read image. Please try another."));
             reader.readAsDataURL(file);
         });
     }
 
     // Compress via canvas downscaling
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new window.Image();
@@ -184,13 +193,16 @@ async function compressImageIfNeeded(
                     resolve({ name: safeName, preview: dataUrl });
                     return;
                 }
+                // Canvas context unavailable — fall back to original data URL
                 resolve({ name: file.name, preview: e.target?.result as string });
             };
             img.onerror = () => {
+                // Image failed to load on canvas — still usable as raw data URL
                 resolve({ name: file.name, preview: e.target?.result as string });
             };
             img.src = e.target?.result as string;
         };
+        reader.onerror = () => reject(new Error("Failed to read image file. Please try another."));
         reader.readAsDataURL(file);
     });
 }
@@ -218,9 +230,17 @@ export function PhotoUpload({
         const selectedFile = e.target.files?.[0];
         if (!selectedFile) return;
 
-        // Size check (max 15MB raw input limit)
-        if (selectedFile.size > 15 * 1024 * 1024) {
-            setError("File is too large (max 15MB). Please select a smaller photo or document.");
+        // Explicit MIME type validation — provide a clear message with allowed types
+        if (!ALLOWED_UPLOAD_MIMES.includes(selectedFile.type)) {
+            setError(`File type "${selectedFile.type || "unknown"}" is not allowed. Please upload JPEG, PNG, WebP, or PDF.`);
+            if (inputRef.current) inputRef.current.value = "";
+            return;
+        }
+
+        // Size check (max 10MB to stay within backend multer limit)
+        if (selectedFile.size > 10 * 1024 * 1024) {
+            setError("File is too large (max 10 MB). Please select a smaller file.");
+            if (inputRef.current) inputRef.current.value = "";
             return;
         }
 
@@ -231,7 +251,8 @@ export function PhotoUpload({
             onUpload(processed);
         } catch (err) {
             console.error("Failed to process document file:", err);
-            setError("Could not read file. Please choose another image or PDF.");
+            const message = err instanceof Error ? err.message : "Could not read file. Please choose another image or PDF.";
+            setError(message);
         } finally {
             setProcessing(false);
             if (inputRef.current) inputRef.current.value = "";
@@ -281,11 +302,21 @@ export function PhotoUpload({
                         border: `2px solid ${GREEN}`,
                     }}
                 >
-                    <img
-                        src={file.preview}
-                        alt={label}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
+                    {/* Show PDF icon for PDF files; img preview for images */}
+                    {file.preview?.startsWith("data:application/pdf") || file.name?.toLowerCase().endsWith(".pdf") ? (
+                        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(31,58,45,0.04)", gap: 8 }}>
+                            <FileText size={32} color={GREEN} />
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.6rem", color: GREEN, fontWeight: 600, maxWidth: "80%", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {file.name || "PDF Document"}
+                            </span>
+                        </div>
+                    ) : (
+                        <img
+                            src={file.preview}
+                            alt={label}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                    )}
                     <button
                         onClick={handleRemove}
                         disabled={deleting}

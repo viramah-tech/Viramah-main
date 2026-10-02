@@ -98,15 +98,40 @@ export default function Step1Page() {
             formData.append("idType", personal.idType);
             formData.append("idNumber", personal.idNumber);
 
-            // Append photos only if they are newly uploaded data: URLs
-            if (personal.profilePhoto?.preview?.startsWith('data:')) {
-                formData.append("profilePhoto", dataURLtoFile(personal.profilePhoto.preview, personal.profilePhoto.name));
+            // Append photos only if they are newly uploaded data: URLs.
+            // Each conversion is wrapped in try-catch to give clear feedback if a
+            // file's data URL was corrupted in-memory (e.g. after a long idle period).
+            try {
+                if (personal.profilePhoto?.preview?.startsWith('data:')) {
+                    formData.append("profilePhoto", dataURLtoFile(personal.profilePhoto.preview, personal.profilePhoto.name));
+                }
+            } catch (fileErr) {
+                const msg = fileErr instanceof Error ? fileErr.message : "Profile photo is corrupted.";
+                setErrors((prev) => ({ ...prev, profilePhoto: msg + " Please re-upload it." }));
+                setSubmitting(false);
+                return;
             }
-            if (personal.idFront?.preview?.startsWith('data:')) {
-                formData.append("idFront", dataURLtoFile(personal.idFront.preview, personal.idFront.name));
+
+            try {
+                if (personal.idFront?.preview?.startsWith('data:')) {
+                    formData.append("idFront", dataURLtoFile(personal.idFront.preview, personal.idFront.name));
+                }
+            } catch (fileErr) {
+                const msg = fileErr instanceof Error ? fileErr.message : "ID front image is corrupted.";
+                setErrors((prev) => ({ ...prev, idFront: msg + " Please re-upload it." }));
+                setSubmitting(false);
+                return;
             }
-            if (personal.idBack?.preview?.startsWith('data:')) {
-                formData.append("idBack", dataURLtoFile(personal.idBack.preview, personal.idBack.name));
+
+            try {
+                if (personal.idBack?.preview?.startsWith('data:')) {
+                    formData.append("idBack", dataURLtoFile(personal.idBack.preview, personal.idBack.name));
+                }
+            } catch (fileErr) {
+                const msg = fileErr instanceof Error ? fileErr.message : "ID back image is corrupted.";
+                setErrors((prev) => ({ ...prev, idBack: msg + " Please re-upload it." }));
+                setSubmitting(false);
+                return;
             }
 
             // Send standard multipart/form-data PUT directly
@@ -136,7 +161,8 @@ export default function Step1Page() {
                 return;
             }
 
-            setErrors({ idFront: message });
+            // Show a clear top-level error with the actual server message
+            setErrors({ _submit: message });
         } finally {
             setSubmitting(false);
         }
@@ -153,6 +179,25 @@ export default function Step1Page() {
                     We need to verify your identity to complete your room booking. Your data is encrypted and secure.
                 </StepSubtitle>
             </motion.div>
+
+            {/* Top-level submit error banner */}
+            {attempted && errors._submit && (
+                <motion.div
+                    variants={itemVariants}
+                    style={{
+                        padding: "14px 18px",
+                        borderRadius: 12,
+                        background: "rgba(192,57,43,0.08)",
+                        border: "1px solid rgba(192,57,43,0.2)",
+                        fontFamily: "var(--font-body, sans-serif)",
+                        fontSize: "0.85rem",
+                        color: "#c0392b",
+                        lineHeight: 1.5,
+                    }}
+                >
+                    <strong>Upload failed:</strong> {errors._submit}
+                </motion.div>
+            )}
 
             <motion.div variants={itemVariants}>
                 <FormCard>
